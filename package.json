@@ -51,7 +51,12 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
+<<<<<<< HEAD
     "drizzle-kit": "^0.18.1",
+=======
+    "drizzle-kit": "^0.31.10",
+    "esbuild": "^0.27.2",
+>>>>>>> 69cebf3 (Regenerate synchronized package-lock for Cloudflare Pages)
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
