@@ -1,36 +1,45 @@
 import { formatCurrency } from '../lib/format';
+import type { CartItem } from '../context/CartContext';
 
 interface Props {
   item: CartItem;
-  remove: (lineId: string) => void;
+  remove: (id: string) => void;
 }
 
 export default function CartItemRow({ item, remove }: Props) {
-  const subtotal = item.listing.price + item.listing.price * 0.09;
+  const itemTotal = item.listing.price;
+  const tax = itemTotal * 0.09;
+
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-[#1f1f1f] bg-[#0a0a0a] p-4">
-      <div className="flex items-center justify-between gap-4">
+    <div className="rounded-2xl border border-[#1f1f1f] bg-vault-surface p-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <div className="h-20 w-20 overflow-hidden rounded-xl bg-black">
-            <img src={item.listing.image_url} alt="" className="h-full w-full object-cover" />
+          <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-black">
+            <img
+              src={item.listing.image_url}
+              alt={item.listing.title}
+              className="h-full w-full object-cover"
+            />
           </div>
           <div className="space-y-1">
-            <p className="font-medium text-[#f5f5f5]">{item.listing.title}</p>
-            <p className="text-sm text-[#a1a1aa]">{item.listing.category}</p>
+            <p className="font-medium text-vault-text">{item.listing.title}</p>
+            <p className="text-sm text-vault-muted">{item.listing.category}</p>
           </div>
         </div>
-        <button
-          className="text-sm text-[#f5f518] hover:underline"
-          onClick={() => remove(item.id)}
-        >
-          Remove
-        </button>
-      </div>
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-[#a1a1aa]">Subtotal</span>
-        <span>
-          {formatCurrency(item.listing.price)} · Tax 9%: {formatCurrency(item.listing.price * 0.09)}
-        </span>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-right">
+            <div className="text-sm text-vault-muted">Subtotal</div>
+            <div className="font-medium text-vault-text">{formatCurrency(itemTotal)}</div>
+            <div className="text-xs text-vault-muted">Tax 9%: {formatCurrency(tax)}</div>
+          </div>
+          <button
+            className="text-sm text-[#EF4444] hover:underline"
+            onClick={() => remove(item.id)}
+          >
+            Remove
+          </button>
+        </div>
       </div>
     </div>
   );
