@@ -43,13 +43,36 @@ const VAULT_API = {
   model: 'hermes-2-free',
   async request(path, data = {}) {
     try {
+      const payload = {
+        ...data,
+        model: this.model,
+        timestamp: Date.now(),
+        strictMode: true,
+        antiHallucination: {
+          requireSource: true,
+          requireConfidence: true,
+          minConfidence: 0.75,
+          requireCitation: true,
+          forbidFabrication: true,
+          scope: 'marketplace_only',
+          forbidden: ['invented_prices', 'fake_inventory', 'false_guarantees', 'unverified_buyers', 'phantom_sales'],
+          validation: {
+            checkPriceRange: true,
+            checkListingExistence: true,
+            checkBuyerVerified: true,
+            returnEvidence: true
+          }
+        }
+      };
       const res = await fetch(`${this.base}${path}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, model: this.model, timestamp: Date.now() })
+        body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(res.statusText);
-      return await res.json();
+      const json = await res.json();
+      if (json.validated === false) throw new Error('Agent response failed anti-hallucination validation');
+      return json;
     } catch (e) {
       console.warn('API unavailable, running in standalone mode:', e.message);
       return { fallback: true, message: 'Backend offline — using local logic.' };
@@ -228,8 +251,78 @@ const routes = {
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Crypto Checkout</h2>
         <p style="color:#a1a1aa;margin-top:10px;">Pay with USDC, SOL, or Coinbase Commerce.</p>
         <div style="margin-top:22px;display:grid;gap:12px;">
-          <button style="padding:14px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Connect Wallet</button>
-          <button style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Coinbase</button>
+          <button onclick="window.VaultAPI.request('/api/checkout/crypto',{method:'wallet'}).then(r=>alert(JSON.stringify(r)))" style="padding:14px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Connect Wallet</button>
+          <button onclick="window.VaultAPI.request('/api/checkout/crypto',{method:'coinbase'}).then(r=>alert(JSON.stringify(r)))" style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Coinbase</button>
+        </div>
+      </div>
+    </section>
+  `,
+  agentproject: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Agent Projects</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Active autonomous campaigns and outreach assignments.</p>
+        <div style="margin-top:22px;display:grid;gap:16px;">
+          ${[
+            {name:'Q3 Luxury Watch Campaign',agent:'Outreach Agent',status:'active',conversions:12},
+            {name:'Rare Coin Valuation Queue',agent:'Appraisal Agent',status:'active',conversions:0},
+            {name:'Support Ticket Sweep',agent:'Support Agent',status:'paused',conversions:47},
+          ].map(p => `
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div>
+                <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;font-size:13px;">${p.name}</div>
+                <div style="font-size:12px;color:#C8BC98;margin-top:6px;">Assigned: <span style="color:#C9A84C;">${p.agent}</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="font-size:12px;color:#C8BC98;">Status: <span style="color:${p.status==='active'?'#6ee7b7':'#fbbf24'};text-transform:capitalize;">${p.status}</span></div>
+                <button onclick="window.VaultAPI.request('/api/agents/outreach',{project:'${p.name}'}).then(r=>alert(JSON.stringify(r)))" style="padding:10px 12px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;font-weight:700;">Run</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+  `,
+  agentcommand: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:900px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Agent Command</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Direct command center for agent fleet operations.</p>
+        <div style="margin-top:22px;background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:18px;">
+          <div style="display:grid;gap:10px;">
+            ${[
+              {cmd:'Trigger buyer match for Sports Memorabilia',endpoint:'/api/agents/outreach'},
+              {cmd:'Re-run AI appraisal for listing l4',endpoint:'/api/agents/appraisal'},
+              {cmd:'Flush support queue',endpoint:'/api/agents/support'},
+              {cmd:'Request authentication report',endpoint:'/api/agents/auth'},
+            ].map(c => `
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;background:#141414;border:1px solid rgba(255,255,255,0.06);padding:12px 14px;border-radius:12px;">
+                <div style="font-size:13px;color:#F5EED8;">${c.cmd}</div>
+                <button onclick="window.VaultAPI.request('${c.endpoint}',{command:'${c.cmd}'}).then(r=>alert(JSON.stringify(r)))" style="padding:10px 12px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;font-weight:700;white-space:nowrap;">Execute</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </section>
+  `,
+  marketingdashboard: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Marketing Dashboard</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Campaign performance, leads, and channel analytics.</p>
+        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          ${[
+            {label:'Active Leads',value:'1,284',change:'+12%'},
+            {label:'Conversion Rate',value:'3.8%',change:'+0.4%'},
+            {label:'Agent Actions',value:'842',change:'+18%'},
+          ].map(k => `
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
+              <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8A6E2F;">${k.label}</div>
+              <div style="font-family:'Cinzel',serif;font-size:24px;font-weight:700;color:#C9A84C;margin-top:6px;">${k.value}</div>
+              <div style="font-size:12px;color:#6ee7b7;margin-top:8px;">${k.change}</div>
+            </div>
+          `).join('')}
         </div>
       </div>
     </section>
@@ -795,16 +888,24 @@ function page(title, subtitle) {
   `;
 }
 
+const resolveRoute = (raw) => {
+  const path = (raw || '').replace(/^\/+/, '') || 'home';
+  if (routes[path]) return routes[path];
+  const segment = path.split('/')[0];
+  if (routes[segment]) return routes[segment];
+  if (path.includes('/')) {
+    const tail = path.split('/').pop();
+    if (routes[tail]) return routes[tail];
+  }
+  return routes.notfound || routes.home;
+};
+
 const render = () => {
   const app = document.getElementById('app');
   if (!app) return;
   const path = location.pathname.replace(/^\/+/, '') || 'home';
   app.innerHTML = shell();
-  const routeFn = routes[path];
-  if (!routeFn) {
-    window._lastRouteError = 'Route missing or path is not exactly /' + path;
-    return;
-  }
+  const routeFn = resolveRoute(path);
   const html = routeFn();
   const main = app.querySelector('main > div');
   if (main) main.innerHTML = html;
