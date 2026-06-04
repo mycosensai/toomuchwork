@@ -150,8 +150,12 @@ body {
 .text-gold { color: var(--gold); }
 .text-muted { color: var(--muted); }
 .text-center { text-align: center; }
-.aspect-video { aspect-ratio: 16 / 9; }
-.aspect-square { aspect-ratio: 1 / 1; }
-.aspect-4-3 { aspect-ratio: 4 / 3; }
+.aspect-box { position: relative; width: 100%; overflow: hidden; }
+.aspect-box::before { content: ''; display: block; }
+.aspect-box > img,
+.aspect-box > *:first-child:not(::before) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.aspect-1-1::before { padding-top: 100%; }
+.aspect-4-3::before { padding-top: 75%; }
+.aspect-16-9::before { padding-top: 56.25%; }
 .cover { object-fit: cover; }
 .contain { object-fit: contain; }

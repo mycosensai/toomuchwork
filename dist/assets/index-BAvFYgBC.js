@@ -1,21 +1,21 @@
-(function(){const i=document.createElement("link").relList;if(i&&i.supports&&i.supports("modulepreload"))return;for(const r of document.querySelectorAll('link[rel="modulepreload"]'))l(r);new MutationObserver(r=>{for(const o of r)if(o.type==="childList")for(const d of o.addedNodes)d.tagName==="LINK"&&d.rel==="modulepreload"&&l(d)}).observe(document,{childList:!0,subtree:!0});function a(r){const o={};return r.integrity&&(o.integrity=r.integrity),r.referrerPolicy&&(o.referrerPolicy=r.referrerPolicy),r.crossOrigin==="use-credentials"?o.credentials="include":r.crossOrigin==="anonymous"?o.credentials="omit":o.credentials="same-origin",o}function l(r){if(r.ep)return;r.ep=!0;const o=a(r);fetch(r.href,o)}})();const t={diamond:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',search:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',shield:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',heart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',cart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',arrow:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',sparkles:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 13.5 8.5 19 10 13.5 11.5 12 17 10.5 11.5 5 10 10.5 8.5Z"/><path d="M5 15 6 18 9 19 6 20 5 23 4 20 1 19 4 18Z"/></svg>',"shield-check":'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',clock:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',trending:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',gem:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',coins:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M18.5 13.5 16 11M14 16l2.5 2.5M16 11.5 18.5 14"/><circle cx="16" cy="16" r="5.5"/></svg>',landmark:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>',palette:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>',watch:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 9v4l2 2"/><path d="M9 2h6M9 22h6"/></svg>',trophy:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66 17 12l-7-2.66v4.01A2 2 0 0 1 12 18a2 2 0 0 1-2-2.01V14.66z"/><path d="M17 8l2-4"/></svg>',book:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',chevron:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>',xsocial:'<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',instagram:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>',mail:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>'},m={x:"https://x.com/thevault",instagram:"https://instagram.com/thevault",email:"mailto:ratchetkrewelabs@gmail.com"},h=[{id:"fine-jewelry",name:"Fine Jewelry",slug:"jewelry",iconName:"gem"},{id:"rare-coins",name:"Rare Coins",slug:"coins",iconName:"coins"},{id:"luxury-watches",name:"Luxury Watches",slug:"watches",iconName:"watch"},{id:"fine-art",name:"Fine Art",slug:"art",iconName:"palette"},{id:"antiques",name:"Antiques",slug:"antiques",iconName:"landmark"},{id:"sports-memorabilia",name:"Sports Memorabilia",slug:"memorabilia",iconName:"trophy"},{id:"collectibles",name:"Collectibles",slug:"collectibles",iconName:"diamond"},{id:"books",name:"Books & Ephemera",slug:"books",iconName:"book"}],f=[{id:"l1",title:"Vault Pass — EMPLOYER{OPS}",price:129,category:"collectibles",image:"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:214,condition:"mint",badge:"new"},{id:"l2",title:"Collectible Card — Obsidian Gold",price:58,category:"sports-memorabilia",image:"https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:178,condition:"near-mint",badge:"hot"},{id:"l3",title:"Vault DFW Limited Watchlist Ticket",price:240,category:"collectibles",image:"https://images.unsplash.com/photo-1599582909646-2f0a3a6e5c2e?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:99,condition:"mint",badge:"offer"},{id:"l4",title:"Rare 1965 Silver Coin Set",price:425,category:"rare-coins",image:"https://images.unsplash.com/photo-1610375465536-5b1d2c5d1f3a?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:312,condition:"mint",badge:"verified"},{id:"l5",title:"Graded 1990 Comic Collection",price:320,category:"books",image:"https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:145,condition:"near-mint",badge:"verified"},{id:"l6",title:"Vintage Toy Robot — 1984",price:190,category:"collectibles",image:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:89,condition:"good",badge:"hot"},{id:"l7",title:"Signed Baseball — Authenticated",price:650,category:"sports-memorabilia",image:"https://images.unsplash.com/photo-1610189012906-478603565824?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:410,condition:"mint",badge:"verified"},{id:"l8",title:"Sealed 1992 Topps Wax Box",price:890,category:"collectibles",image:"https://images.unsplash.com/photo-1607330289024-1535d6f30c7e?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:220,condition:"mint",badge:"new"}],n={cart:[],wishlist:[]},$=e=>({gem:t.gem,coins:t.coins,landmark:t.landmark,palette:t.palette,watch:t.watch,trophy:t.trophy,diamond:t.diamond,book:t.book})[e]||t.diamond,A=["Browse Collection","AI Appraisal","ProVerify","Sell an Item","Token Gallery","Wishlist","My Orders"],E=["About The Vault","FAQ","Contact Us","Shipping Info","Support Center"],B=["Directory / Sitemap","Terms of Service","Privacy Policy","Returns & Refunds"],M=()=>{const e=location.pathname.replace(/^\/+/,"")||"home",i=a=>e===a?"color:#E8CB7A;":"color:#C8BC98;";return`
+(function(){const i=document.createElement("link").relList;if(i&&i.supports&&i.supports("modulepreload"))return;for(const r of document.querySelectorAll('link[rel="modulepreload"]'))l(r);new MutationObserver(r=>{for(const a of r)if(a.type==="childList")for(const d of a.addedNodes)d.tagName==="LINK"&&d.rel==="modulepreload"&&l(d)}).observe(document,{childList:!0,subtree:!0});function o(r){const a={};return r.integrity&&(a.integrity=r.integrity),r.referrerPolicy&&(a.referrerPolicy=r.referrerPolicy),r.crossOrigin==="use-credentials"?a.credentials="include":r.crossOrigin==="anonymous"?a.credentials="omit":a.credentials="same-origin",a}function l(r){if(r.ep)return;r.ep=!0;const a=o(r);fetch(r.href,a)}})();const t={diamond:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',search:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',shield:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',heart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',cart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',arrow:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',sparkles:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 13.5 8.5 19 10 13.5 11.5 12 17 10.5 11.5 5 10 10.5 8.5Z"/><path d="M5 15 6 18 9 19 6 20 5 23 4 20 1 19 4 18Z"/></svg>',"shield-check":'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',clock:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',trending:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',gem:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',coins:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M18.5 13.5 16 11M14 16l2.5 2.5M16 11.5 18.5 14"/><circle cx="16" cy="16" r="5.5"/></svg>',landmark:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>',palette:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>',watch:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 9v4l2 2"/><path d="M9 2h6M9 22h6"/></svg>',trophy:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66 17 12l-7-2.66v4.01A2 2 0 0 1 12 18a2 2 0 0 1-2-2.01V14.66z"/><path d="M17 8l2-4"/></svg>',book:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',chevron:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>',xsocial:'<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',instagram:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>',mail:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>'},m={x:"https://x.com/thevault",instagram:"https://instagram.com/thevault",email:"mailto:ratchetkrewelabs@gmail.com"},$={base:"/api",model:"hermes-2-free",async request(e,i={}){try{const o=await fetch(`${this.base}${e}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...i,model:this.model,timestamp:Date.now()})});if(!o.ok)throw new Error(o.statusText);return await o.json()}catch(o){return console.warn("API unavailable, running in standalone mode:",o.message),{fallback:!0,message:"Backend offline — using local logic."}}}};window.VaultAPI=$;const y=[{id:"fine-jewelry",name:"Fine Jewelry",slug:"jewelry",iconName:"gem"},{id:"rare-coins",name:"Rare Coins",slug:"coins",iconName:"coins"},{id:"luxury-watches",name:"Luxury Watches",slug:"watches",iconName:"watch"},{id:"fine-art",name:"Fine Art",slug:"art",iconName:"palette"},{id:"antiques",name:"Antiques",slug:"antiques",iconName:"landmark"},{id:"sports-memorabilia",name:"Sports Memorabilia",slug:"memorabilia",iconName:"trophy"},{id:"collectibles",name:"Collectibles",slug:"collectibles",iconName:"diamond"},{id:"books",name:"Books & Ephemera",slug:"books",iconName:"book"}],f=[{id:"l1",title:"Vault Pass — EMPLOYER{OPS}",price:129,category:"collectibles",image:"https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:214,condition:"mint",badge:"new"},{id:"l2",title:"Collectible Card — Obsidian Gold",price:58,category:"sports-memorabilia",image:"https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:178,condition:"near-mint",badge:"hot"},{id:"l3",title:"Vault DFW Limited Watchlist Ticket",price:240,category:"collectibles",image:"https://images.unsplash.com/photo-1599582909646-2f0a3a6e5c2e?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:99,condition:"mint",badge:"offer"},{id:"l4",title:"Rare 1965 Silver Coin Set",price:425,category:"rare-coins",image:"https://images.unsplash.com/photo-1610375465536-5b1d2c5d1f3a?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:312,condition:"mint",badge:"verified"},{id:"l5",title:"Graded 1990 Comic Collection",price:320,category:"books",image:"https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:145,condition:"near-mint",badge:"verified"},{id:"l6",title:"Vintage Toy Robot — 1984",price:190,category:"collectibles",image:"https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:89,condition:"good",badge:"hot"},{id:"l7",title:"Signed Baseball — Authenticated",price:650,category:"sports-memorabilia",image:"https://images.unsplash.com/photo-1610189012906-478603565824?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:410,condition:"mint",badge:"verified"},{id:"l8",title:"Sealed 1992 Topps Wax Box",price:890,category:"collectibles",image:"https://images.unsplash.com/photo-1607330289024-1535d6f30c7e?auto=format&fit=crop&w=400&q=80",seller:"vaultops",views:220,condition:"mint",badge:"new"}],n={cart:[],wishlist:[]},A=e=>({gem:t.gem,coins:t.coins,landmark:t.landmark,palette:t.palette,watch:t.watch,trophy:t.trophy,diamond:t.diamond,book:t.book})[e]||t.diamond,E=["Browse Collection","AI Appraisal","ProVerify","Sell an Item","Token Gallery","Wishlist","My Orders"],B=["About The Vault","FAQ","Contact Us","Shipping Info","Support Center"],M=["Directory / Sitemap","Terms of Service","Privacy Policy","Returns & Refunds"],S=()=>{const e=location.pathname.replace(/^\/+/,"")||"home",i=o=>e===o?"color:#E8CB7A;":"color:#C8BC98;";return`
     <header style="border-bottom:1px solid rgba(201,168,76,0.18);background:rgba(0,0,0,0.7);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;">
       <div style="max-width:1200px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;">
         <a href="/" style="text-decoration:none;display:inline-flex;align-items:center;gap:12px;"><span style="font-family:'Cinzel',serif;font-weight:800;letter-spacing:4px;color:#C9A84C;">The Vault DFW</span></a>
         <nav style="display:none;align-items:center;gap:24px;">
-          ${["browse","appraisal","proverify","sell","tokengallery","support"].map(a=>`<a href="/${a}" style="font-size:11px;letter-spacing:3px;text-transform:uppercase;text-decoration:none;${i(a)}">${a==="tokengallery"?"Tokens":a==="proverify"?"ProVerify":a.charAt(0).toUpperCase()+a.slice(1)}</a>`).join("")}
+          ${["browse","appraisal","proverify","sell","tokengallery","support"].map(o=>`<a href="/${o}" style="font-size:11px;letter-spacing:3px;text-transform:uppercase;text-decoration:none;${i(o)}">${o==="tokengallery"?"Tokens":o==="proverify"?"ProVerify":o.charAt(0).toUpperCase()+o.slice(1)}</a>`).join("")}
         </nav>
         <div style="display:none;align-items:center;gap:14px;">
           <a href="/browse" style="color:#C8BC98;text-decoration:none;">${t.search}</a>
           <a href="/wishlist" style="color:#C8BC98;text-decoration:none;">${t.heart}</a>
-          <a href="/orders" style="color:#C8BC98;text-decoration:none;">${t.cart}</a>
+          <a href="/cart" style="color:#C8BC98;text-decoration:none;">${t.cart}</a>
           <a href="/admin" style="color:#C8BC98;text-decoration:none;">${t.shield}</a>
           <a href="/login" style="padding:8px 14px;border:1px solid #C9A84C;color:#C9A84C;text-decoration:none;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;font-weight:700;">Sign In</a>
         </div>
       </div>
     </header>
     <main style="min-height:100vh;">
-      <div style="max-width:1100px;margin:0 auto;padding:0 24px;">${(z[e]||z.home)()}</div>
+      <div style="max-width:1100px;margin:0 auto;padding:0 24px;">${(h[e]||h.home)()}</div>
     </main>
     <footer style="border-top:1px solid rgba(201,168,76,0.18);background:#080808;padding:56px 20px 28px;">
       <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:32px;">
@@ -30,15 +30,15 @@
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Platform</h4>
-          ${A.map(a=>`<a href="/browse" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${a}</a>`).join("")}
+          ${E.map(o=>`<a href="/browse" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${o}</a>`).join("")}
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Company</h4>
-          ${E.map(a=>`<a href="/about" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${a}</a>`).join("")}
+          ${B.map(o=>`<a href="/about" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${o}</a>`).join("")}
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Legal</h4>
-          ${B.map(a=>`<a href="/terms" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${a}</a>`).join("")}
+          ${M.map(o=>`<a href="/terms" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${o}</a>`).join("")}
           <a href="${m.email}" style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#C8BC98;text-decoration:none;">${t.mail} ratchetkrewelabs@gmail.com</a>
         </div>
       </div>
@@ -46,7 +46,109 @@
         <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8A6E2F;">&copy; 2024 The Vault. All rights reserved.</p>
       </div>
     </footer>
-  `},z={home:()=>`
+  `},h={cart:()=>`
+    <section style="padding-top:100px;">
+      <div style="max-width:960px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Cart</h2>
+        ${n.cart.length===0?'<p style="color:#a1a1aa;margin-top:12px;">Your cart is empty.</p>':""}
+        <div style="margin-top:18px;display:grid;gap:16px;">
+          ${n.cart.map(e=>`
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;overflow:hidden;display:grid;grid-template-columns:140px 1fr;gap:16px;padding:12px;">
+              <div style="background:#141414;border:1px solid rgba(201,168,76,0.10);border-radius:14px;overflow:hidden;"><img src="${e.image}" alt="${e.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+              <div style="min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;">
+                  <div>
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#C9A84C;border:1px solid rgba(201,168,76,0.30);padding:6px 10px;border-radius:999px;display:inline-block;">${e.category}</div>
+                    <h3 style="color:#F5EED8;margin-top:8px;font-weight:600;">${e.title}</h3>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="color:#e5c07b;font-weight:700;">$${e.price}</div>
+                    <button onclick="window._remove('${e.id}')" style="margin-top:8px;font-size:12px;color:#f87171;background:transparent;border:1px solid rgba(248,113,113,0.25);padding:6px 10px;border-radius:10px;cursor:pointer;">Remove</button>
+                  </div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                  <div style="font-size:11px;color:#C8BC98;">Retail-ready checkout. Choose Stripe, Coinbase, or wallet at checkout.</div>
+                  <a href="/checkout" style="padding:10px 14px;background:#e5c07b;color:#000;border-radius:12px;text-decoration:none;font-weight:700;font-family:'Cinzel',serif;letter-spacing:2px;white-space:nowrap;">Checkout</a>
+                </div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
+          <a href="/browse" style="color:#C9A84C;text-decoration:none;">${t.arrow} Continue Shopping</a>
+          <a href="/walletpay" style="padding:12px 16px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;text-decoration:none;font-weight:700;">Pay with Wallet</a>
+        </div>
+      </div>
+    </section>
+  `,checkout:e=>`
+    <section style="padding-top:100px;">
+      <div style="max-width:760px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Checkout</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Complete purchase for item <strong style="color:#F5EED8;">${e||"selected"}</strong>.</p>
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Order placed.</p>';" style="margin-top:22px;display:grid;gap:16px;">
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Shipping Address</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="3" required></textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Card Number</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="4242 4242 4242 4242"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="MM/YY"><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="CVC"></div>
+          </div>
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Payment Method</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option>Stripe (Card)</option><option>Coinbase Commerce</option><option>Solana (SOL)</option></select></div>
+          <div><button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;background:#e5c07b;color:#000000;border:1px solid transparent;border-radius:12px;font-weight:700;cursor:pointer;">${t.shield} Pay Securely</button></div>
+        </form>
+      </div>
+    </section>
+  `,cryptocheckout:e=>`
+    <section style="padding-top:100px;">
+      <div style="max-width:760px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Crypto Checkout</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Pay with USDC, SOL, or Coinbase Commerce.</p>
+        <div style="margin-top:22px;display:grid;gap:12px;">
+          <button style="padding:14px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Connect Wallet</button>
+          <button style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Coinbase</button>
+        </div>
+      </div>
+    </section>
+  `,walletpay:e=>`
+    <section style="padding-top:100px;">
+      <div style="max-width:760px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Wallet Pay</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Wallet checkout for <strong style="color:#F5EED8;">${e||"selected"}</strong>.</p>
+        <div style="margin-top:22px;display:grid;gap:12px;">
+          <button style="padding:14px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Connect Wallet</button>
+          <button style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Stripe</button>
+          <button style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Coinbase</button>
+        </div>
+      </div>
+    </section>
+  `,certificate:e=>`
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Digital Certificate</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Authenticity certificate for <strong style="color:#F5EED8;">${e||"this item"}</strong>.</p>
+      </div>
+    </section>
+  `,proverifyresult:e=>`
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">ProVerify Result</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Verification <strong style="color:#F5EED8;">${e?"#"+e:"record"}</strong>.</p>
+      </div>
+    </section>
+  `,leads:e=>`
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Leads</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Buyer leads for <strong style="color:#F5EED8;">${e||"listing"}</strong>.</p>
+      </div>
+    </section>
+  `,notfound:()=>`
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;text-align:center;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Page Not Found</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">The requested page does not exist.</p>
+        <a href="/" style="display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:12px 14px;background:#e5c07b;color:#000;border-radius:12px;text-decoration:none;font-weight:700;">Return Home</a>
+      </div>
+    </section>
+  `,home:()=>`
     <section style="position:relative;min-height:100vh;background:#000000;">
       <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 28%,rgba(201,168,76,0.10),transparent 60%);"></div>
       <div style="position:absolute;inset:0;background:linear-gradient(to bottom,#0a0a0a,#000000 38%,#050505 72%,#0a0a0a);"></div>
@@ -176,10 +278,10 @@
           </div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(201,168,76,0.12);">
-          ${h.map(e=>`
+          ${y.map(e=>`
             <a href="/browse" style="position:relative;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-decoration:none;padding:20px;background:#0e0e0e;">
               <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(201,168,76,0.14));opacity:0;transition:opacity .3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0"></div>
-              <div style="color:#C9A84C;position:relative;z-index:1;">${$(e.iconName)}</div>
+              <div style="color:#C9A84C;position:relative;z-index:1;">${A(e.iconName)}</div>
               <h3 style="color:#C9A84C;position:relative;z-index:1;font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:center;">${e.name}</h3>
             </a>
           `).join("")}
@@ -230,7 +332,7 @@
       <div style="max-width:1100px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;color:#F5EED8;">Browse Collection</h2>
         <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
-          ${h.map(e=>`<button onclick="window._filterBrowse('${e.slug}')" style="padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#f5f5f5;cursor:pointer;">${e.name}</button>`).join("")}
+          ${y.map(e=>`<button onclick="window._filterBrowse('${e.slug}')" style="padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#f5f5f5;cursor:pointer;">${e.name}</button>`).join("")}
         </div>
         <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;" id="browse-grid">
           ${f.map(e=>`
@@ -258,10 +360,10 @@
     <section style="padding-top:100px;">
       <div style="max-width:720px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">List an Item</h2>
-        <form onsubmit="event.preventDefault();alert('Submitted');" style="margin-top:22px;display:grid;gap:16px;">
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Submission received.</p>';" style="margin-top:22px;display:grid;gap:16px;">
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Title</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="Vintage Rolex Submariner — 1987" required></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Category</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;">${h.filter(e=>e.id!=="all").map(e=>`<option>${e.name}</option>`).join("")}</select></div>
+            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Category</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;">${y.filter(e=>e.id!=="all").map(e=>`<option>${e.name}</option>`).join("")}</select></div>
             <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Condition</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option>Mint</option><option>Near Mint</option><option>Good</option><option>Fair</option></select></div>
           </div>
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Images (comma separated URLs)</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="https://example.com/a.jpg, https://example.com/b.jpg"></div>
@@ -283,13 +385,13 @@
           <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#C8BC98;margin-top:10px;">Upload a photo and description for an AI estimate.</p>
         </div>
         <div style="background:#141414;border:1px solid rgba(201,168,76,0.35);padding:28px;">
-          <form onsubmit="event.preventDefault();alert('Submitted for appraisal');" style="display:grid;gap:16px;">
+          <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Appraisal request received.</p>';" style="display:grid;gap:16px;">
             <div>
               <label style="display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Upload Photo</label>
               <div style="border:2px dashed rgba(201,168,76,0.35);background:#141414;height:260px;display:flex;align-items:center;justify-content:center;color:#C8BC98;font-size:12px;">Click to upload a photo</div>
             </div>
             <div><label style="display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Item Name</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="1924 Art Deco Diamond Ring" required></div>
-            <div><label style="display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Category</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;">${h.map(e=>`<option>${e.name}</option>`).join("")}</select></div>
+            <div><label style="display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Category</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;">${y.map(e=>`<option>${e.name}</option>`).join("")}</select></div>
             <div><label style="display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Description</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="5" placeholder="Maker marks, hallmarks, provenance..."></textarea></div>
             <div><button type="submit" style="width:100%;padding:14px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;font-family:'Cinzel',serif;letter-spacing:2px;font-weight:700;border-radius:12px;">${t.sparkles} Get AI Appraisal</button></div>
           </form>
@@ -301,7 +403,7 @@
       <div style="max-width:720px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">ProVerify Authentication</h2>
         <p style="color:#a1a1aa;margin-top:10px;">Submit your item for multi-layer AI + expert authentication.</p>
-        <form onsubmit="event.preventDefault();alert('Submitted');" style="margin-top:22px;display:grid;gap:16px;">
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Submission received.</p>';" style="margin-top:22px;display:grid;gap:16px;">
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Item Title</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Description / Provenance</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="4"></textarea></div>
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Image Links</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="https://..."></div>
@@ -388,7 +490,7 @@
     <section style="padding-top:100px;">
       <div style="max-width:760px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Checkout</h2>
-        <form onsubmit="event.preventDefault();alert('Order placed');" style="margin-top:22px;display:grid;gap:16px;">
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Order placed.</p>';" style="margin-top:22px;display:grid;gap:16px;">
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Shipping Address</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="3" required></textarea></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Card Number</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="4242 4242 4242 4242"></div>
@@ -435,7 +537,7 @@
     <section style="padding-top:100px;">
       <div style="max-width:420px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;text-align:center;">Sign In</h2>
-        <form onsubmit="event.preventDefault();alert('Signed in');" style="margin-top:22px;display:grid;gap:16px;">
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Signed in.</p>';" style="margin-top:22px;display:grid;gap:16px;">
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Email</label><input type="email" style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Password</label><input type="password" style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
           <div><button type="submit" style="width:100%;padding:14px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;font-family:'Cinzel',serif;letter-spacing:2px;font-weight:700;border-radius:12px;">Sign In</button></div>
@@ -462,13 +564,14 @@
     <section style="padding-top:100px;">
       <div style="max-width:1100px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Agent Fleet</h2>
-        <p style="color:#a1a1aa;margin-top:10px;">Autonomous outreach, valuation, and support agents.</p>
+        <p style="color:#a1a1aa;margin-top:10px;">Autonomous outreach, valuation, authentication, fulfillment, and support agents.</p>
         <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
-          ${[{name:"Outreach Agent",desc:"Find buyers across social and marketplace channels."},{name:"Appraisal Agent",desc:"Estimate value from photos, description, and market data."},{name:"Support Agent",desc:"Answer buyer/seller questions and status requests."},{name:"Ops Agent",desc:"Monitor listings, pricing, and fulfillment status."}].map(e=>`
-            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
-              <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;">${e.name}</div>
-              <p style="color:#C8BC98;font-size:12px;margin-top:8px;line-height:1.5;">${e.desc}</p>
-              <button onclick="alert('Agent endpoint ready.')" style="margin-top:14px;width:100%;padding:10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;">Configure Agent</button>
+          ${[{name:"Outreach Agent",endpoint:"/api/agents/outreach",assignment:"Scan marketplace and network channels to match listings with verified buyers.",action:"Find Buyers"},{name:"Appraisal Agent",endpoint:"/api/agents/appraisal",assignment:"Estimate fair market value from uploaded images, descriptions, and comparable sales.",action:"Run Appraisal"},{name:"Support Agent",endpoint:"/api/agents/support",assignment:"Answer buyer/seller questions, order status requests, and dispute escalations.",action:"Open Support"},{name:"Ops Agent",endpoint:"/api/agents/ops",assignment:"Monitor listing quality, pricing drift, and fulfillment status across the marketplace.",action:"View Ops"},{name:"Auth Agent",endpoint:"/api/agents/auth",assignment:"Manage ProVerify submissions, certificate issuance, and authenticity workflows.",action:"Manage Auth"}].map(e=>`
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+              <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;font-size:13px;letter-spacing:1px;">${e.name}</div>
+              <p style="color:#C8BC98;font-size:12px;line-height:1.5;flex:1;">${e.assignment}</p>
+              <div style="font-size:10px;color:#8A6E2F;font-family:monospace;word-break:break-all;">POST ${e.endpoint}</div>
+              <button onclick="window.VaultAPI.request('${e.endpoint}',{action:'${e.action}'}).then(r=>alert(JSON.stringify(r)))" style="width:100%;padding:10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;font-weight:700;letter-spacing:1px;">${e.action}</button>
             </div>
           `).join("")}
         </div>
@@ -497,4 +600,4 @@
         <div style="margin-top:18px;"><a href="/" style="color:#C9A84C;text-decoration:none;">${t.arrow} Back to Home</a></div>
       </div>
     </section>
-  `}const g=()=>{const e=document.getElementById("app");e&&(e.innerHTML=M())};window._add=e=>{const i=f.find(a=>a.id===e);i&&!n.cart.find(a=>a.id===e)&&n.cart.push(i),g()};window._remove=e=>{n.cart=n.cart.filter(i=>i.id!==e),g()};window._toggleW=e=>{n.wishlist=n.wishlist.includes(e)?n.wishlist.filter(i=>i!==e):[...n.wishlist,e],g()};window._filterBrowse=e=>{n._browse=e,g()};window._calc=()=>{var w;const e=((w=document.getElementById("calc-value"))==null?void 0:w.value)||"0",i=parseFloat(e)||0;let a=5;i>=1e4?a=15:i>=7500?a=10:i>=1e3&&(a=7);const l=i*(a/100),r=i-l,o=p=>"$"+p.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}),d=document.getElementById("cv-value");d&&(d.textContent=o(i));const y=document.getElementById("cv-rate");y&&(y.textContent=a);const u=document.getElementById("cv-comm");u&&(u.textContent=o(l));const b=document.getElementById("cv-net");b&&(b.textContent=o(r)),[5,7,10,15].forEach(p=>{const c=document.getElementById("tier-"+p);if(!c)return;const x=p===a;c.style.borderColor=x?"#C9A84C":"rgba(201,168,76,0.25)",c.style.background=x?"rgba(201,168,76,0.08)":"#141414"});const v=document.getElementById("calc-compare");if(v&&(v.style.display=i>0?"block":"none",i>0)){const p=document.getElementById("c1");p&&(p.textContent=o(i*.25));const c=document.getElementById("c2");c&&(c.textContent=o(i*.4));const x=document.getElementById("c3");x&&(x.textContent=o(i*.135));const C=document.getElementById("cv");C&&(C.textContent=o(l));const k=document.getElementById("savings");k&&(k.textContent=o(i*.25-l))}};window.addEventListener("popstate",g);window.addEventListener("load",()=>{g(),setTimeout(()=>{const e=document.getElementById("particle-canvas");if(!e)return;const i=e.getContext("2d"),a=()=>{e.width=e.clientWidth,e.height=e.clientHeight};a(),window.addEventListener("resize",a);const l=Array.from({length:50},()=>({x:Math.random()*e.width,y:Math.random()*e.height,size:Math.random()*1.6+.6,vy:-(Math.random()*.6+.2),opacity:Math.random()*.5+.2,doRate:Math.random()*.01+.005})),r=()=>{i.clearRect(0,0,e.width,e.height),l.forEach(o=>{o.y+=o.vy,o.opacity+=o.doRate,(o.opacity>.7||o.opacity<.1)&&(o.doRate*=-1),o.y<-10&&(o.y=e.height+10,o.x=Math.random()*e.width),i.beginPath(),i.arc(o.x,o.y,o.size,0,Math.PI*2),i.fillStyle=`rgba(201,168,76,${o.opacity})`,i.fill()}),requestAnimationFrame(r)};r()},60)});
+  `}const g=()=>{const e=document.getElementById("app");if(!e)return;const i=location.pathname.replace(/^\/+/,"")||"home";e.innerHTML=S();const o=h[i];if(!o){window._lastRouteError="Route missing or path is not exactly /"+i;return}const l=o(),r=e.querySelector("main > div");r?r.innerHTML=l:e.insertAdjacentHTML("beforeend",l)};window._add=e=>{const i=f.find(o=>o.id===e);i&&!n.cart.find(o=>o.id===e)&&n.cart.push(i),g()};window._remove=e=>{n.cart=n.cart.filter(i=>i.id!==e),g()};window._toggleW=e=>{n.wishlist=n.wishlist.includes(e)?n.wishlist.filter(i=>i!==e):[...n.wishlist,e],g()};window._filterBrowse=e=>{n._browse=e,g()};window._calc=()=>{var C;const e=((C=document.getElementById("calc-value"))==null?void 0:C.value)||"0",i=parseFloat(e)||0;let o=5;i>=1e4?o=15:i>=7500?o=10:i>=1e3&&(o=7);const l=i*(o/100),r=i-l,a=p=>"$"+p.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}),d=document.getElementById("cv-value");d&&(d.textContent=a(i));const u=document.getElementById("cv-rate");u&&(u.textContent=o);const b=document.getElementById("cv-comm");b&&(b.textContent=a(l));const v=document.getElementById("cv-net");v&&(v.textContent=a(r)),[5,7,10,15].forEach(p=>{const c=document.getElementById("tier-"+p);if(!c)return;const x=p===o;c.style.borderColor=x?"#C9A84C":"rgba(201,168,76,0.25)",c.style.background=x?"rgba(201,168,76,0.08)":"#141414"});const w=document.getElementById("calc-compare");if(w&&(w.style.display=i>0?"block":"none",i>0)){const p=document.getElementById("c1");p&&(p.textContent=a(i*.25));const c=document.getElementById("c2");c&&(c.textContent=a(i*.4));const x=document.getElementById("c3");x&&(x.textContent=a(i*.135));const k=document.getElementById("cv");k&&(k.textContent=a(l));const z=document.getElementById("savings");z&&(z.textContent=a(i*.25-l))}};window.addEventListener("popstate",g);window.addEventListener("load",()=>{g(),setTimeout(()=>{const e=document.getElementById("particle-canvas");if(!e)return;const i=e.getContext("2d"),o=()=>{e.width=e.clientWidth,e.height=e.clientHeight};o(),window.addEventListener("resize",o);const l=Array.from({length:50},()=>({x:Math.random()*e.width,y:Math.random()*e.height,size:Math.random()*1.6+.6,vy:-(Math.random()*.6+.2),opacity:Math.random()*.5+.2,doRate:Math.random()*.01+.005})),r=()=>{i.clearRect(0,0,e.width,e.height),l.forEach(a=>{a.y+=a.vy,a.opacity+=a.doRate,(a.opacity>.7||a.opacity<.1)&&(a.doRate*=-1),a.y<-10&&(a.y=e.height+10,a.x=Math.random()*e.width),i.beginPath(),i.arc(a.x,a.y,a.size,0,Math.PI*2),i.fillStyle=`rgba(201,168,76,${a.opacity})`,i.fill()}),requestAnimationFrame(r)};r()},60)});
