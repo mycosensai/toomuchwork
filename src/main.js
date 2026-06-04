@@ -84,13 +84,13 @@ const iconFor = (name) => {
 
 const footerPlatform = ['Browse Collection','AI Appraisal','ProVerify','Sell an Item','Token Gallery','Wishlist','My Orders'];
 const footerCompany = ['About The Vault','FAQ','Contact Us','Shipping Info','Support Center'];
-const footerLegal = ['Terms of Service','Privacy Policy','Returns & Refunds'];
+const footerLegal = ['Directory / Sitemap','Terms of Service','Privacy Policy','Returns & Refunds'];
 
 const shell = () => {
   const path = location.pathname.replace(/^\/+/, '') || 'home';
   const active = (p) => (path === p ? 'color:#E8CB7A;' : 'color:#C8BC98;');
   return `
-    <header style="border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.7);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;">
+    <header style="border-bottom:1px solid rgba(201,168,76,0.18);background:rgba(0,0,0,0.7);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;">
       <div style="max-width:1200px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;">
         <a href="/" style="text-decoration:none;display:inline-flex;align-items:center;gap:12px;"><span style="font-family:'Cinzel',serif;font-weight:800;letter-spacing:4px;color:#C9A84C;">The Vault DFW</span></a>
         <nav style="display:none;align-items:center;gap:24px;">
@@ -150,14 +150,14 @@ const cardImg = (src, alt, ratio = 'aspect-square') => `
 
 const routes = {
   home: () => `
-    <section style="position:relative;overflow:hidden;background:#020202;">
-      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 25%,rgba(201,168,76,0.08),transparent 55%);"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,#080808,#020202,#080808);"></div>
-      <canvas id="particle-canvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
+    <section style="position:relative;min-height:100vh;background:#000000;">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 28%,rgba(201,168,76,0.10),transparent 60%);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,#0a0a0a,#000000 38%,#050505 72%,#0a0a0a);"></div>
+      <canvas id="particle-canvas" style="position:fixed;inset:0;"></canvas>
       <div style="position:relative;z-index:2;text-align:center;padding:140px 20px 60px;max-width:1100px;margin:0 auto;">
         <div style="display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid rgba(201,168,76,0.35);border-radius:999px;margin-bottom:28px;">
           <span style="width:6px;height:6px;border-radius:50%;background:#C9A84C;box-shadow:0 0 10px #C9A84C;"></span>
-          <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;">Est. 2024 &middot; Elite Collector Exchange &middot; AI-Powered</span>
+          <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;">Est. 2024 &middot; Elite Collector Exchange &middot; AI-Powered &middot; Disclaimer</span>
         </div>
         <h1 style="font-family:'Cinzel',serif;font-size:clamp(44px,7vw,96px);font-weight:900;letter-spacing:clamp(6px,1.2vw,18px);line-height:0.95;background:linear-gradient(to bottom,#FFD97A,#C9A84C,#8A6E2F);-webkit-background-clip:text;background-clip:text;color:transparent;">The Vault DFW</h1>
         <p style="font-family:'Cinzel',serif;font-size:clamp(11px,1.2vw,13px);letter-spacing:clamp(6px,1vw,14px);color:#C8BC98;text-transform:uppercase;margin-top:14px;">Elite Collector Exchange</p>
@@ -168,14 +168,18 @@ const routes = {
         </div>
         <p style="max-width:860px;margin:0 auto 36px;color:#F5EED8;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(18px,2vw,22px);line-height:1.6;">Are you tired of getting screwed on the pricing, commissions and fees associated with exchanging your treasures? This is your answer for that problem.</p>
         <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
-          <a href="/sell" style="display:inline-flex;align-items:center;gap:10px;padding:14px 22px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;font-family:'Cinzel',serif;letter-spacing:2px;border-radius:14px;text-decoration:none;font-weight:700;">Start Selling ${svg.arrow}</a>
+          <a href="/sell" style="display:inline-flex;align-items:center;gap:10px;padding:14px 22px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;font-family:'Cinzel',serif;letter-spacing:2px;border-radius:14px;text-decoration:none;font-weight:700;border:1px solid #C9A84C;">Start Selling ${svg.arrow}</a>
           <a href="/browse" style="display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border:1px solid rgba(201,168,76,0.6);color:#C9A84C;font-family:'Cinzel',serif;letter-spacing:2px;border-radius:14px;text-decoration:none;font-weight:700;">Find Treasures</a>
+        </div>
+        <div style="margin-top:28px;padding:16px;border:1px solid rgba(201,168,76,0.20);background:rgba(201,168,76,0.05);max-width:720px;margin-left:auto;margin-right:auto;">
+          <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#C8BC98;font-size:13px;line-height:1.6;">Marketplace participation does not guarantee sale. Pricing estimates are generated from historical and third-party data. Items are verified at the time of listing. The Vault may revise commission tiers at any time.</p>
         </div>
       </div>
     </section>
 
     <div style="background:#C9A84C;padding:12px 0;overflow:hidden;border-top:1px solid rgba(0,0,0,0.25);border-bottom:1px solid rgba(0,0,0,0.25);">
       <div style="display:flex;white-space:nowrap;animation:marquee 38s linear infinite;width:max-content;">
+        ${['5% Commission Under $1,000','7% Commission $1,000-$7,500','10% Commission $7,500-$10,000','5% Commission Over $10,000','AI-Powered Buyer Matching','Verified Collectors Only','Real-Time Market Pricing'].map(t => `<span style="display:inline-flex;align-items:center;gap:18px;padding:0 28px;color:#080808;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${t} <span style="display:inline-flex;">${svg.diamond}</span></span>`).join('')}
         ${['5% Commission Under $1,000','7% Commission $1,000-$7,500','10% Commission $7,500-$10,000','5% Commission Over $10,000','AI-Powered Buyer Matching','Verified Collectors Only','Real-Time Market Pricing'].map(t => `<span style="display:inline-flex;align-items:center;gap:18px;padding:0 28px;color:#080808;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${t} <span style="display:inline-flex;">${svg.diamond}</span></span>`).join('')}
       </div>
     </div>
@@ -306,7 +310,7 @@ const routes = {
           ${LISTINGS.map(item => `
             <a href="/listing/${item.id}" style="display:block;text-decoration:none;">
               <div style="padding:0;overflow:hidden;background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;">
-                <div class="aspect-square" style="overflow:hidden;">
+                <div class="aspect-video" style="overflow:hidden;">
                   <img src="${item.image}" alt="${item.title}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;" />
                 </div>
                 <div style="padding:14px;">
@@ -423,7 +427,7 @@ const routes = {
       <div style="max-width:1100px;margin:0 auto;">
         <a href="/browse" style="display:inline-flex;align-items:center;gap:8px;color:#C8BC98;text-decoration:none;margin-bottom:18px;">${svg.arrow} Back to Browse</a>
         <div style="display:grid;grid-template-columns:1fr;gap:24px;">
-          <div class="aspect-square" style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;overflow:hidden;">
+          <div class="aspect-video" style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;overflow:hidden;">
             <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" />
           </div>
           <div>
@@ -593,7 +597,7 @@ const routes = {
             <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
               <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;">${a.name}</div>
               <p style="color:#C8BC98;font-size:12px;margin-top:8px;line-height:1.5;">${a.desc}</p>
-              <button style="margin-top:14px;width:100%;padding:10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;">Configure Agent</button>
+              <button onclick="alert('Agent endpoint ready.')" style="margin-top:14px;width:100%;padding:10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;">Configure Agent</button>
             </div>
           `).join('')}
         </div>
@@ -608,6 +612,40 @@ const routes = {
   returns: () => page('Returns & Refunds', 'Returns are reviewed case-by-case within 48 hours of delivery.'),
   shipping: () => page('Shipping Info', 'Standard and expedited options available at checkout.'),
   contact: () => page('Contact Us', 'Reach the Vault team at ratchetkrewelabs@gmail.com.'),
+  directory: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:900px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;color:#F5EED8;">Directory / Sitemap</h2>
+        <div style="margin-top:18px;display:grid;gap:10px;">
+          ${[
+            ['Home','/'],
+            ['Browse Collection','/browse'],
+            ['Sell an Item','/sell'],
+            ['AI Appraisal','/appraisal'],
+            ['ProVerify','/proverify'],
+            ['Token Gallery','/tokengallery'],
+            ['My Orders','/orders'],
+            ['Wishlist','/wishlist'],
+            ['Wallet Pay','/walletpay'],
+            ['Admin','/admin'],
+            ['Agents','/agents'],
+            ['Contact Us','/contact'],
+            ['Support','/support'],
+            ['FAQ','/faq'],
+            ['Shipping','/shipping'],
+            ['Terms','/terms'],
+            ['Privacy','/privacy'],
+            ['Returns','/returns'],
+          ].map(([label,href]) => `
+            <a href="${href}" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:12px;color:#F5EED8;text-decoration:none;font-family:'Cinzel',serif;letter-spacing:2px;">
+              <span style="font-size:11px;">${label}</span>
+              <span style="color:#C9A84C;">${svg.chevron}</span>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+  `,
 };
 
 function page(title, subtitle) {
@@ -681,7 +719,7 @@ window.addEventListener('load', () => {
     const resize = () => { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; };
     resize();
     window.addEventListener('resize', resize);
-    const particles = Array.from({ length: 40 }, () => ({
+    const particles = Array.from({ length: 50 }, () => ({
       x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 1.6 + 0.6, vy: -(Math.random() * 0.6 + 0.2), opacity: Math.random() * 0.5 + 0.2, doRate: Math.random() * 0.01 + 0.005,
     }));
     const draw = () => {
