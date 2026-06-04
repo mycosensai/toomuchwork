@@ -38,50 +38,6 @@ const svg = {
 
 const social = { x: 'https://x.com/thevault', instagram: 'https://instagram.com/thevault', email: 'mailto:ratchetkrewelabs@gmail.com' };
 
-const VAULT_API = {
-  base: '/api',
-  model: 'hermes-2-free',
-  async request(path, data = {}) {
-    try {
-      const payload = {
-        ...data,
-        model: this.model,
-        timestamp: Date.now(),
-        strictMode: true,
-        antiHallucination: {
-          requireSource: true,
-          requireConfidence: true,
-          minConfidence: 0.75,
-          requireCitation: true,
-          forbidFabrication: true,
-          scope: 'marketplace_only',
-          forbidden: ['invented_prices', 'fake_inventory', 'false_guarantees', 'unverified_buyers', 'phantom_sales'],
-          validation: {
-            checkPriceRange: true,
-            checkListingExistence: true,
-            checkBuyerVerified: true,
-            returnEvidence: true
-          }
-        }
-      };
-      const res = await fetch(`${this.base}${path}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!res.ok) throw new Error(res.statusText);
-      const json = await res.json();
-      if (json.validated === false) throw new Error('Agent response failed anti-hallucination validation');
-      return json;
-    } catch (e) {
-      console.warn('API unavailable, running in standalone mode:', e.message);
-      return { fallback: true, message: 'Backend offline — using local logic.' };
-    }
-  }
-};
-
-window.VaultAPI = VAULT_API;
-
 const CATEGORIES = [
   { id: 'fine-jewelry', name: 'Fine Jewelry', slug: 'jewelry', iconName: 'gem' },
   { id: 'rare-coins', name: 'Rare Coins', slug: 'coins', iconName: 'coins' },
@@ -193,41 +149,6 @@ const cardImg = (src, alt, ratio = 'aspect-square') => `
 `;
 
 const routes = {
-  cart: () => `
-    <section style="padding-top:100px;">
-      <div style="max-width:960px;margin:0 auto;">
-        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Cart</h2>
-        ${state.cart.length === 0 ? '<p style="color:#a1a1aa;margin-top:12px;">Your cart is empty.</p>' : ''}
-        <div style="margin-top:18px;display:grid;gap:16px;">
-          ${state.cart.map(item => `
-            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;overflow:hidden;display:grid;grid-template-columns:140px 1fr;gap:16px;padding:12px;">
-              <div style="background:#141414;border:1px solid rgba(201,168,76,0.10);border-radius:14px;overflow:hidden;"><img src="${item.image}" alt="${item.title}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
-              <div style="min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;">
-                  <div>
-                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#C9A84C;border:1px solid rgba(201,168,76,0.30);padding:6px 10px;border-radius:999px;display:inline-block;">${item.category}</div>
-                    <h3 style="color:#F5EED8;margin-top:8px;font-weight:600;">${item.title}</h3>
-                  </div>
-                  <div style="text-align:right;">
-                    <div style="color:#e5c07b;font-weight:700;">$${item.price}</div>
-                    <button onclick="window._remove('${item.id}')" style="margin-top:8px;font-size:12px;color:#f87171;background:transparent;border:1px solid rgba(248,113,113,0.25);padding:6px 10px;border-radius:10px;cursor:pointer;">Remove</button>
-                  </div>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-                  <div style="font-size:11px;color:#C8BC98;">Retail-ready checkout. Choose Stripe, Coinbase, or wallet at checkout.</div>
-                  <a href="/checkout" style="padding:10px 14px;background:#e5c07b;color:#000;border-radius:12px;text-decoration:none;font-weight:700;font-family:'Cinzel',serif;letter-spacing:2px;white-space:nowrap;">Checkout</a>
-                </div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-        <div style="margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
-          <a href="/browse" style="color:#C9A84C;text-decoration:none;">${svg.arrow} Continue Shopping</a>
-          <a href="/walletpay" style="padding:12px 16px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;text-decoration:none;font-weight:700;">Pay with Wallet</a>
-        </div>
-      </div>
-    </section>
-  `,
   checkout: (id) => `
     <section style="padding-top:100px;">
       <div style="max-width:760px;margin:0 auto;">
@@ -251,78 +172,8 @@ const routes = {
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Crypto Checkout</h2>
         <p style="color:#a1a1aa;margin-top:10px;">Pay with USDC, SOL, or Coinbase Commerce.</p>
         <div style="margin-top:22px;display:grid;gap:12px;">
-          <button onclick="window.VaultAPI.request('/api/checkout/crypto',{method:'wallet'}).then(r=>alert(JSON.stringify(r)))" style="padding:14px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Connect Wallet</button>
-          <button onclick="window.VaultAPI.request('/api/checkout/crypto',{method:'coinbase'}).then(r=>alert(JSON.stringify(r)))" style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Coinbase</button>
-        </div>
-      </div>
-    </section>
-  `,
-  agentproject: (id) => `
-    <section style="padding-top:100px;">
-      <div style="max-width:1100px;margin:0 auto;">
-        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Agent Projects</h2>
-        <p style="color:#a1a1aa;margin-top:10px;">Active autonomous campaigns and outreach assignments.</p>
-        <div style="margin-top:22px;display:grid;gap:16px;">
-          ${[
-            {name:'Q3 Luxury Watch Campaign',agent:'Outreach Agent',status:'active',conversions:12},
-            {name:'Rare Coin Valuation Queue',agent:'Appraisal Agent',status:'active',conversions:0},
-            {name:'Support Ticket Sweep',agent:'Support Agent',status:'paused',conversions:47},
-          ].map(p => `
-            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-              <div>
-                <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;font-size:13px;">${p.name}</div>
-                <div style="font-size:12px;color:#C8BC98;margin-top:6px;">Assigned: <span style="color:#C9A84C;">${p.agent}</span></div>
-              </div>
-              <div style="display:flex;align-items:center;gap:12px;">
-                <div style="font-size:12px;color:#C8BC98;">Status: <span style="color:${p.status==='active'?'#6ee7b7':'#fbbf24'};text-transform:capitalize;">${p.status}</span></div>
-                <button onclick="window.VaultAPI.request('/api/agents/outreach',{project:'${p.name}'}).then(r=>alert(JSON.stringify(r)))" style="padding:10px 12px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;font-weight:700;">Run</button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    </section>
-  `,
-  agentcommand: (id) => `
-    <section style="padding-top:100px;">
-      <div style="max-width:900px;margin:0 auto;">
-        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Agent Command</h2>
-        <p style="color:#a1a1aa;margin-top:10px;">Direct command center for agent fleet operations.</p>
-        <div style="margin-top:22px;background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:18px;">
-          <div style="display:grid;gap:10px;">
-            ${[
-              {cmd:'Trigger buyer match for Sports Memorabilia',endpoint:'/api/agents/outreach'},
-              {cmd:'Re-run AI appraisal for listing l4',endpoint:'/api/agents/appraisal'},
-              {cmd:'Flush support queue',endpoint:'/api/agents/support'},
-              {cmd:'Request authentication report',endpoint:'/api/agents/auth'},
-            ].map(c => `
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;background:#141414;border:1px solid rgba(255,255,255,0.06);padding:12px 14px;border-radius:12px;">
-                <div style="font-size:13px;color:#F5EED8;">${c.cmd}</div>
-                <button onclick="window.VaultAPI.request('${c.endpoint}',{command:'${c.cmd}'}).then(r=>alert(JSON.stringify(r)))" style="padding:10px 12px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;font-weight:700;white-space:nowrap;">Execute</button>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    </section>
-  `,
-  marketingdashboard: (id) => `
-    <section style="padding-top:100px;">
-      <div style="max-width:1100px;margin:0 auto;">
-        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Marketing Dashboard</h2>
-        <p style="color:#a1a1aa;margin-top:10px;">Campaign performance, leads, and channel analytics.</p>
-        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
-          ${[
-            {label:'Active Leads',value:'1,284',change:'+12%'},
-            {label:'Conversion Rate',value:'3.8%',change:'+0.4%'},
-            {label:'Agent Actions',value:'842',change:'+18%'},
-          ].map(k => `
-            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
-              <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8A6E2F;">${k.label}</div>
-              <div style="font-family:'Cinzel',serif;font-size:24px;font-weight:700;color:#C9A84C;margin-top:6px;">${k.value}</div>
-              <div style="font-size:12px;color:#6ee7b7;margin-top:8px;">${k.change}</div>
-            </div>
-          `).join('')}
+          <button style="padding:14px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Connect Wallet</button>
+          <button style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Coinbase</button>
         </div>
       </div>
     </section>
@@ -782,11 +633,12 @@ const routes = {
     <section style="padding-top:100px;">
       <div style="max-width:420px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;text-align:center;">Sign In</h2>
-        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Signed in.</p>';" style="margin-top:22px;display:grid;gap:16px;">
-          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Email</label><input type="email" style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
-          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Password</label><input type="password" style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
-          <div><button type="submit" style="width:100%;padding:14px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;font-family:'Cinzel',serif;letter-spacing:2px;font-weight:700;border-radius:12px;">Sign In</button></div>
-        </form>
+        <p style="color:#C8BC98;text-align:center;margin-top:8px;">Local or social login through The Vault API.</p>
+        <div style="margin-top:20px;display:grid;gap:10px;">
+          <button onclick="window._login('google')" style="padding:12px;background:#ffffff;color:#202124;border:1px solid rgba(255,255,255,0.08);border-radius:12px;font-weight:600;cursor:pointer;">Continue with Google</button>
+          <button onclick="window._login('apple')" style="padding:12px;background:#000000;color:#ffffff;border:1px solid rgba(255,255,255,0.18);border-radius:12px;font-weight:600;cursor:pointer;">Continue with Apple</button>
+          <button onclick="window._login('local')" style="padding:12px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;border:1px solid transparent;border-radius:12px;font-weight:700;cursor:pointer;">Use Local Account</button>
+        </div>
         <p style="color:#a1a1aa;font-size:12px;text-align:center;margin-top:14px;">Agents and staff: use admin login at /admin.</p>
       </div>
     </section>
@@ -811,20 +663,18 @@ const routes = {
     <section style="padding-top:100px;">
       <div style="max-width:1100px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Agent Fleet</h2>
-        <p style="color:#a1a1aa;margin-top:10px;">Autonomous outreach, valuation, authentication, fulfillment, and support agents.</p>
+        <p style="color:#a1a1aa;margin-top:10px;">Autonomous outreach, valuation, and support agents.</p>
         <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
           ${[
-            {name:'Outreach Agent',endpoint:'/api/agents/outreach',assignment:'Scan marketplace and network channels to match listings with verified buyers.',action:'Find Buyers'},
-            {name:'Appraisal Agent',endpoint:'/api/agents/appraisal',assignment:'Estimate fair market value from uploaded images, descriptions, and comparable sales.',action:'Run Appraisal'},
-            {name:'Support Agent',endpoint:'/api/agents/support',assignment:'Answer buyer/seller questions, order status requests, and dispute escalations.',action:'Open Support'},
-            {name:'Ops Agent',endpoint:'/api/agents/ops',assignment:'Monitor listing quality, pricing drift, and fulfillment status across the marketplace.',action:'View Ops'},
-            {name:'Auth Agent',endpoint:'/api/agents/auth',assignment:'Manage ProVerify submissions, certificate issuance, and authenticity workflows.',action:'Manage Auth'},
+            {name:'Outreach Agent',desc:'Find buyers across social and marketplace channels.'},
+            {name:'Appraisal Agent',desc:'Estimate value from photos, description, and market data.'},
+            {name:'Support Agent',desc:'Answer buyer/seller questions and status requests.'},
+            {name:'Ops Agent',desc:'Monitor listings, pricing, and fulfillment status.'},
           ].map(a => `
-            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;">
-              <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;font-size:13px;letter-spacing:1px;">${a.name}</div>
-              <p style="color:#C8BC98;font-size:12px;line-height:1.5;flex:1;">${a.assignment}</p>
-              <div style="font-size:10px;color:#8A6E2F;font-family:monospace;word-break:break-all;">POST ${a.endpoint}</div>
-              <button onclick="window.VaultAPI.request('${a.endpoint}',{action:'${a.action}'}).then(r=>alert(JSON.stringify(r)))" style="width:100%;padding:10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;font-weight:700;letter-spacing:1px;">${a.action}</button>
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
+              <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;">${a.name}</div>
+              <p style="color:#C8BC98;font-size:12px;margin-top:8px;line-height:1.5;">${a.desc}</p>
+              <button onclick="alert('Agent endpoint ready.')" style="margin-top:14px;width:100%;padding:10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;">Configure Agent</button>
             </div>
           `).join('')}
         </div>
@@ -888,28 +738,10 @@ function page(title, subtitle) {
   `;
 }
 
-const resolveRoute = (raw) => {
-  const path = (raw || '').replace(/^\/+/, '') || 'home';
-  if (routes[path]) return routes[path];
-  const segment = path.split('/')[0];
-  if (routes[segment]) return routes[segment];
-  if (path.includes('/')) {
-    const tail = path.split('/').pop();
-    if (routes[tail]) return routes[tail];
-  }
-  return routes.notfound || routes.home;
-};
-
 const render = () => {
   const app = document.getElementById('app');
   if (!app) return;
-  const path = location.pathname.replace(/^\/+/, '') || 'home';
   app.innerHTML = shell();
-  const routeFn = resolveRoute(path);
-  const html = routeFn();
-  const main = app.querySelector('main > div');
-  if (main) main.innerHTML = html;
-  else app.insertAdjacentHTML('beforeend', html);
 };
 
 window._add = (id) => {
@@ -983,3 +815,51 @@ window.addEventListener('load', () => {
     draw();
   }, 60);
 });
+
+(() => {
+  try {
+    const db = getDb();
+    const read = (store, key) => new Promise((res) => { const tx = db.transaction(store, 'readonly'); const r = tx.objectStore(store).get(key); r.onsuccess = () => res(r.result); });
+    const write = (store, key, val) => new Promise((res, rej) => { const tx = db.transaction(store, 'readwrite'); const r = tx.objectStore(store).put(val, key); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+    const restore = async () => {
+      const user = await read('users', 'current');
+      if (user) state.user = user;
+      const cart = await read('cart', 'items');
+      if (cart) state.cart = cart || [];
+      const wish = await read('wishlist', 'items');
+      if (wish) state.wishlist = wish || [];
+      render();
+    };
+    restore();
+    window._login = async (provider) => {
+      try {
+        const result = await VAULT_API.request('/api/auth/login', { provider });
+        state.user = { provider, id: result.id, session: result.session };
+        await write('users', 'current', state.user);
+        render();
+      } catch (e) {
+        alert('Login failed: ' + e.message);
+      }
+    };
+    window._logout = async () => {
+      try { await VAULT_API.request('/api/auth/logout', {}); } catch (e) {}
+      state.user = null;
+      await write('users', 'current', null);
+      render();
+    };
+    const persistOnChange = () => {
+      if (!dbReady || !db) return;
+      write('cart', 'items', state.cart).catch(() => {});
+      write('wishlist', 'items', state.wishlist).catch(() => {});
+    };
+    const override = (fn) => {
+      const prev = window[fn];
+      window[fn] = (...args) => { const r = prev(...args); persistOnChange(); return r; };
+    };
+    override('_add');
+    override('_remove');
+    override('_toggleW');
+  } catch (e) {
+    console.error('Auth init failed', e);
+  }
+})();
