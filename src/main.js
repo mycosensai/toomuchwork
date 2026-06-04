@@ -642,53 +642,24 @@ const routes = {
   checkout: (id) => `
     <section style="padding-top:100px;">
       <div style="max-width:980px;margin:0 auto;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-          <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Secure Checkout</h2>
-          <span style="color:#C9A84C;font-size:12px;letter-spacing:2px;text-transform:uppercase;">The Vault Branded</span>
-        </div>
-        <p style="color:#a1a1aa;margin-top:10px;">Complete purchase for <strong style="color:#F5EED8;">${id || 'selected item'}</strong> with shipping and fee breakdown.</p>
-        <div style="margin-top:22px;display:grid;grid-template-columns:1.1fr .9fr;gap:22px;">
-          <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif;font-weight:700;letter-spacing:2px;>Order placed successfully.</p>';" style="background:#141414;border:1px solid rgba(201,168,76,0.25);padding:22px;border-radius:18px;display:grid;gap:16px;">
-            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Shipping Address</label><textarea style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="3" required></textarea></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Card</label><input style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="4242 4242 4242 4242"></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><input style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="MM/YY"><input style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="CVC"></div>
-            </div>
-            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Payment Method</label><select id="pay-method" onchange="window._checkoutMethodChange()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option>Stripe (Card)</option><option>Coinbase Commerce</option><option>Solana (SOL)</option></select></div>
-            <button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:#e5c07b;color:#000000;border:1px solid transparent;border-radius:14px;font-weight:800;cursor:pointer;letter-spacing:2px;">Pay Securely</button>
-          </form>
-          <div style="background:#141414;border:1px solid rgba(201,168,76,0.25);padding:22px;border-radius:18px;">
-            <h3 style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;margin-bottom:10px;">Price Breakdown</h3>
-            <div style="display:grid;gap:10px;color:#C8BC98;font-size:13px;">
-              <div style="display:flex;justify-content:space-between;"><span>Item</span><span style="color:#F5EED8;font-weight:700;" id="ko-item">—</span></div>
-              <div style="display:flex;justify-content:space-between;"><span>Commission</span><span style="color:#C9A84C;font-weight:700;" id="ko-commission">$0.00</span></div>
-              <div style="display:flex;justify-content:space-between;"><span>Processing</span><span style="color:#F5EED8;">$0.00</span></div>
-              <div style="border-top:1px solid rgba(201,168,76,0.20);padding-top:10px;display:flex;justify-content:space-between;color:#F5EED8;"><span>Total</span><span style="font-family:'Cinzel',serif;font-size:22px;font-weight:800;color:#FFD97A;" id="ko-total">$0.00</span></div>
-            </div>
-            <div style="margin-top:18px;border-top:1px solid rgba(201,168,76,0.20);padding-top:14px;">
-              <h3 style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;margin-bottom:10px;">Shipping Calculator</h3>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                <div><label style="display:block;color:#a1a1aa;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Destination</label><select id="ship-dest" onchange="window._shipQuote()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:10px 12px;border-radius:12px;outline:none;"><option value="domestic">Domestic</option><option value="canada">Canada</option><option value="uk">UK / EU</option><option value="row">Rest of World</option></select></div>
-                <div><label style="display:block;color:#a1a1aa;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Speed</label><select id="ship-speed" onchange="window._shipQuote()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:10px 12px;border-radius:12px;outline:none;"><option value="standard">Standard</option><option value="express">Express</option><option value="white">White-Glove</option></select></div>
-              </div>
-              <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
-                <span style="color:#C8BC98;font-size:12px;text-transform:uppercase;letter-spacing:2px;">Est. Shipping</span>
-                <span style="font-family:'Cinzel',serif;font-weight:800;color:#E8CB7A;" id="ship-cost">$0.00</span>
-              </div>
-            </div>
-            <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
-              <span style="color:#F5EED8;font-weight:700;">Order Total</span>
-              <span style="font-family:'Cinzel',serif;font-size:22px;font-weight:800;color:#FFD97A;" id="ko-order-total">$0.00</span>
-            </div>
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Shipping Estimator</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Select destination and service for <strong style="color:#F5EED8;">${id || 'this item'}</strong>.</p>
+        <div style="margin-top:22px;background:#141414;border:1px solid rgba(201,168,76,0.25);padding:22px;border-radius:18px;display:grid;grid-template-columns:1fr 1fr;gap:22px;">
+          <div style="display:grid;gap:12px;">
+            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Destination</label><select id="ship-dest" onchange="window._shipQuote()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option value="domestic">Domestic</option><option value="canada">Canada</option><option value="uk">UK / EU</option><option value="row">Rest of World</option></select></div>
+            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Speed</label><select id="ship-speed" onchange="window._shipQuote()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option value="standard">Standard</option><option value="express">Express</option><option value="white">White-Glove</option></select></div>
+            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Weight class</label><select id="ship-weight" onchange="window._shipQuote()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option value="standard">Standard (&lt;5 lbs)</option><option value="heavy">Heavy (5-25 lbs)</option><option value="fragile">Fragile / Art</option></select></div>
           </div>
-        </div>
-        <div style="margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="color:#8A6E2F;font-size:10px;letter-spacing:2px;text-transform:uppercase;">Secured by</span>
-          <span style="color:#C9A84C;font-weight:700;font-size:12px;">Stripe</span>
-          <span style="color:#8A6E2F;">·</span>
-          <span style="color:#C9A84C;font-weight:700;font-size:12px;">Coinbase Commerce</span>
-          <span style="color:#8A6E2F;">·</span>
-          <span style="color:#C9A84C;font-weight:700;font-size:12px;">Solana</span>
+          <div style="background:#111;border:1px solid rgba(201,168,76,0.15);padding:18px;border-radius:16px;">
+            <h3 style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;margin-bottom:10px;">Estimate</h3>
+            <div style="display:grid;gap:10px;color:#C8BC98;font-size:13px;">
+              <div style="display:flex;justify-content:space-between;"><span>Base rate</span><span style="color:#F5EED8;" id="ship-base">—</span></div>
+              <div style="display:flex;justify-content:space-between;"><span>Speed multiplier</span><span style="color:#F5EED8;" id="ship-mult">1x</span></div>
+              <div style="display:flex;justify-content:space-between;"><span>Insurance</span><span style="color:#F5EED8;" id="ship-ins">—</span></div>
+              <div style="border-top:1px solid rgba(201,168,76,0.20);padding-top:10px;display:flex;justify-content:space-between;color:#F5EED8;"><span>Estimated total</span><span style="font-family:'Cinzel',serif;font-size:22px;font-weight:800;color:#FFD97A;" id="ship-total">$0.00</span></div>
+            </div>
+            <p style="color:#8A6E2F;font-size:11px;margin-top:10px;">Final rate confirmed at invoicing.</p>
+          </div>
         </div>
       </div>
     </section>
