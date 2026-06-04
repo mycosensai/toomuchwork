@@ -1,0 +1,26 @@
+# ═══════════════════════════════════════════════════════════
+# The Vault — Cloudflare Workers + Pages Configuration
+# ═══════════════════════════════════════════════════════════
+
+name = "the-vault"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "the-vault-db"
+database_id = ""  # Will be set after 'wrangler d1 create'
+
+# Routes
+[[routes]]
+pattern = "thevaultdfw.win/*"
+custom_domain = true
+
+[[routes]]
+pattern = "*.thevaultdfw.win/*"
+custom_domain = true
+
+# Build settings
+[site]
+bucket = "./dist"
