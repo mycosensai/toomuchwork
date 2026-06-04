@@ -1,337 +1,459 @@
-// ===== minimal SPA router + vanilla app shell =====
+// https://github.com/mycosensai/toomuchwork
+// The Vault DFW — standalone marketplace UI
+// Licensed to The Vault DFW. All rights reserved.
+
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
-const create = (tag, attrs = {}, ...children) => {
-  const el = document.createElement(tag);
-  Object.entries(attrs).forEach(([k, v]) => {
-    if (k === 'class') el.className = v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
-    else el.setAttribute(k, v);
-  });
-  children.flat(Infinity).forEach(c => {
-    if (typeof c === 'string') el.appendChild(document.createTextNode(c));
-    else if (c) el.appendChild(c);
-  });
-  return el;
+
+const svg = {
+  diamond: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',
+  search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  menu: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  x: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  logout: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17 21 12 16 7"/><path d="M21 12h-9"/></svg>',
+  user: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a2 2 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  shield: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  heart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+  cart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+  info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  help: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  msg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  arrow: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
+  sparkles: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 13.5 8.5 19 10 13.5 11.5 12 17 10.5 11.5 5 10 10.5 8.5Z"/><path d="M5 15 6 18 9 19 6 20 5 23 4 20 1 19 4 18Z"/></svg>',
+  'shield-check': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+  clock: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+  trending: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+  gem: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',
+  coins: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M18.5 13.5 16 11M14 16l2.5 2.5M16 11.5 18.5 14"/><circle cx="16" cy="16" r="5.5"/></svg>',
+  landmark: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-5 7 5v11"/><path d="M9 21v-6h6v6"/></svg>',
+  palette: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>',
+  watch: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 9v4l2 2"/><path d="M9 2h6M9 22h6"/></svg>',
+  trophy: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66 17 12l-7-2.66v4.01A2 2 0 0 1 12 18a2 2 0 0 1-2-2.01V14.66z"/><path d="M17 8l2-4"/></svg>',
+  book: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+  chevron: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>',
+  xsocial: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+  instagram: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>',
+  mail: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>',
 };
 
-// ===== icons (inline SVG, self-contained) =====
-const I = {
-  bag: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="14" rx="3"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>`,
-  cart: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
-  user: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-  star: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
-  arrow: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>`,
-  shield: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-  gem: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>`,
-  scan: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>`,
-  price: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-  heart: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
-  back: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>`,
-};
+const social = { x: 'https://x.com/thevault', instagram: 'https://instagram.com/thevault', email: 'mailto:ratchetkrewelabs@gmail.com' };
 
-// ===== mock data (replace with backend API later) =====
 const CATEGORIES = [
-  { id: 'all', name: 'All' },
-  { id: 'sports-cards', name: 'Sports Cards' },
-  { id: 'memorabilia', name: 'Memorabilia' },
-  { id: 'sealed-wax', name: 'Sealed Wax' },
-  { id: 'coins', name: 'Coins & Currency' },
-  { id: 'vintage-toys', name: 'Vintage Toys' },
-  { id: 'comics', name: 'Comics' },
-  { id: 'autographs', name: 'Autographs' },
-  { id: 'other', name: 'Other' },
+  { id: 'fine-jewelry', name: 'Fine Jewelry', slug: 'jewelry', iconName: 'gem' },
+  { id: 'rare-coins', name: 'Rare Coins', slug: 'coins', iconName: 'coins' },
+  { id: 'luxury-watches', name: 'Luxury Watches', slug: 'watches', iconName: 'watch' },
+  { id: 'fine-art', name: 'Fine Art', slug: 'art', iconName: 'palette' },
+  { id: 'antiques', name: 'Antiques', slug: 'antiques', iconName: 'landmark' },
+  { id: 'sports-memorabilia', name: 'Sports Memorabilia', slug: 'memorabilia', iconName: 'trophy' },
+  { id: 'collectibles', name: 'Collectibles', slug: 'collectibles', iconName: 'diamond' },
+  { id: 'books', name: 'Books & Ephemera', slug: 'books', iconName: 'book' },
 ];
 
 const LISTINGS = [
-  { id: 'l1', title: 'Vault Pass — EMPLOYER{OPS}', price: 129, category: 'collectibles', image_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80', seller_username: 'vaultops', views: 214, condition: 'mint' },
-  { id: 'l2', title: 'Collectible Card — Obsidian Gold', price: 58, category: 'sports-cards', image_url: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80', seller_username: 'vaultops', views: 178, condition: 'near-mint' },
-  { id: 'l3', title: 'Vault DFW Limited Watchlist Ticket', price: 240, category: 'memorabilia', image_url: 'https://images.unsplash.com/photo-1599582909646-2f0a3a6e5c2e?auto=format&fit=crop&w=400&q=80', seller_username: 'vaultops', views: 99, condition: 'mint' },
-  { id: 'l4', title: 'Rare 1965 Silver Coin Set', price: 425, category: 'coins', image_url: 'https://images.unsplash.com/photo-1610375465536-5b1d2c5d1f3a?auto=format&fit=crop&w=400&q=80', seller_username: 'vaultops', views: 312, condition: 'mint' },
-  { id: 'l5', title: 'Graded 1990 Comic Collection', price: 320, category: 'comics', image_url: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=400&q=80', seller_username: 'vaultops', views: 145, condition: 'near-mint' },
-  { id: 'l6', title: 'Vintage Toy Robot — 1984', price: 190, category: 'vintage-toys', image_url: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=400&q=80', seller_username: 'vaultops', views: 89, condition: 'good' },
-  { id: 'l7', title: 'Signed Baseball — Authenticated', price: 650, category: 'sports-cards', image_url: 'https://images.unsplash.com/photo-1610189012906-478603565824?auto=format&fit=crop&w=400&q=80', seller_username: 'vaultops', views: 410, condition: 'mint' },
-  { id: 'l8', title: 'Sealed 1992 Topps Wax Box', price: 890, category: 'sealed-wax', image_url: 'https://images.unsplash.com/photo-1607330289024-1535d6f30c7e?auto=format&fit=crop&w=400&q=80', seller_username: 'vaultops', views: 220, condition: 'mint' },
+  { id: 'l1', title: 'Vault Pass — EMPLOYER{OPS}', price: 129, category: 'collectibles', image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 214, condition: 'mint', badge: 'new' },
+  { id: 'l2', title: 'Collectible Card — Obsidian Gold', price: 58, category: 'sports-memorabilia', image: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 178, condition: 'near-mint', badge: 'hot' },
+  { id: 'l3', title: 'Vault DFW Limited Watchlist Ticket', price: 240, category: 'collectibles', image: 'https://images.unsplash.com/photo-1599582909646-2f0a3a6e5c2e?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 99, condition: 'mint', badge: 'offer' },
+  { id: 'l4', title: 'Rare 1965 Silver Coin Set', price: 425, category: 'rare-coins', image: 'https://images.unsplash.com/photo-1610375465536-5b1d2c5d1f3a?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 312, condition: 'mint', badge: 'verified' },
+  { id: 'l5', title: 'Graded 1990 Comic Collection', price: 320, category: 'books', image: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 145, condition: 'near-mint', badge: 'verified' },
+  { id: 'l6', title: 'Vintage Toy Robot — 1984', price: 190, category: 'collectibles', image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 89, condition: 'good', badge: 'hot' },
+  { id: 'l7', title: 'Signed Baseball — Authenticated', price: 650, category: 'sports-memorabilia', image: 'https://images.unsplash.com/photo-1610189012906-478603565824?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 410, condition: 'mint', badge: 'verified' },
+  { id: 'l8', title: 'Sealed 1992 Topps Wax Box', price: 890, category: 'collectibles', image: 'https://images.unsplash.com/photo-1607330289024-1535d6f30c7e?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 220, condition: 'mint', badge: 'new' },
 ];
 
-// ===== app state =====
-const state = {
-  cart: [],
-  wishlist: [],
-  user: null,
-};
+const state = { cart: [], wishlist: [], user: null };
 
-const addToCart = (listing) => {
-  if (!state.cart.find(i => i.id === listing.id)) state.cart.push(listing);
+const addToCart = (id) => {
+  const item = LISTINGS.find(i => i.id === id);
+  if (item && !state.cart.find(i => i.id === id)) state.cart.push(item);
   render();
 };
-const removeFromCart = (id) => {
-  state.cart = state.cart.filter(i => i.id !== id);
-  render();
+const removeFromCart = (id) => { state.cart = state.cart.filter(i => i.id !== id); render(); };
+const toggleWishlist = (id) => { state.wishlist = state.wishlist.includes(id) ? state.wishlist.filter(x => x !== id) : [...state.wishlist, id]; render(); };
+
+const navigate = (path) => { history.pushState(null, '', `/${path}`); render(); };
+
+const badgeFor = (key) => {
+  const map = {
+    verified: 'border:1px solid rgba(201,168,76,0.45);color:#E8CB7A;background:rgba(201,168,76,0.10)',
+    new: 'border:1px solid rgba(52,211,153,0.45);color:#6ee7b7;background:rgba(16,185,129,0.10)',
+    hot: 'border:1px solid rgba(248,113,113,0.45);color:#fca5a5;background:rgba(220,38,38,0.10)',
+    offer: 'border:1px solid rgba(251,146,60,0.45);color:#fdba74;background:rgba(234,88,12,0.10)',
+  };
+  return map[key] || map.verified;
 };
-const toggleWishlist = (id) => {
-  state.wishlist = state.wishlist.includes(id) ? state.wishlist.filter(x => x !== id) : [...state.wishlist, id];
-  render();
+
+const iconForCategory = (name) => {
+  const map = { gem: svg.gem, coins: svg.coins, landmark: svg.landmark, palette: svg.palette, watch: svg.watch, trophy: svg.trophy, diamond: svg.diamond, book: svg.book };
+  return map[name] || svg.diamond;
 };
 
-// ===== router =====
-const routes = {};
+const categoryGrid = () => `
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(201,168,76,0.12);">
+    ${CATEGORIES.map(c => `
+      <a href="/browse" style="position:relative;height:180px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-decoration:none;padding:20px;background:#0e0e0e;">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(201,168,76,0.14));opacity:0;transition:opacity .3s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0"></div>
+        <div style="color:#C9A84C;position:relative;z-index:1;">${iconForCategory(c.iconName)}</div>
+        <h3 style="color:#C9A84C;position:relative;z-index:1;font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:center;">${c.name}</h3>
+      </a>
+    `).join('')}
+  </div>
+`;
 
-function navigate(path) {
-  history.pushState(null, '', `/${path}`);
-  render();
-}
+const listingCard = (item) => `
+  <div style="padding:0;overflow:hidden;background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;">
+    <img src="${item.image}" alt="${item.title}" loading="lazy" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;" />
+    <div style="padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#C9A84C;border:1px solid rgba(201,168,76,0.30);padding:6px 10px;border-radius:999px;">${item.category}</span>
+        <span style="color:#a1a1aa;font-size:12px;">Qty 1</span>
+      </div>
+      <h3 style="margin-top:10px;font-weight:600;line-height:1.3;">${item.title}</h3>
+      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:20px;font-weight:700;color:#e5c07b;">$${item.price}</span>
+        <div style="display:flex;gap:8px;">
+          <button onclick="window._toggleW('${item.id}')" style="padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#f5f5f5;cursor:pointer;">${svg.heart}</button>
+          <button onclick="window._add('${item.id}')" style="padding:8px 10px;border-radius:12px;border:1px solid transparent;background:#e5c07b;color:#000000;font-weight:700;cursor:pointer;">Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+`;
 
-function render() {
+const routes = {
+  home: () => `
+    <section style="position:relative;overflow:hidden;background:#020202;">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 25%,rgba(201,168,76,0.08),transparent 55%);"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(to bottom,#080808,#020202,#080808);"></div>
+      <canvas id="particle-canvas" style="position:absolute;inset:0;pointer-events:none;"></canvas>
+      <div style="position:relative;z-index:2;text-align:center;padding:140px 20px 60px;max-width:1100px;margin:0 auto;">
+        <div style="display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid rgba(201,168,76,0.35);border-radius:999px;margin-bottom:28px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#C9A84C;box-shadow:0 0 10px #C9A84C;"></span>
+          <span style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;">Est. 2024 &middot; Elite Collector Exchange &middot; AI-Powered</span>
+        </div>
+        <h1 style="font-family:'Cinzel',serif;font-size:clamp(44px,7vw,96px);font-weight:900;letter-spacing:clamp(6px,1.2vw,18px);line-height:0.95;background:linear-gradient(to bottom,#FFD97A,#C9A84C,#8A6E2F);-webkit-background-clip:text;background-clip:text;color:transparent;">The Vault DFW</h1>
+        <p style="font-family:'Cinzel',serif;font-size:clamp(11px,1.2vw,13px);letter-spacing:clamp(6px,1vw,14px);color:#C8BC98;text-transform:uppercase;margin-top:14px;">Elite Collector Exchange</p>
+        <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:18px 0 26px;">
+          <div style="width:80px;height:1px;background:linear-gradient(to right,transparent,#C9A84C);"></div>
+          <span style="color:#C9A84C;display:inline-flex;">${svg.diamond}</span>
+          <div style="width:80px;height:1px;background:linear-gradient(to left,transparent,#C9A84C);"></div>
+        </div>
+        <p style="max-width:860px;margin:0 auto 36px;color:#F5EED8;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(18px,2vw,22px);line-height:1.6;">Are you tired of getting screwed on the pricing, commissions and fees associated with exchanging your treasures? This is your answer for that problem.</p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+          <a href="/sell" style="display:inline-flex;align-items:center;gap:10px;padding:14px 22px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;font-family:'Cinzel',serif;letter-spacing:2px;border-radius:14px;text-decoration:none;font-weight:700;">Start Selling ${svg.arrow}</a>
+          <a href="/browse" style="display:inline-flex;align-items:center;gap:10px;padding:14px 22px;border:1px solid rgba(201,168,76,0.6);color:#C9A84C;font-family:'Cinzel',serif;letter-spacing:2px;border-radius:14px;text-decoration:none;font-weight:700;">Find Treasures</a>
+        </div>
+      </div>
+    </section>
+
+    <div style="background:#C9A84C;padding:12px 0;overflow:hidden;border-top:1px solid rgba(0,0,0,0.25);border-bottom:1px solid rgba(0,0,0,0.25);">
+      <div style="display:flex;white-space:nowrap;animation:marquee 38s linear infinite;width:max-content;">
+        ${['5% Commission Under $1,000','7% Commission $1,000-$7,500','10% Commission $7,500-$10,000','5% Commission Over $10,000','AI-Powered Buyer Matching','Verified Collectors Only','Real-Time Market Pricing'].map(t => `<span style="display:inline-flex;align-items:center;gap:18px;padding:0 28px;color:#080808;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${t} <span style="display:inline-flex;">${svg.diamond}</span></span>`).join('')}
+        ${['5% Commission Under $1,000','7% Commission $1,000-$7,500','10% Commission $7,500-$10,000','5% Commission Over $10,000','AI-Powered Buyer Matching','Verified Collectors Only','Real-Time Market Pricing'].map(t => `<span style="display:inline-flex;align-items:center;gap:18px;padding:0 28px;color:#080808;font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">${t} <span style="display:inline-flex;">${svg.diamond}</span></span>`).join('')}
+      </div>
+    </div>
+
+    <section style="padding:80px 20px;background:#020202;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <div style="text-align:center;margin-bottom:56px;">
+          <p style="font-size:9px;letter-spacing:5px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Transparent Pricing</p>
+          <h2 style="font-family:'Cinzel',serif;font-size:clamp(22px,3vw,34px);font-weight:700;color:#F5EED8;letter-spacing:4px;">Commission Calculator</h2>
+          <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0 10px;">
+            <div style="width:56px;height:1px;background:linear-gradient(to right,transparent,#C9A84C);"></div>
+            <span style="color:#C9A84C;display:inline-flex;">${svg.diamond}</span>
+            <div style="width:56px;height:1px;background:linear-gradient(to left,transparent,#C9A84C);"></div>
+          </div>
+          <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#C8BC98;">Know exactly what you keep before you list</p>
+        </div>
+        <div style="background:#141414;border:1px solid rgba(201,168,76,0.35);padding:28px;position:relative;box-shadow:0 0 40px rgba(201,168,76,0.06);">
+          <div style="position:absolute;top:0;left:0;width:18px;height:18px;border-top:2px solid #C9A84C;border-left:2px solid #C9A84C;"></div>
+          <div style="position:absolute;bottom:0;right:0;width:18px;height:18px;border-bottom:2px solid #C9A84C;border-right:2px solid #C9A84C;"></div>
+          <div style="margin-bottom:28px;">
+            <label style="display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Item Value</label>
+            <input type="number" id="calc-value" placeholder="0" oninput="window._calc()" style="width:100%;background:#141414;border:1px solid rgba(201,168,76,0.35);border-bottom:2px solid #C9A84C;color:#F5EED8;font-family:'Cinzel',serif;font-size:clamp(24px,4vw,40px);font-weight:700;padding:18px 16px 18px 44px;outline:none;" />
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px;" id="calc-tiers">
+            ${[{r:5,range:'Under $1,000',label:'Entry'},{r:7,range:'$1,000-$7,500',label:'Standard'},{r:10,range:'$7,500-$10,000',label:'Premium'},{r:15,range:'$10,000+',label:'Elite'}].map(t => `
+              <div id="tier-${t.r}" style="padding:14px;border:1px solid rgba(201,168,76,0.25);background:#141414;text-align:center;transition:all .2s;">
+                <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:800;color:#C9A84C;">${t.r}%</div>
+                <div style="font-size:9px;letter-spacing:1px;color:#C8BC98;text-transform:uppercase;line-height:1.5;">${t.range}<br/>${t.label}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="background:#141414;border:1px solid rgba(201,168,76,0.65);padding:18px;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+              <div style="padding:14px;background:#111;text-align:center;">
+                <div style="font-size:8px;letter-spacing:3px;color:#8A6E2F;text-transform:uppercase;margin-bottom:6px;">Item Value</div>
+                <div id="cv-value" style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#E8CB7A;">$0.00</div>
+              </div>
+              <div style="padding:14px;background:#111;text-align:center;border:1px solid rgba(201,168,76,0.35);">
+                <div style="font-size:8px;letter-spacing:3px;color:#8A6E2F;text-transform:uppercase;margin-bottom:6px;">Commission (<span id="cv-rate">0</span>%)</div>
+                <div id="cv-comm" style="font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#FFD97A;">$0.00</div>
+              </div>
+              <div style="padding:14px;background:#111;text-align:center;">
+                <div style="font-size:8px;letter-spacing:3px;color:#8A6E2F;text-transform:uppercase;margin-bottom:6px;">You Receive</div>
+                <div id="cv-net" style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#E8CB7A;">$0.00</div>
+              </div>
+            </div>
+          </div>
+          <div id="calc-compare" style="margin-top:18px;padding:18px;border:1px solid rgba(201,168,76,0.25);background:#141414;display:none;">
+            <p style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;text-align:center;margin-bottom:14px;">Commission Comparison</p>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;text-align:center;">
+              <div><div style="font-size:8px;letter-spacing:1px;color:#C8BC98;text-transform:uppercase;margin-bottom:4px;">Christie's</div><div id="c1" style="font-family:'Cinzel',serif;font-weight:700;color:#f87171;"></div></div>
+              <div><div style="font-size:8px;letter-spacing:1px;color:#C8BC98;text-transform:uppercase;margin-bottom:4px;">Pawn Shop</div><div id="c2" style="font-family:'Cinzel',serif;font-weight:700;color:#f87171;"></div></div>
+              <div><div style="font-size:8px;letter-spacing:1px;color:#C8BC98;text-transform:uppercase;margin-bottom:4px;">eBay</div><div id="c3" style="font-family:'Cinzel',serif;font-weight:700;color:#f87171;"></div></div>
+              <div><div style="font-size:8px;letter-spacing:1px;color:#C8BC98;text-transform:uppercase;margin-bottom:4px;">The Vault</div><div id="cv" style="font-family:'Cinzel',serif;font-weight:700;color:#6ee7b7;"></div></div>
+            </div>
+            <div style="margin-top:14px;padding:14px;background:rgba(16,185,129,0.08);border:1px solid rgba(52,211,153,0.25);text-align:center;">
+              <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#6ee7b7;">You save an estimated <strong id="savings" style="font-family:'Cinzel',serif;font-weight:700;"></strong> compared to auction houses</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding:80px 20px;background:#080808;border-top:1px solid rgba(201,168,76,0.15);">
+      <div style="max-width:1100px;margin:0 auto;">
+        <div style="text-align:center;margin-bottom:56px;">
+          <p style="font-size:9px;letter-spacing:5px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">The Process</p>
+          <h2 style="font-family:'Cinzel',serif;font-size:clamp(22px,3vw,34px);font-weight:700;color:#F5EED8;letter-spacing:4px;">How The Vault Works</h2>
+          <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0 0;">
+            <div style="width:56px;height:1px;background:linear-gradient(to right,transparent,#C9A84C);"></div>
+            <span style="color:#C9A84C;display:inline-flex;">${svg.diamond}</span>
+            <div style="width:56px;height:1px;background:linear-gradient(to left,transparent,#C9A84C);"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+          ${[
+            {n:'01',icon:svg.sparkles,title:'AI Appraisal',desc:'Upload photos and describe your item. Our AI analyzes market data across the internet to give you an accurate price estimate.'},
+            {n:'02',icon:svg['shield-check'],title:'List Your Item',desc:'Create your listing with our transparent commission structure. 5%, 7%, 10%, or 15% based on item value.'},
+            {n:'03',icon:svg.trending,title:'AI Finds Buyers',desc:'Our AI agents scan collector networks and marketplaces to find the ideal buyers for your rare item.'},
+            {n:'04',icon:svg.clock,title:'Close the Deal',desc:'Secure checkout with Stripe. Funds released within 48 hours. You keep the majority, we take our fair commission.'},
+          ].map(s => `
+            <div style="padding:24px;background:#111;border:1px solid rgba(201,168,76,0.18);border-radius:16px;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;" onmouseover="this.style.transform='translateY(-6px)';this.style.borderColor='rgba(201,168,76,0.55)';this.style.boxShadow='0 0 30px rgba(201,168,76,0.12)'" onmouseout="this.style.transform='';this.style.borderColor='rgba(201,168,76,0.18)';this.style.boxShadow=''">
+              <div style="font-family:'Cinzel',serif;font-size:44px;font-weight:900;color:rgba(201,168,76,0.12);line-height:1;margin-bottom:10px;">${s.n}</div>
+              <div style="color:#C9A84C;margin-bottom:14px;">${s.icon}</div>
+              <h3 style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">${s.title}</h3>
+              <p style="font-size:12px;line-height:1.6;color:#C8BC98;">${s.desc}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+
+    <section style="padding:80px 20px;background:#020202;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <div style="text-align:center;margin-bottom:56px;">
+          <p style="font-size:9px;letter-spacing:5px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">What We Handle</p>
+          <h2 style="font-family:'Cinzel',serif;font-size:clamp(22px,3vw,34px);font-weight:700;color:#F5EED8;letter-spacing:4px;">Categories of Excellence</h2>
+          <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0 0;">
+            <div style="width:56px;height:1px;background:linear-gradient(to right,transparent,#C9A84C);"></div>
+            <span style="color:#C9A84C;display:inline-flex;">${svg.diamond}</span>
+            <div style="width:56px;height:1px;background:linear-gradient(to left,transparent,#C9A84C);"></div>
+          </div>
+        </div>
+        ${categoryGrid()}
+      </div>
+    </section>
+
+    <section style="padding:80px 20px;background:#080808;border-top:1px solid rgba(201,168,76,0.15);">
+      <div style="max-width:1100px;margin:0 auto;">
+        <div style="text-align:center;margin-bottom:56px;">
+          <p style="font-size:9px;letter-spacing:5px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Currently Available</p>
+          <h2 style="font-family:'Cinzel',serif;font-size:clamp(22px,3vw,34px);font-weight:700;color:#F5EED8;letter-spacing:4px;">Featured in The Vault</h2>
+          <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0 0;">
+            <div style="width:56px;height:1px;background:linear-gradient(to right,transparent,#C9A84C);"></div>
+            <span style="color:#C9A84C;display:inline-flex;">${svg.diamond}</span>
+            <div style="width:56px;height:1px;background:linear-gradient(to left,transparent,#C9A84C);"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;">
+          ${LISTINGS.map(listingCard).join('')}
+        </div>
+        <div style="text-align:center;margin-top:36px;">
+          <a href="/browse" style="display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border:1px solid rgba(201,168,76,0.6);color:#C9A84C;font-family:'Cinzel',serif;letter-spacing:2px;border-radius:14px;text-decoration:none;">View All Listings ${svg.chevron}</a>
+        </div>
+      </div>
+    </section>
+  `,
+  browse: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;color:#F5EED8;">Browse Collection</h2>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+          ${CATEGORIES.map(c => `<button style="padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#f5f5f5;cursor:pointer;">${c.name}</button>`).join('')}
+        </div>
+        <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;">
+          ${LISTINGS.map(listingCard).join('')}
+        </div>
+      </div>
+    </section>
+  `,
+  sell: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">List an Item</h2>
+        <form onsubmit="event.preventDefault();alert('Submitted');" style="margin-top:22px;display:grid;gap:16px;">
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Title</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="Vintage Rolex Submariner — 1987" required></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Category</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;">${CATEGORIES.filter(c => c.id !== 'all').map(c => `<option>${c.name}</option>`).join('')}</select></div>
+            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Condition</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option>Mint</option><option>Near Mint</option><option>Good</option><option>Fair</option></select></div>
+          </div>
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Images (comma separated URLs)</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="https://example.com/a.jpg, https://example.com/b.jpg"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Price (USD)</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" type="number" min="0" step="0.01" required></div>
+            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Shipping</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" type="number" min="0" step="0.01"></div>
+          </div>
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Description</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="5" placeholder="Provenance, grading, authenticity notes..."></textarea></div>
+          <div><button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;background:#e5c07b;color:#000000;border:1px solid transparent;border-radius:12px;font-weight:700;cursor:pointer;">${svg.gem} Create Listing</button></div>
+        </form>
+      </div>
+    </section>
+  `,
+  checkout: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:760px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Checkout</h2>
+        <form onsubmit="event.preventDefault();alert('Order placed');" style="margin-top:22px;display:grid;gap:16px;">
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Shipping Address</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="3" required></textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Card Number</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="4242 4242 4242 4242"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="MM/YY"><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="CVC"></div>
+          </div>
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Payment Method</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option>Stripe (Card)</option><option>Coinbase Commerce</option><option>Solana (SOL)</option></select></div>
+          <div><button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;background:#e5c07b;color:#000000;border:1px solid transparent;border-radius:12px;font-weight:700;cursor:pointer;">${svg.shield} Pay Securely</button></div>
+        </form>
+      </div>
+    </section>
+  `,
+};
+
+const shell = () => {
   const path = location.pathname.replace(/^\/+/, '') || 'home';
-  const page = routes[path];
-  const app = $('#app');
-  app.innerHTML = '';
+  const active = (p) => (path === p ? 'color:#E8CB7A;' : 'color:#C8BC98;');
+  return `
+    <header style="border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.7);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;">
+      <div style="max-width:1200px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;">
+        <a href="/" style="text-decoration:none;display:inline-flex;align-items:center;gap:12px;"><span style="font-family:'Cinzel',serif;font-weight:800;letter-spacing:4px;color:#C9A84C;">The Vault DFW</span></a>
+        <nav style="display:none;align-items:center;gap:24px;">
+          ${['browse','appraisal','proverify','sell','token-gallery','support'].map(p => `<a href="/${p}" style="font-size:11px;letter-spacing:3px;text-transform:uppercase;text-decoration:none;${active(p)}">${p === 'proverify' ? 'ProVerify' : p.charAt(0).toUpperCase() + p.slice(1)}</a>`).join('')}
+        </nav>
+        <div style="display:none;align-items:center;gap:14px;">
+          <a href="/browse" style="color:#C8BC98;text-decoration:none;">${svg.search}</a>
+          <a href="/wishlist" style="color:#C8BC98;text-decoration:none;">${svg.heart}</a>
+          <a href="/orders" style="color:#C8BC98;text-decoration:none;">${svg.cart}</a>
+          <a href="/admin" style="color:#C8BC98;text-decoration:none;">${svg.shield}</a>
+          <a href="/login" style="padding:8px 14px;border:1px solid #C9A84C;color:#C9A84C;text-decoration:none;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;font-weight:700;">Sign In</a>
+        </div>
+      </div>
+    </header>
+    <main style="min-height:100vh;">
+      <div style="max-width:1100px;margin:0 auto;padding:0 24px;">${(routes[path] || routes.home)()}</div>
+    </main>
+    <footer style="border-top:1px solid rgba(201,168,76,0.18);background:#080808;padding:56px 20px 28px;">
+      <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:32px;">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:12px;"><span style="font-family:'Cinzel',serif;font-weight:800;letter-spacing:4px;color:#C9A84C;font-size:14px;">THE VAULT</span></div>
+          <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:#C8BC98;line-height:1.6;max-width:280px;">The elite collector exchange. Peer-to-peer marketplace for rare and exclusive items. AI-powered. Blockchain-certified. Collector-first.</p>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <a href="${social.x}" target="_blank" rel="noopener" style="width:32px;height:32px;border:1px solid rgba(201,168,76,0.25);display:inline-flex;align-items:center;justify-content:center;color:#C8BC98;text-decoration:none;">${svg.xsocial}</a>
+            <a href="${social.instagram}" target="_blank" rel="noopener" style="width:32px;height:32px;border:1px solid rgba(201,168,76,0.25);display:inline-flex;align-items:center;justify-content:center;color:#C8BC98;text-decoration:none;">${svg.instagram}</a>
+            <a href="${social.email}" style="width:32px;height:32px;border:1px solid rgba(201,168,76,0.25);display:inline-flex;align-items:center;justify-content:center;color:#C8BC98;text-decoration:none;">${svg.mail}</a>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Platform</h4>
+          ${['Browse Collection','AI Appraisal','ProVerify','Sell an Item','Token Gallery','Wishlist','My Orders'].map(label => `<a href="/browse" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
+        </div>
+        <div>
+          <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Company</h4>
+          ${['About The Vault','FAQ','Contact Us','Shipping Info','Support Center'].map(label => `<a href="/about" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
+        </div>
+        <div>
+          <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Legal</h4>
+          ${['Terms of Service','Privacy Policy','Returns & Refunds'].map(label => `<a href="/terms" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
+          <a href="${social.email}" style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#C8BC98;text-decoration:none;">${svg.mail} ratchetkrewelabs@gmail.com</a>
+        </div>
+      </div>
+      <div style="max-width:1100px;margin:28px auto 0;padding-top:18px;border-top:1px solid rgba(201,168,76,0.10);display:flex;flex-direction:column;gap:10px;align-items:center;">
+        <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8A6E2F;">&copy; 2024 The Vault. All rights reserved.</p>
+      </div>
+    </footer>
+  `;
+};
 
-  // header
-  const header = create('header', { class: 'header' },
-    create('div', { class: 'header-inner' },
-      create('a', { href: '/home', class: 'brand', style: { textDecoration: 'none' } }, 'The Vault DFW'),
-      create('nav', { class: 'nav' },
-        ['home', 'browse', 'sell', 'appraisal', 'pro-verify', 'orders', 'cart', 'wallet-pay', 'profile'].map(p =>
-          create('a', {
-            href: `/${p}`,
-            class: location.pathname.replace(/^\/+/, '') === p ? 'active' : ''
-          }, p.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase()))
-        )
-      )
-    )
-  );
+const render = () => {
+  const app = document.getElementById('app');
+  if (!app) return;
+  app.innerHTML = shell();
+};
 
-  app.appendChild(header);
-  if (page) {
-    const section = create('main', { class: 'page' },
-      create('div', { class: 'container' }, page())
-    );
-    app.appendChild(section);
-  } else {
-    app.appendChild(create('main', { class: 'page' },
-      create('div', { class: 'container' }, create('h1', {}, '404 — Not Found'))
-    ));
+window._add = (id) => {
+  const item = LISTINGS.find(i => i.id === id);
+  if (item && !state.cart.find(i => i.id === id)) state.cart.push(item);
+  render();
+};
+window._remove = (id) => { state.cart = state.cart.filter(i => i.id !== id); render(); };
+window._toggleW = (id) => { state.wishlist = state.wishlist.includes(id) ? state.wishlist.filter(x => x !== id) : [...state.wishlist, id]; render(); };
+window._calc = () => {
+  const raw = document.getElementById('calc-value')?.value || '0';
+  const num = parseFloat(raw) || 0;
+  let rate = 5;
+  if (num >= 10000) rate = 15;
+  else if (num >= 7500) rate = 10;
+  else if (num >= 1000) rate = 7;
+  const comm = num * (rate / 100);
+  const net = num - comm;
+  const fmt = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const e1 = document.getElementById('cv-value'); if (e1) e1.textContent = fmt(num);
+  const e2 = document.getElementById('cv-rate'); if (e2) e2.textContent = rate;
+  const e3 = document.getElementById('cv-comm'); if (e3) e3.textContent = fmt(comm);
+  const e4 = document.getElementById('cv-net'); if (e4) e4.textContent = fmt(net);
+  [5,7,10,15].forEach(r => {
+    const box = document.getElementById('tier-' + r);
+    if (!box) return;
+    const active = r === rate;
+    box.style.borderColor = active ? '#C9A84C' : 'rgba(201,168,76,0.25)';
+    box.style.background = active ? 'rgba(201,168,76,0.08)' : '#141414';
+  });
+  const comp = document.getElementById('calc-compare');
+  if (comp) {
+    comp.style.display = num > 0 ? 'block' : 'none';
+    if (num > 0) {
+      const c1 = document.getElementById('c1'); if (c1) c1.textContent = fmt(num * 0.25);
+      const c2 = document.getElementById('c2'); if (c2) c2.textContent = fmt(num * 0.40);
+      const c3 = document.getElementById('c3'); if (c3) c3.textContent = fmt(num * 0.135);
+      const cv = document.getElementById('cv'); if (cv) cv.textContent = fmt(comm);
+      const sv = document.getElementById('savings'); if (sv) sv.textContent = fmt(num * 0.25 - comm);
+    }
   }
-
-  // floating actions (global)
-  const fab = create('div', { style: { position: 'fixed', bottom: '24px', right: '24px', display: 'flex', gap: '12px', zIndex: 100 } },
-    create('button', { class: 'btn btn-ghost', title: 'Cart', onclick: () => navigate('cart') }, I.cart),
-    create('button', { class: 'btn btn-ghost', title: 'Earn / Payouts', onclick: () => navigate('profile') }, I.price),
-    create('button', { class: 'btn btn-ghost', title: 'Account', onclick: () => navigate('profile') }, I.user)
-  );
-  app.appendChild(fab);
-}
+};
 
 window.addEventListener('popstate', render);
-
-// ===== page builders =====
-routes.home = () => `
-  <div class="text-center" style="margin-top: 80px;">
-    <div class="badge" style="margin-bottom: 24px;">
-      <span style="display:inline-flex;align-items:center;gap:8px;">${I.star} Marketplace</span>
-    </div>
-    <h1 class="text-gold" style="font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif; font-size: clamp(40px, 6vw, 72px); font-weight: 800; letter-spacing: 4px;">The Vault DFW</h1>
-    <p style="max-width: 860px; margin: 24px auto 0; color: #c8bc98; font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif; font-style: italic; font-size: clamp(18px, 2vw, 22px); line-height: 1.6;">
-      Are you tired of getting screwed on the pricing, commissions and fees associated with exchanging your treasures? This is your answer for that problem.
-    </p>
-    <div style="margin-top: 36px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-      <a href="/browse" class="btn btn-primary" style="text-decoration: none;">${I.arrow} Browse Collection</a>
-      <a href="/appraisal" class="btn btn-ghost" style="text-decoration: none;">${I.scan} AI Appraisal</a>
-    </div>
-  </div>
-`;
-
-routes.browse = () => {
-  const grid = LISTINGS.map(item => `
-    <div class="card" style="padding: 0; overflow: hidden;">
-      <img src="${item.image_url}" alt="${item.title}" loading="lazy" style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;" />
-      <div style="padding: 16px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap: 8px;">
-          <span class="badge">${item.category}</span>
-          <span class="text-muted" style="font-size: 12px;">Qty 1</span>
-        </div>
-        <h3 style="margin-top: 10px; font-weight: 600; line-height: 1.3;">${item.title}</h3>
-        <div style="margin-top: 12px; display:flex; justify-content:space-between; align-items:center;">
-          <span class="text-gold" style="font-size: 20px; font-weight: 700;">$${item.price}</span>
-          <div style="display:flex; gap:8px;">
-            <button class="btn btn-ghost" title="Wishlist" onclick="window._toggleWishlist('${item.id}')">${I.heart}</button>
-            <button class="btn btn-primary" onclick="window._addToCart('${item.id}')">${I.cart} Add</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `).join('');
-
-  return `
-    <div style="margin-top: 32px;">
-      <h2 style="font-size: 28px; font-weight: 700; letter-spacing: 1px;">Browse Collection</h2>
-      <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-        ${CATEGORIES.map(c => `<button class="btn btn-ghost" style="font-size: 12px;">${c.name}</button>`).join('')}
-      </div>
-      <div style="margin-top: 24px; display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px;">
-        ${grid}
-      </div>
-    </div>
-  `;
-};
-
-routes.cart = () => {
-  const items = state.cart.map((item, idx) => `
-    <div class="card" style="display:flex; gap: 16px; align-items: center; justify-content: space-between;">
-      <div style="display:flex; gap:16px; align-items:center;">
-        <img src="${item.image_url}" alt="" style="width:64px; height:64px; border-radius: 12px; object-fit:cover; background:#000;" />
-        <div>
-          <h4 style="font-weight: 600;">${item.title}</h4>
-          <span class="text-muted" style="font-size: 12px;">${item.category}</span>
-        </div>
-      </div>
-      <div style="display:flex; gap:12px; align-items:center;">
-        <span class="text-gold" style="font-weight:700;">$${item.price}</span>
-        <button class="btn btn-ghost" onclick="window._removeFromCart('${item.id}')">Remove</button>
-      </div>
-    </div>
-  `).join('');
-
-  const subtotal = state.cart.reduce((sum, i) => sum + Number(i.price || 0), 0);
-  const tax = subtotal * 0.09;
-  const total = subtotal + tax;
-
-  return `
-    <div style="margin-top: 32px;">
-      <h2 style="font-size: 28px; font-weight: 700;">Your Cart</h2>
-      ${state.cart.length === 0 ? '<p class="text-muted" style="margin-top:16px;">Your cart is empty.</p>' : `
-        <div style="margin-top: 20px; display:grid; grid-template-columns: 1fr 360px; gap: 24px;">
-          <div style="display:flex; flex-direction:column; gap:12px;">${items}</div>
-          <div class="card" style="height: fit-content;">
-            <h3 style="font-weight: 700; margin-bottom: 12px;">Summary</h3>
-            <div style="display:flex; justify-content:space-between; color: var(--muted); font-size: 14px;">
-              <span>Subtotal</span><span>$${subtotal.toFixed(2)}</span>
-            </div>
-            <div class="divider" style="margin: 12px 0;"></div>
-            <div style="display:flex; justify-content:space-between; color: var(--muted); font-size: 14px;">
-              <span>Tax (9%)</span><span>$${tax.toFixed(2)}</span>
-            </div>
-            <div class="divider" style="margin: 12px 0;"></div>
-            <div style="display:flex; justify-content:space-between; font-weight: 700;">
-              <span>Total</span><span class="text-gold">$${total.toFixed(2)}</span>
-            </div>
-            <button class="btn btn-primary" style="width:100%; margin-top: 16px;">Checkout</button>
-          </div>
-        </div>
-      `}
-    </div>
-  `;
-};
-
-routes.sell = () => `
-  <div style="margin-top: 32px; max-width: 720px;">
-    <h2 style="font-size: 28px; font-weight: 700;">List an Item</h2>
-    <form onsubmit="event.preventDefault(); alert('Submitted');" style="margin-top: 20px; display:grid; gap: 16px;">
-      <div>
-        <label class="label">Title</label>
-        <input class="input" placeholder="Vintage Rolex Submariner — 1987" required />
-      </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div>
-          <label class="label">Category</label>
-          <select class="input">
-            ${CATEGORIES.filter(c => c.id !== 'all').map(c => `<option>${c.name}</option>`).join('')}
-          </select>
-        </div>
-        <div>
-          <label class="label">Condition</label>
-          <select class="input">
-            <option>Mint</option><option>Near Mint</option><option>Good</option><option>Fair</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label class="label">Images (comma separated URLs)</label>
-        <input class="input" placeholder="https://example.com/a.jpg, https://example.com/b.jpg" />
-      </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div>
-          <label class="label">Price (USD)</label>
-          <input class="input" type="number" min="0" step="0.01" required />
-        </div>
-        <div>
-          <label class="label">Shipping</label>
-          <input class="input" type="number" min="0" step="0.01" />
-        </div>
-      </div>
-      <div>
-        <label class="label">Description</label>
-        <textarea class="input" rows="5" placeholder="Provenance, grading, authenticity notes..."></textarea>
-      </div>
-      <div>
-        <button class="btn btn-primary" type="submit">${I.gem} Create Listing</button>
-      </div>
-    </form>
-  </div>
-`;
-
-routes.checkout = () => `
-  <div style="margin-top: 32px; max-width: 760px;">
-    <h2 style="font-size: 28px; font-weight: 700;">Checkout</h2>
-    <form onsubmit="event.preventDefault(); alert('Order placed');" style="margin-top: 20px; display:grid; gap: 16px;">
-      <div>
-        <label class="label">Shipping Address</label>
-        <textarea class="input" rows="3" required></textarea>
-      </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div>
-          <label class="label">Card Number</label>
-          <input class="input" placeholder="4242 4242 4242 4242" />
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <input class="input" placeholder="MM/YY" />
-          <input class="input" placeholder="CVC" />
-        </div>
-      </div>
-      <div>
-        <label class="label">Payment Method</label>
-        <select class="input">
-          <option>Stripe (Card)</option>
-          <option>Coinbase Commerce</option>
-          <option>Solana (SOL)</option>
-        </select>
-      </div>
-      <button class="btn btn-primary" type="submit">${I.shield} Pay Securely</button>
-    </form>
-  </div>
-`;
-
-['orders', 'profile', 'about', 'support', 'terms', 'privacy', 'returns', 'shipping', 'faq'].forEach(name => {
-  routes[name] = () => `
-    <div style="margin-top: 32px;">
-      <h2 style="font-size: 28px; font-weight: 700;">${name.replace(/^./, s => s.toUpperCase()).replace('-', ' ')}</h2>
-      <p class="text-muted" style="margin-top: 10px;">This section is connected and ready for backend integration.</p>
-    </div>
-  `;
+window.addEventListener('load', () => {
+  render();
+  setTimeout(() => {
+    const canvas = document.getElementById('particle-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const resize = () => { canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+    const particles = Array.from({ length: 40 }, () => ({
+      x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 1.6 + 0.6, vy: -(Math.random() * 0.6 + 0.2), opacity: Math.random() * 0.5 + 0.2, doRate: Math.random() * 0.01 + 0.005,
+    }));
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.y += p.vy; p.opacity += p.doRate;
+        if (p.opacity > 0.7 || p.opacity < 0.1) p.doRate *= -1;
+        if (p.y < -10) { p.y = canvas.height + 10; p.x = Math.random() * canvas.width; }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(201,168,76,${p.opacity})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    };
+    draw();
+  }, 60);
 });
-
-// Additional functional pages
-routes['wallet-pay'] = () => `
-  <div style="margin-top: 32px; max-width: 720px;">
-    <h2 style="font-size: 28px; font-weight: 700;">Wallet Pay</h2>
-    <p class="text-muted" style="margin-top: 10px;">Pay with Solana, USDC, or connect your wallet.</p>
-    <div style="margin-top: 20px; display:grid; gap: 12px;">
-      <button class="btn btn-primary">Connect Wallet</button>
-      <button class="btn btn-ghost">Pay with Stripe</button>
-      <button class="btn btn-ghost">Pay with Coinbase</button>
-    </div>
-  </div>
-`;
-
-// ===== global actions =====
-window._addToCart = (id) => {
-  const item = LISTINGS.find(i => i.id === id);
-  if (item) addToCart(item);
-};
-window._removeFromCart = (id) => removeFromCart(id);
-window._toggleWishlist = (id) => toggleWishlist(id);
-
-// ===== boot =====
-render();
