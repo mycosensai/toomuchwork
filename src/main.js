@@ -82,9 +82,9 @@ const iconFor = (name) => {
   return map[name] || svg.diamond;
 };
 
-const footerPlatform = ['Browse Collection','AI Appraisal','ProVerify','Sell an Item','Token Gallery','Wishlist','My Orders'];
-const footerCompany = ['About The Vault','FAQ','Contact Us','Shipping Info','Support Center'];
-const footerLegal = ['Directory / Sitemap','Terms of Service','Privacy Policy','Returns & Refunds'];
+const footerPlatform = [{label:'Browse Collection',href:'/browse'},{label:'AI Appraisal',href:'/appraisal'},{label:'ProVerify',href:'/proverify'},{label:'Sell an Item',href:'/sell'},{label:'Token Gallery',href:'/tokengallery'},{label:'Wallet Pay',href:'/walletpay'},{label:'Cart',href:'/cart'},{label:'Wishlist',href:'/wishlist'},{label:'My Orders',href:'/orders'}];
+const footerCompany = [{label:'About The Vault',href:'/about'},{label:'FAQ',href:'/faq'},{label:'Contact Us',href:'/contact'},{label:'Shipping Info',href:'/shipping'},{label:'Support Center',href:'/support'}];
+const footerLegal = [{label:'Directory / Sitemap',href:'/directory'},{label:'Terms of Service',href:'/terms'},{label:'Privacy Policy',href:'/privacy'},{label:'Returns & Refunds',href:'/returns'}];
 
 const shell = () => {
   const path = location.pathname.replace(/^\/+/, '') || 'home';
@@ -121,15 +121,15 @@ const shell = () => {
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Platform</h4>
-          ${footerPlatform.map(label => `<a href="/browse" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
+          ${footerPlatform.map(item => `<a href="${item.href}" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${item.label}</a>`).join('')}
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Company</h4>
-          ${footerCompany.map(label => `<a href="/about" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
+          ${footerCompany.map(item => `<a href="${item.href}" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${item.label}</a>`).join('')}
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Legal</h4>
-          ${footerLegal.map(label => `<a href="/terms" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
+          ${footerLegal.map(item => `<a href="${item.href}" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${item.label}</a>`).join('')}
           <a href="${social.email}" style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#C8BC98;text-decoration:none;">${svg.mail} ratchetkrewelabs@gmail.com</a>
         </div>
       </div>
@@ -368,7 +368,7 @@ const routes = {
     <section style="padding-top:100px;">
       <div style="max-width:720px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">List an Item</h2>
-        <form onsubmit="event.preventDefault();alert('Submitted');" style="margin-top:22px;display:grid;gap:16px;">
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Submission received.</p>';" style="margin-top:22px;display:grid;gap:16px;">
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Title</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="Vintage Rolex Submariner — 1987" required></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Category</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;">${CATEGORIES.filter(c => c.id !== 'all').map(c => `<option>${c.name}</option>`).join('')}</select></div>
@@ -394,7 +394,7 @@ const routes = {
           <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#C8BC98;margin-top:10px;">Upload a photo and description for an AI estimate.</p>
         </div>
         <div style="background:#141414;border:1px solid rgba(201,168,76,0.35);padding:28px;">
-          <form onsubmit="event.preventDefault();alert('Submitted for appraisal');" style="display:grid;gap:16px;">
+          <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Appraisal request received.</p>';" style="display:grid;gap:16px;">
             <div>
               <label style="display:block;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;margin-bottom:10px;">Upload Photo</label>
               <div style="border:2px dashed rgba(201,168,76,0.35);background:#141414;height:260px;display:flex;align-items:center;justify-content:center;color:#C8BC98;font-size:12px;">Click to upload a photo</div>
@@ -507,7 +507,7 @@ const routes = {
     <section style="padding-top:100px;">
       <div style="max-width:760px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Checkout</h2>
-        <form onsubmit="event.preventDefault();alert('Order placed');" style="margin-top:22px;display:grid;gap:16px;">
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Order placed.</p>';" style="margin-top:22px;display:grid;gap:16px;">
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Shipping Address</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="3" required></textarea></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Card Number</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="4242 4242 4242 4242"></div>
@@ -557,7 +557,7 @@ const routes = {
     <section style="padding-top:100px;">
       <div style="max-width:420px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;text-align:center;">Sign In</h2>
-        <form onsubmit="event.preventDefault();alert('Signed in');" style="margin-top:22px;display:grid;gap:16px;">
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Signed in.</p>';" style="margin-top:22px;display:grid;gap:16px;">
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Email</label><input type="email" style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Password</label><input type="password" style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
           <div><button type="submit" style="width:100%;padding:14px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;font-family:'Cinzel',serif;letter-spacing:2px;font-weight:700;border-radius:12px;">Sign In</button></div>
