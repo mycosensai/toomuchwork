@@ -1184,7 +1184,7 @@ window.addEventListener('load', () => {
       window._toast('Samson toggle failed: ' + e.message, true);
     }
   };
-  } catch (e) {
-    console.error('Auth init failed', e);
-  }
+} catch (e) {
+  console.error('Auth init failed', e);
+}
 })();
