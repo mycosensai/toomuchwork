@@ -486,15 +486,35 @@ const routes = {
   `,
   proverify: () => `
     <section style="padding-top:100px;">
-      <div style="max-width:720px;margin:0 auto;">
-        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">ProVerify Authentication</h2>
-        <p style="color:#a1a1aa;margin-top:10px;">Submit your item for multi-layer AI + expert authentication.</p>
-        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Submission received.</p>';" style="margin-top:22px;display:grid;gap:16px;">
-          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Item Title</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
-          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Description / Provenance</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="4"></textarea></div>
-          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Image Links</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="https://..."></div>
-          <div><button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;background:#e5c07b;color:#000000;border:1px solid transparent;border-radius:12px;font-weight:700;cursor:pointer;">${svg['shield-check']} Submit for Verification</button></div>
-        </form>
+      <div style="max-width:1100px;margin:0 auto;">
+        <div style="text-align:center;margin-bottom:42px;">
+          <div style="display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid rgba(201,168,76,0.35);border-radius:999px;margin-bottom:18px;"><span style="width:6px;height:6px;border-radius:50%;background:#C9A84C;"></span><span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;">Professional Verification</span></div>
+          <h1 style="font-family:'Cinzel',serif;font-size:clamp(26px,4vw,46px);font-weight:900;letter-spacing:clamp(4px,1vw,10px);color:#F5EED8;">ProVerify</h1>
+          <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:#C8BC98;margin-top:10px;max-width:760px;margin-left:auto;margin-right:auto;">Like Antiques Roadshow, but global. Submit your item to world-class experts who will grade its authenticity, value, and condition on a scale of 1-100.</p>
+          <div style="display:inline-flex;align-items:center;gap:24px;margin-top:18px;color:#8A6E2F;font-size:10px;letter-spacing:2px;text-transform:uppercase;"><span>Authenticity 1-100</span><span style="color:#C9A84C;">|</span><span>Value 1-100</span><span style="color:#C9A84C;">|</span><span>Condition 1-100</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1.2fr .8fr;gap:22px;">
+          <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif;font-weight:700;letter-spacing:2px;>Submission received.</p>';" style="background:#141414;border:1px solid rgba(201,168,76,0.25);padding:24px;border-radius:18px;display:grid;gap:16px;">
+            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Item Name</label><input style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="1924 Art Deco Diamond Ring" required></div>
+            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Description / Provenance</label><textarea style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="4"></textarea></div>
+            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Image Links</label><input style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="https://..."></div>
+            <div><button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;border-radius:14px;font-weight:800;cursor:pointer;letter-spacing:2px;">Submit for Expert Review</button></div>
+          </form>
+          <div style="background:#111;border:1px solid rgba(201,168,76,0.15);padding:18px;border-radius:16px;">
+            <h3 style="font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:#C9A84C;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">Review Speed</h3>
+            ${[
+              {p:'standard',price:'49.99',time:'7-10 days'},
+              {p:'express',price:'99.99',time:'3-5 days'},
+              {p:'rush',price:'199.99',time:'24-48 hours'},
+            ].map(t => `
+              <div style="padding:12px;border:1px solid rgba(201,168,76,0.15);border-radius:12px;margin-bottom:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;"><span style="color:#F5EED8;font-weight:700;font-size:12px;text-transform:uppercase;">${t.p}</span><span style="color:#C9A84C;font-family:'Cinzel',serif;font-weight:800;">$${t.price}</span></div>
+                <div style="color:#8A6E2F;font-size:11px;margin-top:4px;">${t.time}</div>
+              </div>
+            `).join('')}
+            <div style="margin-top:14px;padding:14px;border:1px solid rgba(201,168,76,0.20);background:rgba(201,168,76,0.06);border-radius:14px;color:#C8BC98;font-size:11px;line-height:1.6;">Fees go directly to the assigned experts. You never share payment or shipping info on this site.</div>
+          </div>
+        </div>
       </div>
     </section>
   `,
@@ -579,19 +599,57 @@ const routes = {
       </div>
     </section>
   `,
-  checkout: () => `
+  checkout: (id) => `
     <section style="padding-top:100px;">
-      <div style="max-width:760px;margin:0 auto;">
-        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Checkout</h2>
-        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Order placed.</p>';" style="margin-top:22px;display:grid;gap:16px;">
-          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Shipping Address</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="3" required></textarea></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Card Number</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="4242 4242 4242 4242"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="MM/YY"><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="CVC"></div>
+      <div style="max-width:980px;margin:0 auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+          <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Secure Checkout</h2>
+          <span style="color:#C9A84C;font-size:12px;letter-spacing:2px;text-transform:uppercase;">The Vault Branded</span>
+        </div>
+        <p style="color:#a1a1aa;margin-top:10px;">Complete purchase for <strong style="color:#F5EED8;">${id || 'selected item'}</strong> with shipping and fee breakdown.</p>
+        <div style="margin-top:22px;display:grid;grid-template-columns:1.1fr .9fr;gap:22px;">
+          <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif;font-weight:700;letter-spacing:2px;>Order placed successfully.</p>';" style="background:#141414;border:1px solid rgba(201,168,76,0.25);padding:22px;border-radius:18px;display:grid;gap:16px;">
+            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Shipping Address</label><textarea style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="3" required></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Card</label><input style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="4242 4242 4242 4242"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><input style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="MM/YY"><input style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="CVC"></div>
+            </div>
+            <div><label style="display:block;color:#a1a1aa;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">Payment Method</label><select id="pay-method" onchange="window._checkoutMethodChange()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option>Stripe (Card)</option><option>Coinbase Commerce</option><option>Solana (SOL)</option></select></div>
+            <button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px;background:#e5c07b;color:#000000;border:1px solid transparent;border-radius:14px;font-weight:800;cursor:pointer;letter-spacing:2px;">Pay Securely</button>
+          </form>
+          <div style="background:#141414;border:1px solid rgba(201,168,76,0.25);padding:22px;border-radius:18px;">
+            <h3 style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;margin-bottom:10px;">Price Breakdown</h3>
+            <div style="display:grid;gap:10px;color:#C8BC98;font-size:13px;">
+              <div style="display:flex;justify-content:space-between;"><span>Item</span><span style="color:#F5EED8;font-weight:700;" id="ko-item">—</span></div>
+              <div style="display:flex;justify-content:space-between;"><span>Commission</span><span style="color:#C9A84C;font-weight:700;" id="ko-commission">$0.00</span></div>
+              <div style="display:flex;justify-content:space-between;"><span>Processing</span><span style="color:#F5EED8;">$0.00</span></div>
+              <div style="border-top:1px solid rgba(201,168,76,0.20);padding-top:10px;display:flex;justify-content:space-between;color:#F5EED8;"><span>Total</span><span style="font-family:'Cinzel',serif;font-size:22px;font-weight:800;color:#FFD97A;" id="ko-total">$0.00</span></div>
+            </div>
+            <div style="margin-top:18px;border-top:1px solid rgba(201,168,76,0.20);padding-top:14px;">
+              <h3 style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;margin-bottom:10px;">Shipping Calculator</h3>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div><label style="display:block;color:#a1a1aa;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Destination</label><select id="ship-dest" onchange="window._shipQuote()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:10px 12px;border-radius:12px;outline:none;"><option value="domestic">Domestic</option><option value="canada">Canada</option><option value="uk">UK / EU</option><option value="row">Rest of World</option></select></div>
+                <div><label style="display:block;color:#a1a1aa;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Speed</label><select id="ship-speed" onchange="window._shipQuote()" style="width:100%;background:#0c0c0c;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:10px 12px;border-radius:12px;outline:none;"><option value="standard">Standard</option><option value="express">Express</option><option value="white">White-Glove</option></select></div>
+              </div>
+              <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+                <span style="color:#C8BC98;font-size:12px;text-transform:uppercase;letter-spacing:2px;">Est. Shipping</span>
+                <span style="font-family:'Cinzel',serif;font-weight:800;color:#E8CB7A;" id="ship-cost">$0.00</span>
+              </div>
+            </div>
+            <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
+              <span style="color:#F5EED8;font-weight:700;">Order Total</span>
+              <span style="font-family:'Cinzel',serif;font-size:22px;font-weight:800;color:#FFD97A;" id="ko-order-total">$0.00</span>
+            </div>
           </div>
-          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Payment Method</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option>Stripe (Card)</option><option>Coinbase Commerce</option><option>Solana (SOL)</option></select></div>
-          <div><button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;background:#e5c07b;color:#000000;border:1px solid transparent;border-radius:12px;font-weight:700;cursor:pointer;">${svg.shield} Pay Securely</button></div>
-        </form>
+        </div>
+        <div style="margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="color:#8A6E2F;font-size:10px;letter-spacing:2px;text-transform:uppercase;">Secured by</span>
+          <span style="color:#C9A84C;font-weight:700;font-size:12px;">Stripe</span>
+          <span style="color:#8A6E2F;">·</span>
+          <span style="color:#C9A84C;font-weight:700;font-size:12px;">Coinbase Commerce</span>
+          <span style="color:#8A6E2F;">·</span>
+          <span style="color:#C9A84C;font-weight:700;font-size:12px;">Solana</span>
+        </div>
       </div>
     </section>
   `,
@@ -666,18 +724,98 @@ const routes = {
         <p style="color:#a1a1aa;margin-top:10px;">Autonomous outreach, valuation, and support agents.</p>
         <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
           ${[
-            {name:'Outreach Agent',desc:'Find buyers across social and marketplace channels.'},
-            {name:'Appraisal Agent',desc:'Estimate value from photos, description, and market data.'},
-            {name:'Support Agent',desc:'Answer buyer/seller questions and status requests.'},
-            {name:'Ops Agent',desc:'Monitor listings, pricing, and fulfillment status.'},
+            {name:'Outreach Agent',desc:'Find buyers across social and marketplace channels.',endpoint:'/api/agents/outreach'},
+            {name:'Appraisal Agent',desc:'Estimate value from photos, description, and market data.',endpoint:'/api/agents/appraisal'},
+            {name:'Support Agent',desc:'Answer buyer/seller questions and status requests.',endpoint:'/api/agents/support'},
+            {name:'Ops Agent',desc:'Monitor listings, pricing, and fulfillment status.',endpoint:'/api/agents/ops'},
+            {name:'ProVerify Agent',desc:'Assign experts, calculate fees, and run verification cycles.',endpoint:'/api/agents/verify'},
+            {name:'Leads Agent',desc:'Run outreach campaigns and deliver qualified buyer leads.',endpoint:'/api/agents/leads'},
           ].map(a => `
             <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
-              <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;">${a.name}</div>
-              <p style="color:#C8BC98;font-size:12px;margin-top:8px;line-height:1.5;">${a.desc}</p>
-              <button onclick="alert('Agent endpoint ready.')" style="margin-top:14px;width:100%;padding:10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;">Configure Agent</button>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;">${a.name}</div>
+                <span style="font-size:9px;color:#C9A84C;letter-spacing:1px;text-transform:uppercase;">Live</span>
+              </div>
+              <p style="color:#C8BC98;font-size:12px;line-height:1.6;margin-bottom:10px;">${a.desc}</p>
+              <div style="color:#8A6E2F;font-size:9px;font-family:monospace,monospace;margin-bottom:10px;word-break:break-all;">${a.endpoint}</div>
+              <button onclick="window._agentRun('${a.endpoint}')" style="width:100%;padding:10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;font-weight:600;">Run Assignment</button>
             </div>
           `).join('')}
         </div>
+      </div>
+    </section>
+  `,
+  agentcommand: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Agent Command Center</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Full fleet control with Samson kill switch and admin override.</p>
+        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+          <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
+            <h3 style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#F5EED8;margin-bottom:8px;">Command Override</h3>
+            <p style="color:#C8BC98;font-size:12px;line-height:1.6;">Send a priority instruction to the active fleet or pause all agents immediately.</p>
+            <div style="margin-top:14px;display:grid;gap:10px;">
+              <input id="cmd-text" placeholder="Run full system audit." style="width:100%;background:#141414;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);padding:12px 14px;border-radius:12px;outline:none;">
+              <button onclick="window._agentCommand('command', document.getElementById('cmd-text')?.value)" style="padding:12px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;border-radius:12px;font-weight:700;cursor:pointer;">Execute</button>
+            </div>
+            <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+              <button onclick="window._samsonToggle()" style="padding:12px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Toggle Samson Kill Switch</button>
+              <button onclick="window._agentCommand('audit','appraisal')" style="padding:12px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;">Run Appraisal Audit</button>
+              <button onclick="window._agentCommand('audit','buyer_finder')" style="padding:12px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;">Run Buyer Finder Audit</button>
+            </div>
+          </div>
+          <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
+            <h3 style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#F5EED8;margin-bottom:8px;">Tactical Actions</h3>
+            <p style="color:#C8BC98;font-size:12px;line-height:1.6;">Promote campaigns, enforce boundaries, and trigger workflow automations.</p>
+            <div style="margin-top:18px;display:grid;gap:8px;">
+              <button onclick="window._agentCommand('promote','outreach')" style="padding:12px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Promote Outreach</button>
+              <button onclick="window._agentCommand('promote','partnerships')" style="padding:12px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Promote Partnerships</button>
+              <button onclick="window._agentCommand('workflow','lead_conversion')" style="padding:12px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Run Conversion Workflow</button>
+              <button onclick="window._agentCommand('research','professional_watchlist')" style="padding:12px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Research Watchlist</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `,
+  agentproject: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Agent Project</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Project lifecycle, target professionals, and verification instructions.</p>
+        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(2,1fr);gap:16px;">
+          <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
+            <h3 style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#F5EED8;margin-bottom:8px;">Run Session</h3>
+            <div style="color:#C8BC98;font-size:12px;line-height:1.6;">Execute the next agent cycle for this project stream.</div>
+            <button onclick="window._agentCommand('run','session')" style="margin-top:18px;width:100%;padding:12px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;border-radius:12px;font-weight:700;cursor:pointer;">Run Now</button>
+          </div>
+          <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
+            <h3 style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#F5EED8;margin-bottom:8px;">Find Professionals</h3>
+            <div style="color:#C8BC98;font-size:12px;line-height:1.6;">Queue a professional discovery sweep for the current category.</div>
+            <button onclick="window._agentCommand('find','professionals')" style="margin-top:18px;width:100%;padding:12px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;">Find Professionals</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  `,
+  marketingdashboard: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Marketing Dashboard</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Campaign pipeline and outreach metrics.</p>
+        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          ${[
+            {label:'Active Campaigns',value:'—'},
+            {label:'Response Rate',value:'—'},
+            {label:'Pipeline Revenue',value:'—'},
+          ].map(c => `
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:16px;">
+              <div style="color:#8A6E2F;font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">${c.label}</div>
+              <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#C9A84C;">${c.value}</div>
+            </div>
+          `).join('')}
+        </div>
+        <button onclick="window._agentCommand('marketing','refresh')" style="margin-top:18px;padding:12px 18px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Refresh Metrics</button>
       </div>
     </section>
   `,
@@ -687,7 +825,34 @@ const routes = {
   terms: () => page('Terms of Service', 'Please review the marketplace terms before using The Vault.'),
   privacy: () => page('Privacy Policy', 'We protect your data and transaction privacy.'),
   returns: () => page('Returns & Refunds', 'Returns are reviewed case-by-case within 48 hours of delivery.'),
-  shipping: () => page('Shipping Info', 'Standard and expedited options available at checkout.'),
+  shipping: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:900px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;color:#F5EED8;">SHIPPING INFORMATION</h2>
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;color:#C8BC98;margin-top:10px;">Safe, insured delivery for your treasures.</p>
+        <div style="margin-top:28px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:32px;">
+          ${[
+            {t:'Insured Shipping',d:'Full value coverage'},
+            {t:'Expert Packaging',d:'Museum-grade materials'},
+            {t:'Tracking',d:'Real-time updates'},
+            {t:'Worldwide',d:'40+ countries'}
+          ].map(f => `
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);padding:16px;border-radius:14px;">
+              <div style="color:#C9A84C;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">${f.t}</div>
+              <div style="color:#C8BC98;font-size:12px;">${f.d}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div style="background:#111;border:1px solid rgba(201,168,76,0.20);padding:24px;border-radius:16px;display:grid;gap:18px;color:#C8BC98;font-size:12px;line-height:1.7;">
+          <div><h3 style="font-family:'Cinzel',serif;font-weight:700;color:#C9A84C;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Shipping Arrangements</h3><p>The Vault is a peer-to-peer marketplace. Buyers and sellers arrange shipping directly. We strongly recommend using insured shipping with tracking for all transactions. For items over $5,000, we require signature confirmation and full insurance coverage.</p></div>
+          <div><h3 style="font-family:'Cinzel',serif;font-weight:700;color:#C9A84C;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Insurance Requirements</h3><p>All shipments must be insured for the full transaction value. Sellers should obtain insurance through their chosen carrier. Never ship high-value items uninsured.</p></div>
+          <div><h3 style="font-family:'Cinzel',serif;font-weight:700;color:#C9A84C;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">High-Value Items ($25,000+)</h3><p>For transactions exceeding $25,000, we recommend using a professional art shipping service with white-glove delivery and climate-controlled transport.</p></div>
+          <div style="display:flex;align-items:center;gap:10px;border:1px solid rgba(201,168,76,0.15);background:rgba(201,168,76,0.06);padding:14px;border-radius:14px;"><span style="color:#C9A84C;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:2px;">Calculator</span><span style="color:#C8BC98;font-size:11px;">Use the shipping calculator on the checkout page for instant estimates.</span></div>
+        </div>
+        <p style="margin-top:18px;color:#8A6E2F;font-size:11px;text-transform:uppercase;letter-spacing:1px;">Use <a href="/checkout" style="color:#C9A84C;text-decoration:none;">checkout</a> for rates.</p>
+      </div>
+    </section>
+  `,
   contact: () => page('Contact Us', 'Reach the Vault team at ratchetkrewelabs@gmail.com.'),
   directory: () => `
     <section style="padding-top:100px;">
@@ -830,35 +995,106 @@ window.addEventListener('load', () => {
       if (wish) state.wishlist = wish || [];
       render();
     };
-    restore();
-    window._login = async (provider) => {
-      try {
-        const result = await VAULT_API.request('/api/auth/login', { provider });
-        state.user = { provider, id: result.id, session: result.session };
-        await write('users', 'current', state.user);
-        render();
-      } catch (e) {
-        alert('Login failed: ' + e.message);
-      }
-    };
-    window._logout = async () => {
-      try { await VAULT_API.request('/api/auth/logout', {}); } catch (e) {}
-      state.user = null;
-      await write('users', 'current', null);
+  restore();
+  window._login = async (provider) => {
+    try {
+      const result = await VAULT_API.request('/api/auth/login', { provider });
+      state.user = { provider, id: result.id, session: result.session };
+      await write('users', 'current', state.user);
       render();
-    };
-    const persistOnChange = () => {
-      if (!dbReady || !db) return;
-      write('cart', 'items', state.cart).catch(() => {});
-      write('wishlist', 'items', state.wishlist).catch(() => {});
-    };
-    const override = (fn) => {
-      const prev = window[fn];
-      window[fn] = (...args) => { const r = prev(...args); persistOnChange(); return r; };
-    };
-    override('_add');
-    override('_remove');
-    override('_toggleW');
+    } catch (e) {
+      alert('Login failed: ' + e.message);
+    }
+  };
+  window._logout = async () => {
+    try { await VAULT_API.request('/api/auth/logout', {}); } catch (e) {}
+    state.user = null;
+    await write('users', 'current', null);
+    render();
+  };
+  const persistOnChange = () => {
+    if (!dbReady || !db) return;
+    write('cart', 'items', state.cart).catch(() => {});
+    write('wishlist', 'items', state.wishlist).catch(() => {});
+  };
+  const override = (fn) => {
+    const prev = window[fn];
+    window[fn] = (...args) => { const r = prev(...args); persistOnChange(); return r; };
+  };
+  override('_add');
+  override('_remove');
+  override('_toggleW');
+
+  const RATES = {
+    commission(price) {
+      const n = Number(price) || 0;
+      if (n < 1000) return 0.05;
+      if (n < 7500) return 0.07;
+      if (n < 10000) return 0.10;
+      return 0.15;
+    },
+    shipping(dest, speed) {
+      const base = dest === 'domestic' ? 12 : dest === 'canada' ? 18 : dest === 'uk' ? 24 : 29;
+      const mult = speed === 'express' ? 1.6 : speed === 'white' ? 3.4 : 1;
+      return Number((base * mult).toFixed(2));
+    }
+  };
+
+  window._shipQuote = function() {
+    const dest = document.getElementById('ship-dest')?.value || 'domestic';
+    const speed = document.getElementById('ship-speed')?.value || 'standard';
+    const shipEl = document.getElementById('ship-cost');
+    const orderEl = document.getElementById('ko-order-total');
+    const itemEl = document.getElementById('ko-item');
+    const commEl = document.getElementById('ko-commission');
+    const totalEl = document.getElementById('ko-total');
+
+    const itemText = itemEl?.textContent || 'Selected item';
+    const m = String(itemText).match(/(\\$[0-9.,]+)/);
+    const itemRaw = m ? Number(m[1].replace(/[^0-9.]/g, '')) : 0;
+    const comm = itemRaw * RATES.commission(itemRaw);
+    const itemTotal = itemRaw + comm;
+    const ship = RATES.shipping(dest, speed);
+    if (shipEl) shipEl.textContent = '$' + ship.toFixed(2);
+    if (commEl) commEl.textContent = '$' + comm.toFixed(2);
+    if (totalEl) totalEl.textContent = '$' + itemTotal.toFixed(2);
+    if (orderEl) orderEl.textContent = '$' + (itemTotal + ship).toFixed(2);
+  };
+
+  window._checkoutMethodChange = function() {
+    const sel = document.getElementById('pay-method')?.value || 'Stripe (Card)';
+    const name = String(sel);
+    const chip = document.querySelector('[data-method-chip]');
+    if (chip) chip.textContent = name;
+  };
+
+  window._agentRun = async function(endpoint) {
+    try {
+      const data = await VAULT_API.request('/run', { endpoint, context: 'agent_run', model: 'hermes-2-free', timestamp: Date.now(), source: 'web_client' });
+      alert('Agent request dispatched: ' + (data.status || 'queued'));
+    } catch (e) {
+      alert('Agent dispatch failed: ' + e.message);
+    }
+  };
+
+  window._agentCommand = async function(action, value) {
+    try {
+      const payload = { action, value, context: 'agent_command', model: 'hermes-2-free', timestamp: Date.now(), source: 'web_client' };
+      const data = await VAULT_API.request('/command', payload);
+      alert('Command sent: ' + (data.status || 'accepted'));
+    } catch (e) {
+      alert('Command failed: ' + e.message);
+    }
+  };
+
+  window._samsonToggle = async function() {
+    try {
+      const data = await VAULT_API.request('/samson/toggle', { context: 'samson', model: 'hermes-2-free', timestamp: Date.now(), source: 'web_client' });
+      alert('Samson state: ' + (data.armed ? 'ARMED' : 'DISARMED'));
+    } catch (e) {
+      alert('Samson toggle failed: ' + e.message);
+    }
+  };
   } catch (e) {
     console.error('Auth init failed', e);
   }
