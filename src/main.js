@@ -34,6 +34,7 @@ const svg = {
   xsocial: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
   instagram: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>',
   mail: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg>',
+  logo: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="6" width="12" height="12" rx="1"/></svg>',
 };
 
 const social = { x: 'https://x.com/thevault', instagram: 'https://instagram.com/thevault', email: 'mailto:ratchetkrewelabs@gmail.com' };
@@ -60,7 +61,7 @@ const LISTINGS = [
   { id: 'l8', title: 'Sealed 1992 Topps Wax Box', price: 890, category: 'collectibles', image: 'https://images.unsplash.com/photo-1607330289024-1535d6f30c7e?auto=format&fit=crop&w=400&q=80', seller: 'vaultops', views: 220, condition: 'mint', badge: 'new' },
 ];
 
-const state = { cart: [], wishlist: [], user: null };
+const state = { cart: [], wishlist: [], user: null, _status: '' };
 
 const addToCart = (id) => {
   const item = LISTINGS.find(i => i.id === id);
@@ -92,9 +93,9 @@ const shell = () => {
   return `
     <header style="border-bottom:1px solid rgba(201,168,76,0.18);background:rgba(0,0,0,0.7);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;">
       <div style="max-width:1200px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;">
-        <a href="/" style="text-decoration:none;display:inline-flex;align-items:center;gap:12px;"><span style="font-family:'Cinzel',serif;font-weight:800;letter-spacing:4px;color:#C9A84C;">The Vault DFW</span></a>
+        <a href="/" style="text-decoration:none;display:inline-flex;align-items:center;gap:12px;">${svg.logo} <span style="font-family:'Cinzel',serif;font-weight:800;letter-spacing:4px;color:#C9A84C;">The Vault DFW Exchange</span></a>
         <nav style="display:none;align-items:center;gap:24px;">
-          ${['browse','appraisal','proverify','sell','tokengallery','support'].map(p => `<a href="/${p}" style="font-size:11px;letter-spacing:3px;text-transform:uppercase;text-decoration:none;${active(p)}">${p === 'tokengallery' ? 'Tokens' : p === 'proverify' ? 'ProVerify' : p.charAt(0).toUpperCase() + p.slice(1)}</a>`).join('')}
+          ${['browse','appraisal','proverify','sell','tokengallery','nft','support'].map(p => `<a href="/${p}" style="font-size:11px;letter-spacing:3px;text-transform:uppercase;text-decoration:none;${active(p)}">${p === 'tokengallery' ? 'Tokens' : p === 'proverify' ? 'ProVerify' : p === 'nft' ? 'NFT' : p.charAt(0).toUpperCase() + p.slice(1)}</a>`).join('')}
         </nav>
         <div style="display:none;align-items:center;gap:14px;">
           <a href="/browse" style="color:#C8BC98;text-decoration:none;">${svg.search}</a>
@@ -246,8 +247,8 @@ const routes = {
               <div style="color:#F5EED8;font-weight:700;font-size:12px;margin-bottom:6px;">${m.author}</div>
               <p style="color:#C8BC98;font-size:12px;line-height:1.6;margin-bottom:8px;">"${m.content}"</p>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button onclick="alert('Mark contacted')" style="padding:8px 10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:10px;cursor:pointer;">Contacted</button>
-                <button onclick="alert('Mark interested')" style="padding:8px 10px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;">Interested</button>
+                <button onclick="window._toast('Mark contacted')" style="padding:8px 10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:10px;cursor:pointer;">Contacted</button>
+                <button onclick="window._toast('Mark interested')" style="padding:8px 10px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;">Interested</button>
               </div>
             </div>
           `).join('')}
@@ -864,6 +865,34 @@ const routes = {
       </div>
     </section>
   `,
+  nft: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Solana Certificate Marketplace</h2>
+        <p style="color:#C8BC98;margin-top:8px;">Tokenize physical items as on-chain certificates. Browse and list on OpenSea and Magic Eden.</p>
+        <div style="margin-top:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;">
+          ${[
+            {name:'OpenSea',desc:"World's largest NFT marketplace. Solana collections supported.",action:'View Collections',href:'https://opensea.io'},
+            {name:'Magic Eden',desc:'Solana-native marketplace. Fast minting and trading.',action:'Go to Magic Eden',href:'https://magiceden.io'},
+          ].map(m => `
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.25);border-radius:16px;padding:18px;">
+              <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;margin-bottom:6px;">${m.name}</div>
+              <p style="color:#C8BC98;font-size:12px;line-height:1.6;margin-bottom:12px;">${m.desc}</p>
+              <a href="${m.href}" target="_blank" rel="noopener" style="display:inline-flex;padding:10px 14px;border:1px solid rgba(201,168,76,0.45);color:#C9A84C;text-decoration:none;border-radius:12px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;font-weight:700;">${m.action}</a>
+            </div>
+          `).join('')}
+        </div>
+        <div style="margin-top:28px;background:#111;border:1px solid rgba(201,168,76,0.25);border-radius:16px;padding:18px;">
+          <div style="font-family:'Cinzel',serif;font-weight:700;color:#F5EED8;margin-bottom:8px;">Physical Item Tokenization</div>
+          <p style="color:#C8BC98;font-size:12px;line-height:1.7;margin-bottom:10px;">Submit item details and photos for certificate minting. Our agents verify condition and provenance before issuing an on-chain record on Solana. The resulting token can be bought, sold, or transferred through OpenSea and Magic Eden.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button onclick="window._agentRun('/api/agents/nft')" style="padding:10px 12px;background:linear-gradient(to bottom right,#C9A84C,#8A6E2F);color:#080808;border-radius:12px;font-weight:700;cursor:pointer;">Request Certificate</button>
+            <button onclick="window._agentRun('/api/agents/nft/status')" style="padding:10px 12px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:12px;cursor:pointer;font-weight:600;">Check Status</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  `,
   contact: () => page('Contact Us', 'Reach the Vault team at ratchetkrewelabs@gmail.com.'),
   directory: () => `
     <section style="padding-top:100px;">
@@ -901,7 +930,7 @@ const routes = {
   `,
 };
 
-function page(title, subtitle) {
+const page = (title, subtitle) => {
   return `
     <section style="padding-top:100px;">
       <div style="max-width:900px;margin:0 auto;">
@@ -918,6 +947,37 @@ const render = () => {
   const app = document.getElementById('app');
   if (!app) return;
   app.innerHTML = shell();
+};
+
+window._toast = (msg, isError = false) => {
+  let el = document.getElementById('vault-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'vault-toast';
+    Object.assign(el.style, {
+      position: 'fixed',
+      bottom: '18px',
+      right: '18px',
+      zIndex: '9999',
+      maxWidth: '360px',
+      padding: '14px 16px',
+      borderRadius: '14px',
+      border: '1px solid rgba(201,168,76,0.35)',
+      background: 'rgba(15,15,15,0.96)',
+      color: '#F5EED8',
+      fontFamily: "'Cinzel',serif",
+      fontSize: '12px',
+      letterSpacing: '1px',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+    });
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.color = isError ? '#f87171' : '#E8CB7A';
+  el.style.borderColor = isError ? 'rgba(248,113,113,0.45)' : 'rgba(201,168,76,0.35)';
+  el.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2200);
 };
 
 window._add = (id) => {
@@ -1012,9 +1072,10 @@ window.addEventListener('load', () => {
       const result = await VAULT_API.request('/api/auth/login', { provider });
       state.user = { provider, id: result.id, session: result.session };
       await write('users', 'current', state.user);
+      window._toast('Signed in with ' + provider);
       render();
     } catch (e) {
-      alert('Login failed: ' + e.message);
+      window._toast('Login failed: ' + e.message, true);
     }
   };
   window._logout = async () => {
@@ -1082,9 +1143,9 @@ window.addEventListener('load', () => {
   window._agentRun = async function(endpoint) {
     try {
       const data = await VAULT_API.request('/run', { endpoint, context: 'agent_run', model: 'hermes-2-free', timestamp: Date.now(), source: 'web_client' });
-      alert('Agent request dispatched: ' + (data.status || 'queued'));
+      window._toast('Agent request dispatched: ' + (data.status || 'queued'));
     } catch (e) {
-      alert('Agent dispatch failed: ' + e.message);
+      window._toast('Agent dispatch failed: ' + e.message, true);
     }
   };
 
@@ -1092,18 +1153,18 @@ window.addEventListener('load', () => {
     try {
       const payload = { action, value, context: 'agent_command', model: 'hermes-2-free', timestamp: Date.now(), source: 'web_client' };
       const data = await VAULT_API.request('/command', payload);
-      alert('Command sent: ' + (data.status || 'accepted'));
+      window._toast('Command sent: ' + (data.status || 'accepted'));
     } catch (e) {
-      alert('Command failed: ' + e.message);
+      window._toast('Command failed: ' + e.message, true);
     }
   };
 
   window._samsonToggle = async function() {
     try {
       const data = await VAULT_API.request('/samson/toggle', { context: 'samson', model: 'hermes-2-free', timestamp: Date.now(), source: 'web_client' });
-      alert('Samson state: ' + (data.armed ? 'ARMED' : 'DISARMED'));
+      window._toast('Samson state: ' + (data.armed ? 'ARMED' : 'DISARMED'));
     } catch (e) {
-      alert('Samson toggle failed: ' + e.message);
+      window._toast('Samson toggle failed: ' + e.message, true);
     }
   };
   } catch (e) {
