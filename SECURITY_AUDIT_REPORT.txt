@@ -1,0 +1,337 @@
+SECURITY AUDIT REPORT
+Standalone Vite Vanilla JS SPA
+Repository: C:\Users\vdako\toomuchwork
+Scope: src/main.js, src/vault-api.js, src/style.css, index.html, vite.config.ts, package.json
+Deployment target guidance: Cloudflare Pages + Workers
+
+EXECUTIVE SUMMARY
+This codebase is a static Vite SPA entirely composed of one 1190-line client-side module (main.js)
+with no backend Workers implementation present. It spawns DOM from template strings using
+app.innerHTML = shell() plus dynamic innerHTML replacement inside form onsubmit handlers, reads
+URL path via location.pathname, secretes a bearer token into window.__VAULT_API_TOKEN__ on the
+global object, and simulates payment/sensitive flows without any real validation. The vault-api.js
+client is a thin POST wrapper with hardcoded model name "hermes-2-free". There are no other
+authentication primitives, rate limits, CSP, or service workers, and there is no manifest/sri logic.
+
+=== FINDINGS ===
+
+-- 1. Input / Injection / XSS
+
+1.1 Global innerHTML shell rendering
+Files / lines: src/main.js:910-957
+Risk: High
+Every navigation re-renders the entire app: app.innerHTML = shell(); and shell() is a 900+ line
+template string that interpolates route templates from location.pathname. The path segment is
+derived client-side, so a malicious URL fragment or a link that lands on /<img src=x onerror=...>
+will be reflected into markup without sanitization. Although Vite history handling mitigates this
+specific vector to some degree, the construction is unconditionally unsafe.
+
+1.2 Form onsubmit innerHTML replacement (XSS sink)
+Files / lines:
+  - src/main.js:158 (checkout)
+  - src/main.js:496 (list an item)
+  - src/main.js:522 (appraisal)
+  - src/main.js:546 (contact/prove/sell form)
+Risk: High/Critical
+Each form uses inline onsubmit which does:
+event.preventDefault();
+this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>...';
+The form fields are never validated server-side, so an attacker can POST crafted input when the
+try-catch is chased to a backend; even currently, these patterns set a precedent where user input
+is reflected into innerHTML. Additionally, the inline onsubmit handlers are themselves a bad
+practice that can be broken by future sanitization policies.
+
+1.3 URL path used as route key with no allowlist
+Files / lines: src/main.js:91
+  const path = location.pathname.replace(/^\/+/, '') || 'home';
+  ... (routes[path] || routes.home)()
+Risk: Medium
+Any path value will be looked up in routes and otherwise falls back to home. This does not
+execute untrusted content directly but exposes that fragments or locale prefixes could land on an
+intended route, and future additions that interpolate path into the DOM can introduce XSS.
+
+1.4 Unsafe global function attachment and browser onclick/onchange handlers
+Files / lines: src/main.js:258-259, 467, 779, 897, 1160-1177, etc.
+Risk: High
+The codebase polllutes window with many functions (_toast, _login, _add, _remove, _toggleW,
+_agentRun, _agentCommand, _samsonToggle, _checkout, ...) and calls them from inline HTML
+attributes: <button onclick="window._agentCommand('audit','buyer_finder')" ...>. If any of these
+functions ever accept raw user input and later inject it into the DOM or an API payload, the lack
+of strict validation will enable reflected XSS or command injection against the backend.
+
+1.5 Potential DOM clobbering via library endpoints
+Files / lines: src/main.js:760-761
+  ${a.endpoint}
+  <button onclick="window._agentRun('${a.endpoint}')" ...>
+Risk: High
+Endpoints are read from a static list, which is fine now, but the path is interpolated from data
+and concatenated into a string passed inside quotes without escaping. If endpoints become dynamic
+or parser-facing later, an endpoint string containing a single quote or HTML could break out of
+the attribute and inject script.
+
+1.6 Shipping quote inputs reflected without sanitization
+Files / lines: src/main.js:658-660 (onchange) and 1123-1142 (_shipQuote reads .value)
+Risk: Low-Medium
+Values flow through to computed text nodes via textContent (safe) now. No DOM insertion of raw
+values, but the pattern of reading arbitrary select values and rendering into a cart confirmation
+section can become dangerous if future changes interpolate them into innerHTML.
+
+-- 2. Hardcoded Secrets, Tokens, API Keys, Credentials
+
+2.1 Auth token stored on global window object
+Files / lines: src/vault-api.js:13-15
+  if (typeof window !== 'undefined' && window.__VAULT_API_TOKEN__) {
+    h['authorization'] = `Bearer ${window.__VAULT_API_TOKEN__}`;
+  }
+Risk: High
+The JWT is exposed to any script running in the page world (extension, third-party, compromised
+CDN). In a Cloudflare Pages deployment, Workers can inject this value into the page via an
+environment-aware placeholder but should not leave it observable globally. A HttpOnly cookie
+strategy is preferred.
+
+2.2 API base URL placement on window
+Files / lines: src/vault-api.js:7-8
+  if (typeof window !== 'undefined' && window.__VAULT_API_BASE__) return window.__VAULT_API_BASE__;
+  return DEFAULT_BASE;
+Risk: Low (stub)
+No real credential here, but exposes infrastructure details and weakens defense-in-depth.
+2.3 Publicly visible contact email
+Files / lines: src/main.js:40, 134, 135
+  email: 'mailto:ratchetkrewelabs@gmail.com'
+Risk: Low
+2.4 External image URLs with no integrity/sri
+Files / lines: src/main.js:54-61
+All images use Unsplash URLs without Subresource Integrity. If the CDN is compromised, attackers
+can swap in malicious images.
+Risk: Low-Medium
+
+-- 3. Unsafe DOM APIs / innerHTML Usage
+
+3.1 app.innerHTML = shell() (line 957)
+Risk: High
+Full-page rewrite via innerHTML without any sanitization or escaping. The shell template
+interpolates svg strings that are constant and safe, but it also interpolates the current route
+path and title strings. Any route path controlled by the user (via URL manipulation) flows into
+the DOM without escaping.
+
+3.2 Multiple form innerHTML replacements
+Files / lines: src/main.js:158, 496, 522, 546
+Risk: High
+Each form replaces its own innerHTML with a static success message. While the message is static,
+using innerHTML as the mechanism sets precedent for later dynamic messages and can lead to policy
+violations with fresh inline script restrictions in Workers/Pages.
+
+3.3 Static SVG strings and social links
+Files / lines: src/main.js:8-38 and 40, 118-120
+Risk: Low
+Stable constants not user-controlled. No immediate XSS risk but the size of svg-in-template
+strings adds noise to CSP reviews. Prefer converting SVGs to inline markup or <use> references.
+
+-- 4. CSRF / Auth Token Handling Gaps
+
+4.1 Bearer token from global variable with no CSRF mitigation
+Files / lines: src/vault-api.js:13-15, 22-24
+Risk: High
+The fetch call uses Authorization: Bearer with no CSRF token. Cross-site request forgery is
+unprotected because the client does not validate the Origin nor include any CSRF cookie or
+double-submit token. Since the token is just a client-side global property, any attacker-controlled
+page can make fetch('/api/auth/login', {method:'POST', headers:{Authorization:'Bearer ...'}}).
+
+4.2 No SameSite/HttpOnly cookie usage
+Throughout entire codebase
+Risk: High
+Sessions are not represented by cookies, only by a token passed in JS headers. Cloudflare Pages
+and Workers support both same-site cookie enforcement and HttpOnly sessions; none are used.
+
+4.3 No request signing, nonce, or idempotency
+src/vault-api.js:19-31
+Risk: Medium
+All mutations are plain POSTs with no idempotency key; replay or double-submit via browser back/
+refresh is not protected at the client layer.
+
+4.4 Token persistence in IndexedDB without expiry checking
+Files / lines: src/main.js:1082-1083, 1069-1070, 1091-1092
+Risk: Medium
+state.user is persisted in IndexedDB, including the result.session token presumably. There is no
+expiry check, no refresh, and no validation on restore(); an expired token would continue to be
+sent.
+
+-- 5. Data Validation Gaps
+
+5.1 No client-side schema validation on any forms
+Files / lines: src/main.js:159-165 (checkout), 497-514 (sell), 547-555 (appraisal/contact)
+Risk: High
+User-entered fields (address, card number text, description / provenance) are accepted as plain
+strings with no regex/Luhn/email/URL checks. Because the same-on-submit handler does not
+touch the values, they are not transmitted to an API in this stub, but any future call using
+these inputs will need server-side validation before storing or processing.
+
+5.2 Shipping quote parsing assumes monetary format
+Files / lines: src/main.js:1132-1133
+  const itemText = itemEl?.textContent || 'Selected item';
+  const m = String(itemText).match(/(\$\s*[0-9.,]+)/);
+  const itemRaw = m ? Number(m[1].replace(/[^0-9.]/g, '')) : 0;
+Risk: Low
+Regex is naive; it precedes fragile behavior if UI strings change. No actual financial input is
+accepted here, so it is not a direct attacker vector, but is brittle.
+
+-- 6. External Dependency Exposure
+
+6.1 Google / Apple identity platform scripts loaded from CDN
+Files / lines: index.html:14-15
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://appleid.cdn-apple.com/appleauth/static/jsapi/...auth.js" async defer></script>
+Risk: Medium
+Third-party scripts execute with full page permissions; if either CDN is compromised, tokens and
+user PII are exposed. Add integrity attributes or move login flows into a safe iframe/callback.
+
+6.2 Vite dev server listening on 0.0.0.0 in production config
+Files / lines: vite.config.ts:6-7
+  server: { host: '0.0.0.0', port: 5173 },
+  preview: { host: '0.0.0.0', port: 5173 }
+Risk: Medium
+For a Cloudflare Pages build, only the dist/ output is served, but if the same config is used to
+preview or the router forwards requests, exposing the historic Vite dev/preview origin is not
+ideal. Remove or override these and ensure preview access is restricted.
+
+6.3 Unsplash external image source (no integrity)
+Files / lines: src/main.js:54-61
+Risk: Low
+No SRI or fallback. Attack surface is minimal but public CDNs can be a vector for defacement or
+tracker injection if not reviewed.
+
+6.4 Minimal dependency surface
+Files / lines: package.json:11-13
+  devDependencies: { vite: ^6.3.3 }
+Risk: Low
+Only Vite as dependency, no extra libraries; broader SPA injection is not a realistic vector.
+
+-- 7. Specific Line-Number Reference Table
+
+A) XSS/Injection
+  - src/main.js:91  (path derivation)
+  - src/main.js:158 (innerHTML replacement)
+  - src/main.js:258-259 (inline onclick)
+  - src/main.js:467 (inline onclick)
+  - src/main.js:496 (innerHTML replacement)
+  - src/main.js:522 (innerHTML replacement)
+  - src/main.js:546 (innerHTML replacement)
+  - src/main.js:760-761 (endpoint interpolation)
+  - src/main.js:779 (inline onclick using input.value)
+  - src/main.js:897 (inline onclick)
+  - src/main.js:957 (app.innerHTML = shell())
+B) Secrets/Credentials
+  - src/vault-api.js:7 (window.__VAULT_API_BASE__)
+  - src/vault-api.js:13-15 (window.__VAULT_API_TOKEN__)
+  - src/main.js:40, 134, 135 (mailto exposed)
+C) Unsafe DOM APIs
+  - src/main.js:157 (id reflected into <strong> without escaping)
+  - src/main.js:158, 496, 522, 546 (innerHTML)
+  - src/main.js:956-957 (innerHTML shell)
+D) CSRF/Auth
+  - src/vault-api.js:13-15 (Bearer on global JWT)
+  - src/vault-api.js:22-24 (no CSRF header/cookie)
+  - src/main.js:1081 (session token persisted without expiry)
+  - src/main.js:1092 (logout clears IndexedDB but does not invalidate session)
+E) Validation
+  - src/main.js:159, 497, 547 (forms lacking validation)
+  - src/main.js:1132-1133 (regex assumption)
+F) Dependencies
+  - index.html:14-15 (Google/Apple CDN script tags)
+  - vite.config.ts:6-7 (host 0.0.0.0 on preview)
+  - src/main.js:54-61 (Unsplash images)
+
+=== REMEDIATIONS FOR Cloudflare Pages + Workers ===
+
+R1) Replace global window.__VAULT_API_TOKEN__ with Cloudflare Pages-managed env
+    that is inlined at build time (via import.meta.env) into a fetch wrapper that sets
+    headers directly, not via global var. Pair with a Cloudflare Worker proxy that sets
+    an HttpOnly SameSite=Strict session cookie; on the client, remove Authorization header
+    and rely on cookies + CSRF token.
+
+R2) Eliminate inline onsubmit/onclick and innerHTML.
+    - Replace app.innerHTML = shell() with either a DOM assembly step using document.createElement
+      and textContent or a lightweight template library such as lit-html / lit with
+      directive-level escaping.
+    - For forms, attach event listeners via addEventListener; for success messages, replace via
+      textContent or an existing toast element rather than innerHTML.
+    - For the shell/nav/interpolated ids, use textContent and DOMPurify if any rich text
+      rendering is required.
+
+R3) Allowlist URL paths in a real router map early.
+    Replace (routes[path] || routes.home)() with a whitelist-based match. Render a 404 for
+    unknown paths and never reflect raw path segments into the DOM.
+
+R4) Add Content-Security-Policy.
+    In Cloudflare Pages, configure _headers (static asset) or the Worker to emit a strict CSP:
+      default-src 'self'; script-src 'self' https://accounts.google.com https://appleid.cdn-apple.com;
+      img-src 'self' https://images.unsplash.com data:; connect-src 'self' https://api.workers.cloudflare.com;
+      frame-src 'none'; object-src 'none'; base-uri 'self'.
+    Add nonce support if inline scripts remain for the particle canvas or toasts; treat inline
+    onclick strings as removed.
+
+R5) Move checkout / sensitive forms into Worker-validated POST endpoints.
+    - Invalidate card inputs at the Blade/Worker layer using a STRIPE_PUBLISHABLE + intent flow;
+      never store full card numbers.
+    - Enforce schema validation with zod/valibot in the Worker before any downstream logic.
+
+R6) Service worker for caching.
+    A Pages-compatible service worker (via workbox-precaching) can cache the shell. Do not rely
+    on stale API responses that carry auth tokens.
+
+R7) Remove public email; route contact through a ticket form on Workers.
+    ratchetkrewelabs@gmail.com appears in multiple places; replace with a Workers-backed
+    /contact route that uses a reCAPTCHA-like verification (Cloudflare Turnstine) and forwards
+    to support email.
+
+R8) External image integrity.
+    For Unsplash CDN images, add crossorigin="anonymous" + referrerpolicy="no-referrer" and
+    consider hosting images on a Cloudflare R2 bucket with strict cache-control and signed URLs.
+
+R9) Sanitize npm input in during _agentCommand and _agentRun.
+    Define an explicit action allowlist and route allowlist; never concatenate user-supplied
+    values into query strings or text without encoding.
+
+R10) Audit and lock vite.config.ts.
+    - Remove server.host and preview.host overrides (or override to localhost in dev, only
+      dist in Pages). Set build.outDir = 'dist'; ensure publicDir removed or harmless.
+    - Provide a separate production environment config that does not enable source maps unless
+      required for debugging.
+
+R11) Enforce HTTPS and HSTS.
+    Pages provides HTTPS by default; ensure custom domains force TLS and HSTS via the Worker.
+
+-- PRIORITIZED ACTION ITEMS
+
+P0) Remove Authorizaton header from client and migrate to HttpOnly cookie sessions via
+    Cloudflare Worker. Remove all window.__VAULT_API_TOKEN__ references and never place
+    tokens in LocalStorage, IndexedDB, or window globals.
+
+P1) Eliminate every innerHTML assignment in src/main.js. Replace with safe DOM APIs or
+    lit-html-style tagged templates with auto-escaping.
+
+P2) Move all inline onsubmit/onclick attributes to addEventListener handlers and route IDs
+    through a strict allowlist router derived in src/main.js:91.
+
+P3) Add CSP and SRI headers in the Pages deployment config/_headers.
+
+P4) Validate all financial inputs, addresses, and endpoints with strict parsing in the Worker
+    and client.
+
+-- CONCLUSION
+
+The current code is a static shell/DOM renderer with a stub API client and authentication state
+persisted to IndexedDB + window globals. For a production Cloudflare Pages + Workers rollout,
+token handling must be moved to HttpOnly cookies and the SPA renderer must abandon innerHTML in
+favor of safe DOM construction. The rest of the remediation aligns with standard Cloudflare
+patterns (Turnstile, HSTS, signed image URLs, zod-validated Workers POSTs).
+
+PREPARED BY: Hermes Agent (Automated Audit)
+FILES REVIEWED:
+  C:\Users\vdako\toomuchwork\src\main.js (1190 lines)
+  C:\Users\vdako\toomuchwork\src\vault-api.js (43 lines)
+  C:\Users\vdako\toomuchwork\src\style.css (161 lines)
+  C:\Users\vdako\toomuchwork\index.html (21 lines)
+  C:\Users\vdako\toomuchwork\vite.config.ts (8 lines)
+  C:\Users\vdako\toomuchwork\package.json (14 lines)
+REPORT PATH: C:\Users\vdako\toomuchwork\SECURITY_AUDIT_REPORT.txt
