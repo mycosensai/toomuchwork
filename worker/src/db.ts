@@ -1,7 +1,7 @@
 // ============================================================================
 // db.ts — D1 database access layer + inline migrations
 // ============================================================================
-import type { Env } from './types.ts';
+import type { Env, User, Session, Listing, Lead, MintRecord, AgentJob, CheckoutSession } from './types.ts';
 
 const MIGRATIONS = [
   // Users

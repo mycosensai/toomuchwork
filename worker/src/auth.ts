@@ -23,8 +23,7 @@ function errResponse(code: string, message: string, status = 400, details?: unkn
 // ---------------------------------------------------------------------------
 // JWT via Web Crypto (HS256)
 // ---------------------------------------------------------------------------
-const JWT_SECRET = (process.env as unknown as Record<string, string | undefined>).JWT_SECRET
-  ?? 'local-dev-secret-change-me-please-override';
+const JWT_SECRET = 'local-dev-secret-change-me-please-override';
 
 const JWT_KEY_CACHE: { key?: CryptoKey } = {};
 

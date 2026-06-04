@@ -1,6 +1,7 @@
 // ============================================================================
 // types.ts — Shared types, error envelope, and CORS helpers
 // ============================================================================
+/// <reference types="@cloudflare/workers-types" />
 
 // ---------------------------------------------------------------------------
 // Generic API envelope
@@ -53,6 +54,16 @@ export const JSON_HEADERS: Record<string, string> = {
 };
 
 // ---------------------------------------------------------------------------
+// Cloudflare binding types
+// ---------------------------------------------------------------------------
+export interface Env {
+  VAULT_KV: KVNamespace;
+  thevault_db: D1Database;
+  CORS_ORIGIN?: string;
+  JWT_SECRET?: string;
+}
+
+// ---------------------------------------------------------------------------
 // Domain types
 // ---------------------------------------------------------------------------
 export type UserRole = 'user' | 'admin' | 'ops';
@@ -64,14 +75,14 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
   provider: 'google' | 'apple' | 'local';
-  createdAt: string; // ISO-8601
+  createdAt: string;
   updatedAt: string;
 }
 
 export interface Session {
-  id: string;          // opaque session id (stored in KV)
+  id: string;
   userId: string;
-  expiresAt: string;   // ISO-8601
+  expiresAt: string;
   createdAt: string;
 }
 
@@ -82,10 +93,10 @@ export interface Listing {
   ownerId: string;
   title: string;
   description: string;
-  priceCents: number;   // USD cents
+  priceCents: number;
   category: string;
   condition: ListingCondition;
-  images: string[];     // array of URLs
+  images: string[];
   status: 'draft' | 'active' | 'sold' | 'archived';
   metadata: Record<string, unknown>;
   createdAt: string;
@@ -143,7 +154,7 @@ export type TokenStatus = 'pending' | 'minted' | 'transferred' | 'burned';
 export interface PhysicalItem {
   serialNumber?: string;
   condition: string;
-  authenticityDocs: string[]; // URLs
+  authenticityDocs: string[];
   provenanceNotes?: string;
   photos: string[];
 }
@@ -156,8 +167,8 @@ export interface MintRecord {
   contractAddress: string;
   tokenId: string;
   status: TokenStatus;
-  onchainUri?: string;   // e.g. ipfs://...
-  offchainUri?: string;  // API Gateway / R2 fallback
+  onchainUri?: string;
+  offchainUri?: string;
   physicalItem: PhysicalItem;
   createdAt: string;
   updatedAt: string;

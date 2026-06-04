@@ -57,7 +57,7 @@ const buildBody = (payload = {}, opts = {}) => {
   const { strict = true } = opts;
   const base = { ...payload };
   if (strict) {
-    base.model = payload.model || 'hermes-2-free';
+    base.model = payload.model || 'step-3.7-flash';
     base.timestamp = payload.timestamp || Date.now();
     base.source = payload.source || 'web_client';
   }

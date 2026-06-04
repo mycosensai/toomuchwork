@@ -2,15 +2,13 @@ name = "thevault-api"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
+migrations_dir = "migrations"
 
-# Bindings placeholders — fill these at deploy time
-# Put KV namespace IDs here once created in the Cloudflare dashboard.
 kv_namespaces = [
-  { binding = "VAULT_KV", id = "__PLACEHOLDER__" }
+  { binding = "VAULT_KV", id = "6836e305861a45a78d24128a07f558e5" }
 ]
 
-# Put D1 database ID here once created.
 [[d1_databases]]
 binding = "thevault-db"
 database_name = "thevault-db"
-database_id = "__PLACEHOLDER__"
+database_id = "375949ce-7c7d-4822-8235-461446769258"

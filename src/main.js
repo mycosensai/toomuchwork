@@ -1159,7 +1159,7 @@ window.addEventListener('load', () => {
 
   window._agentRun = async function(endpoint) {
     try {
-      const data = await VAULT_API.request('/run', { endpoint, context: 'agent_run', model: 'hermes-2-free', timestamp: Date.now(), source: 'web_client' });
+      const data = await VAULT_API.request('/run', { endpoint, context: 'agent_run', model: 'step-3.7-flash', timestamp: Date.now(), source: 'web_client' });
       window._toast('Agent request dispatched: ' + (data.status || 'queued'));
     } catch (e) {
       window._toast('Agent dispatch failed: ' + e.message, true);
