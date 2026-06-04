@@ -1,88 +1,29 @@
-// https://github.com/mycosensai/toomuchwork
-// THE VAULT — COMPLETE 1:1 KIMI UI OVERHAUL
-// Full transparency, correct hero, corner ornaments, and scrolling header.
-
-const $ = (sel, ctx = document) => ctx.querySelector(sel);
-const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
-
-const svg = {
-  diamond: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',
-  search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
-  menu: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
-  x: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>',
-  logout: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17 21 12 16 7"/><path d="M21 12h-9"/></svg>',
-  user: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a2 2 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-  shield: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-  heart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
-  cart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
-  arrow: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
-  gem: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',
-};
-
-const CATEGORIES = [
-  { id: 'fine-jewelry', name: 'Fine Jewelry', slug: 'jewelry', icon: 'gem' },
-  { id: 'rare-coins', name: 'Rare Coins', slug: 'coins', icon: 'coins' },
-  { id: 'luxury-watches', name: 'Luxury Watches', slug: 'watches', icon: 'watch' },
-  { id: 'fine-art', name: 'Fine Art', slug: 'art', icon: 'palette' },
-];
-
-const state = { cart: [], wishlist: [], user: null, scrolled: false };
-
-window.addEventListener('scroll', () => {
-  const isScrolled = window.scrollY > 50;
-  if (state.scrolled !== isScrolled) {
-    state.scrolled = isScrolled;
-    const nav = document.querySelector('nav');
-    if (nav) {
-       nav.className = `fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-16 lg:h-20 ${isScrolled ? 'bg-[#080808]/95 backdrop-blur-xl border-b border-[#C9A84C]/20' : 'bg-transparent'}`;
-    }
-  }
-}, { passive: true });
-
-const render = () => {
-  const app = document.getElementById('app');
-  if (!app) return;
-  app.innerHTML = `
+(function(){const a=document.createElement("link").relList;if(a&&a.supports&&a.supports("modulepreload"))return;for(const t of document.querySelectorAll('link[rel="modulepreload"]'))i(t);new MutationObserver(t=>{for(const r of t)if(r.type==="childList")for(const n of r.addedNodes)n.tagName==="LINK"&&n.rel==="modulepreload"&&i(n)}).observe(document,{childList:!0,subtree:!0});function s(t){const r={};return t.integrity&&(r.integrity=t.integrity),t.referrerPolicy&&(r.referrerPolicy=t.referrerPolicy),t.crossOrigin==="use-credentials"?r.credentials="include":t.crossOrigin==="anonymous"?r.credentials="omit":r.credentials="same-origin",r}function i(t){if(t.ep)return;t.ep=!0;const r=s(t);fetch(t.href,r)}})();const o={diamond:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l7 13"/><path d="M2 9h20"/></svg>',heart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',cart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',arrow:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>'},l={scrolled:!1};window.addEventListener("scroll",()=>{const e=window.scrollY>50;if(l.scrolled!==e){l.scrolled=e;const a=document.querySelector("nav");a&&(a.className=`fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-16 lg:h-20 ${e?"bg-[#080808]/95 backdrop-blur-xl border-b border-[#C9A84C]/20":"bg-transparent"}`)}},{passive:!0});const c=()=>{const e=document.getElementById("app");e&&(e.innerHTML=`
     <div class="min-h-screen bg-[#080808] selection:bg-[#C9A84C] selection:text-[#080808]">
-      ${nav()}
-      <main>${router()}</main>
-      ${footer()}
+      ${p()}
+      <main>${x()}</main>
+      ${d()}
     </div>
-  `;
-  initParticles();
-};
-
-const nav = () => {
-  const path = window.location.pathname;
-  return `
+  `,g())},p=()=>{const e=window.location.pathname;return`
     <nav class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 h-16 lg:h-20 bg-transparent">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         <a href="/" class="flex items-center gap-3 group">
           <div class="w-8 h-8 lg:w-9 lg:h-9 border border-[#C9A84C] rotate-45 flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(201,168,76,0.3)] transition-shadow">
-            <span class="text-[#C9A84C] -rotate-45">${svg.diamond}</span>
+            <span class="text-[#C9A84C] -rotate-45">${o.diamond}</span>
           </div>
           <span class="font-cinzel text-lg lg:text-xl font-bold tracking-[4px] text-[#C9A84C]">THE VAULT</span>
         </a>
         <div class="hidden md:flex items-center gap-8">
-          ${['Browse', 'Appraisal', 'ProVerify', 'Sell', 'Tokens', 'Support'].map(l => `<a href="/${l.toLowerCase()}" class="text-[10px] tracking-[3px] uppercase ${path === '/' + l.toLowerCase() ? 'text-[#E8CB7A]' : 'text-[#C8BC98] hover:text-[#E8CB7A]'}">${l}</a>`).join('')}
+          ${["Browse","Appraisal","ProVerify","Sell","Tokens","Support"].map(a=>`<a href="/${a.toLowerCase()}" class="text-[10px] tracking-[3px] uppercase ${e==="/"+a.toLowerCase()?"text-[#E8CB7A]":"text-[#C8BC98] hover:text-[#E8CB7A]"}">${a}</a>`).join("")}
         </div>
         <div class="hidden md:flex items-center gap-4">
-          <a href="/wishlist" class="text-[#C8BC98] hover:text-[#C9A84C] transition-colors">${svg.heart}</a>
-          <a href="/cart" class="text-[#C8BC98] hover:text-[#C9A84C] transition-colors">${svg.cart}</a>
+          <a href="/wishlist" class="text-[#C8BC98] hover:text-[#C9A84C] transition-colors">${o.heart}</a>
+          <a href="/cart" class="text-[#C8BC98] hover:text-[#C9A84C] transition-colors">${o.cart}</a>
           <a href="/login" class="px-5 py-2 border border-[#C9A84C] text-[#C9A84C] text-[10px] tracking-[3px] uppercase font-cinzel font-semibold hover:bg-[#C9A84C] hover:text-[#080808] transition-all">Sign In</a>
         </div>
       </div>
     </nav>
-  `;
-};
-
-const router = () => {
-  const path = window.location.pathname;
-  if (path === '/' || path === '/home') return home();
-  return `<section class="pt-40 text-center font-cinzel text-gold">Route Under Construction</section>`;
-};
-
-const home = () => `
+  `},x=()=>{const e=window.location.pathname;return e==="/"||e==="/home"?b():'<section class="pt-40 text-center font-cinzel text-gold">Route Under Construction</section>'},b=()=>`
   <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
     <div class="absolute inset-0">
       <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_30%,rgba(201,168,76,0.06)_0%,transparent_70%)]"></div>
@@ -107,7 +48,7 @@ const home = () => `
       
       <div class="flex items-center justify-center gap-4 mb-10">
         <div class="w-16 h-px bg-gradient-to-r from-transparent to-[#C9A84C]"></div>
-        <span class="text-[#C9A84C] rotate-45 scale-75">${svg.diamond}</span>
+        <span class="text-[#C9A84C] rotate-45 scale-75">${o.diamond}</span>
         <div class="w-16 h-px bg-gradient-to-l from-transparent to-[#C9A84C]"></div>
       </div>
 
@@ -116,32 +57,28 @@ const home = () => `
       </p>
 
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="/sell" class="inline-flex items-center justify-center gap-2 px-10 py-4 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] hover:-translate-y-0.5 transition-all">Start Selling ${svg.arrow}</a>
+        <a href="/sell" class="inline-flex items-center justify-center gap-2 px-10 py-4 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] hover:-translate-y-0.5 transition-all">Start Selling ${o.arrow}</a>
         <a href="/browse" class="inline-flex items-center justify-center gap-2 px-10 py-4 border border-[#C9A84C] text-[#C9A84C] font-cinzel text-[11px] tracking-[3px] uppercase font-semibold hover:bg-[#C9A84C]/10 hover:-translate-y-0.5 transition-all">Find Treasures</a>
       </div>
     </div>
   </section>
-  ${marquee()}
-  ${calculator()}
-  ${footer()}
-`;
-
-const marquee = () => `
+  ${h()}
+  ${v()}
+  ${d()}
+`,h=()=>`
   <div class="bg-[#C9A84C] py-3 overflow-hidden border-y border-black/20">
     <div class="flex whitespace-nowrap animate-marquee">
-      ${Array(4).fill(0).map(() => `
+      ${Array(4).fill(0).map(()=>`
         <span class="inline-flex items-center gap-6 px-10">
           <span class="font-cinzel text-[10px] font-bold tracking-[3px] text-[#080808] uppercase">5% Commission Under $1,000</span>
-          <span class="text-[#080808] rotate-45 scale-50">${svg.diamond}</span>
+          <span class="text-[#080808] rotate-45 scale-50">${o.diamond}</span>
           <span class="font-cinzel text-[10px] font-bold tracking-[3px] text-[#080808] uppercase">AI-Powered Buyer Matching</span>
-          <span class="text-[#080808] rotate-45 scale-50">${svg.diamond}</span>
+          <span class="text-[#080808] rotate-45 scale-50">${o.diamond}</span>
         </span>
-      `).join('')}
+      `).join("")}
     </div>
   </div>
-`;
-
-const calculator = () => `
+`,v=()=>`
   <section class="py-24 px-4 relative overflow-hidden bg-transparent">
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(201,168,76,0.04),transparent)]"></div>
     <div class="max-w-3xl mx-auto relative">
@@ -166,48 +103,11 @@ const calculator = () => `
       </div>
     </div>
   </section>
-`;
-
-const footer = () => `
+`,d=()=>`
   <footer class="border-t border-[#C9A84C]/10 bg-transparent py-20">
     <div class="max-w-7xl mx-auto px-4 text-center">
        <div class="font-cinzel text-[#C9A84C] font-bold tracking-[6px] mb-4 text-lg">THE VAULT</div>
        <p class="text-[#8A6E2F] text-[10px] tracking-[3px] uppercase font-light">&copy; 2024 The Vault. All rights reserved.</p>
     </div>
   </footer>
-`;
-
-window.updateCalculator = () => {
-  const v = parseFloat(document.getElementById('calc-input').value) || 0;
-  const rate = v >= 10000 ? 0.05 : v >= 7500 ? 0.10 : v >= 1000 ? 0.07 : 0.05;
-  const comm = v * rate;
-  const net = v - comm;
-  const fmt = (n) => '$' + n.toLocaleString();
-  document.getElementById('res-val').innerText = fmt(v);
-  document.getElementById('res-comm').innerText = fmt(comm);
-  document.getElementById('res-net').innerText = fmt(net);
-};
-
-const initParticles = () => {
-  const canvas = document.getElementById('particle-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
-  window.addEventListener('resize', resize);
-  resize();
-  const ps = Array.from({length: 40}, () => ({
-    x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*1.5+0.5, vy: -(Math.random()*0.5+0.2), o: Math.random()*0.5+0.2
-  }));
-  const loop = () => {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ps.forEach(p => {
-      p.y += p.vy; if (p.y < -10) p.y = canvas.height + 10;
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(201,168,76,${p.o})`; ctx.fill();
-    });
-    requestAnimationFrame(loop);
-  };
-  loop();
-};
-
-render();
+`;window.updateCalculator=()=>{const e=parseFloat(document.getElementById("calc-input").value)||0,a=e>=1e4?.05:e>=7500?.1:e>=1e3?.07:.05,s=e*a,i=e-s,t=r=>"$"+r.toLocaleString();document.getElementById("res-val").innerText=t(e),document.getElementById("res-comm").innerText=t(s),document.getElementById("res-net").innerText=t(i)};const g=()=>{const e=document.getElementById("particle-canvas");if(!e)return;const a=e.getContext("2d"),s=()=>{e.width=window.innerWidth,e.height=window.innerHeight};window.addEventListener("resize",s),s();const i=Array.from({length:40},()=>({x:Math.random()*e.width,y:Math.random()*e.height,s:Math.random()*1.5+.5,vy:-(Math.random()*.5+.2),o:Math.random()*.5+.2})),t=()=>{a.clearRect(0,0,e.width,e.height),i.forEach(r=>{r.y+=r.vy,r.y<-10&&(r.y=e.height+10),a.beginPath(),a.arc(r.x,r.y,r.s,0,Math.PI*2),a.fillStyle=`rgba(201,168,76,${r.o})`,a.fill()}),requestAnimationFrame(t)};t()};c();
