@@ -82,9 +82,9 @@ const iconFor = (name) => {
   return map[name] || svg.diamond;
 };
 
-const footerPlatform = [{label:'Browse Collection',href:'/browse'},{label:'AI Appraisal',href:'/appraisal'},{label:'ProVerify',href:'/proverify'},{label:'Sell an Item',href:'/sell'},{label:'Token Gallery',href:'/tokengallery'},{label:'Wallet Pay',href:'/walletpay'},{label:'Cart',href:'/cart'},{label:'Wishlist',href:'/wishlist'},{label:'My Orders',href:'/orders'}];
-const footerCompany = [{label:'About The Vault',href:'/about'},{label:'FAQ',href:'/faq'},{label:'Contact Us',href:'/contact'},{label:'Shipping Info',href:'/shipping'},{label:'Support Center',href:'/support'}];
-const footerLegal = [{label:'Directory / Sitemap',href:'/directory'},{label:'Terms of Service',href:'/terms'},{label:'Privacy Policy',href:'/privacy'},{label:'Returns & Refunds',href:'/returns'}];
+const footerPlatform = ['Browse Collection','AI Appraisal','ProVerify','Sell an Item','Token Gallery','Wishlist','My Orders'];
+const footerCompany = ['About The Vault','FAQ','Contact Us','Shipping Info','Support Center'];
+const footerLegal = ['Directory / Sitemap','Terms of Service','Privacy Policy','Returns & Refunds'];
 
 const shell = () => {
   const path = location.pathname.replace(/^\/+/, '') || 'home';
@@ -99,7 +99,7 @@ const shell = () => {
         <div style="display:none;align-items:center;gap:14px;">
           <a href="/browse" style="color:#C8BC98;text-decoration:none;">${svg.search}</a>
           <a href="/wishlist" style="color:#C8BC98;text-decoration:none;">${svg.heart}</a>
-          <a href="/orders" style="color:#C8BC98;text-decoration:none;">${svg.cart}</a>
+          <a href="/cart" style="color:#C8BC98;text-decoration:none;">${svg.cart}</a>
           <a href="/admin" style="color:#C8BC98;text-decoration:none;">${svg.shield}</a>
           <a href="/login" style="padding:8px 14px;border:1px solid #C9A84C;color:#C9A84C;text-decoration:none;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;font-weight:700;">Sign In</a>
         </div>
@@ -121,15 +121,15 @@ const shell = () => {
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Platform</h4>
-          ${footerPlatform.map(item => `<a href="${item.href}" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${item.label}</a>`).join('')}
+          ${footerPlatform.map(label => `<a href="/browse" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Company</h4>
-          ${footerCompany.map(item => `<a href="${item.href}" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${item.label}</a>`).join('')}
+          ${footerCompany.map(label => `<a href="/about" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
         </div>
         <div>
           <h4 style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#C9A84C;font-family:'Cinzel',serif;font-weight:700;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.18);">Legal</h4>
-          ${footerLegal.map(item => `<a href="${item.href}" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${item.label}</a>`).join('')}
+          ${footerLegal.map(label => `<a href="/terms" style="display:block;font-size:12px;color:#C8BC98;text-decoration:none;margin-bottom:8px;letter-spacing:1px;">${label}</a>`).join('')}
           <a href="${social.email}" style="display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#C8BC98;text-decoration:none;">${svg.mail} ratchetkrewelabs@gmail.com</a>
         </div>
       </div>
@@ -149,6 +149,82 @@ const cardImg = (src, alt, ratio = 'aspect-square') => `
 `;
 
 const routes = {
+  checkout: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:760px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Checkout</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Complete purchase for item <strong style="color:#F5EED8;">${id || 'selected'}</strong>.</p>
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Order placed.</p>';" style="margin-top:22px;display:grid;gap:16px;">
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Shipping Address</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="3" required></textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Card Number</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="4242 4242 4242 4242"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="MM/YY"><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="CVC"></div>
+          </div>
+          <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Payment Method</label><select style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;"><option>Stripe (Card)</option><option>Coinbase Commerce</option><option>Solana (SOL)</option></select></div>
+          <div><button type="submit" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;background:#e5c07b;color:#000000;border:1px solid transparent;border-radius:12px;font-weight:700;cursor:pointer;">${svg.shield} Pay Securely</button></div>
+        </form>
+      </div>
+    </section>
+  `,
+  cryptocheckout: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:760px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Crypto Checkout</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Pay with USDC, SOL, or Coinbase Commerce.</p>
+        <div style="margin-top:22px;display:grid;gap:12px;">
+          <button style="padding:14px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Connect Wallet</button>
+          <button style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Coinbase</button>
+        </div>
+      </div>
+    </section>
+  `,
+  walletpay: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:760px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Wallet Pay</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Wallet checkout for <strong style="color:#F5EED8;">${id || 'selected'}</strong>.</p>
+        <div style="margin-top:22px;display:grid;gap:12px;">
+          <button style="padding:14px;background:#e5c07b;color:#000;border-radius:12px;font-weight:700;cursor:pointer;">Connect Wallet</button>
+          <button style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Stripe</button>
+          <button style="padding:14px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;">Pay with Coinbase</button>
+        </div>
+      </div>
+    </section>
+  `,
+  certificate: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Digital Certificate</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Authenticity certificate for <strong style="color:#F5EED8;">${id || 'this item'}</strong>.</p>
+      </div>
+    </section>
+  `,
+  proverifyresult: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">ProVerify Result</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Verification <strong style="color:#F5EED8;">${id ? '#' + id : 'record'}</strong>.</p>
+      </div>
+    </section>
+  `,
+  leads: (id) => `
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Leads</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Buyer leads for <strong style="color:#F5EED8;">${id || 'listing'}</strong>.</p>
+      </div>
+    </section>
+  `,
+  notfound: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:720px;margin:0 auto;text-align:center;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Page Not Found</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">The requested page does not exist.</p>
+        <a href="/" style="display:inline-flex;align-items:center;gap:10px;margin-top:18px;padding:12px 14px;background:#e5c07b;color:#000;border-radius:12px;text-decoration:none;font-weight:700;">Return Home</a>
+      </div>
+    </section>
+  `,
+
   home: () => `
     <section style="position:relative;min-height:100vh;background:#000000;">
       <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 28%,rgba(201,168,76,0.10),transparent 60%);"></div>
@@ -413,7 +489,7 @@ const routes = {
       <div style="max-width:720px;margin:0 auto;">
         <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">ProVerify Authentication</h2>
         <p style="color:#a1a1aa;margin-top:10px;">Submit your item for multi-layer AI + expert authentication.</p>
-        <form onsubmit="event.preventDefault();alert('Submitted');" style="margin-top:22px;display:grid;gap:16px;">
+        <form onsubmit="event.preventDefault();this.closest('form').innerHTML='<p style=color:#C9A84C;font-family:Cinzel,serif>Submission received.</p>';" style="margin-top:22px;display:grid;gap:16px;">
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Item Title</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" required></div>
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Description / Provenance</label><textarea style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" rows="4"></textarea></div>
           <div><label style="display:block;color:#a1a1aa;font-size:13px;font-weight:600;margin-bottom:8px;">Image Links</label><input style="width:100%;background:#141414;border:1px solid rgba(255,255,255,0.08);color:#f5f5f5;padding:12px 14px;border-radius:12px;outline:none;" placeholder="https://..."></div>
