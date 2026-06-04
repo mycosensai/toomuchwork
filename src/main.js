@@ -207,11 +207,51 @@ const routes = {
       </div>
     </section>
   `,
-  leads: (id) => `
+  leads: () => `
     <section style="padding-top:100px;">
-      <div style="max-width:720px;margin:0 auto;">
-        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Leads</h2>
-        <p style="color:#a1a1aa;margin-top:10px;">Buyer leads for <strong style="color:#F5EED8;">${id || 'listing'}</strong>.</p>
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Professional Leads</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Qualified professionals interested in your item category.</p>
+        <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">
+          ${[
+            {name:'Elena Rossi',title:'Senior Curator, European Art',institution:'Louvre Dept.',interest:'very_interested',offer:'$14,200'},
+            {name:'David Chen',title:'Private Collector / Dealer',institution:'Hong Kong',interest:'interested',offer:'$10,800'},
+            {name:'Sarah Mitchell',title:'Estate Director',institution:'Mitchell Estates',interest:'contacted',offer:''},
+            {name:'Marcus Webb',title:'Certified Appraiser',institution:'Webb & Co.',interest:'interested',offer:'$9,500'},
+          ].map(l => `
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);padding:16px;border-radius:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><div style="color:#F5EED8;font-weight:700;font-size:12px;">${l.name}</div><span style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:${l.interest==='very_interested'?'#6ee7b7':l.interest==='interested'?'#C9A84C':'#8A6E2F'};">${l.interest.replace('_',' ')}</span></div>
+              <div style="color:#C8BC98;font-size:11px;margin-bottom:4px;">${l.title}</div>
+              <div style="color:#8A6E2F;font-size:10px;margin-bottom:8px;">${l.institution}</div>
+              ${l.offer?`<div style="display:inline-flex;align-items:center;gap:8px;padding:8px 10px;background:#C9A84C/8;border:1px solid rgba(201,168,76,0.25);border-radius:999px;color:#C9A84C;font-size:11px;font-weight:700;">Offer: ${l.offer}</div>`:''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+  `,
+  socialleads: () => `
+    <section style="padding-top:100px;">
+      <div style="max-width:1100px;margin:0 auto;">
+        <h2 style="font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;">Social Buyer Intelligence</h2>
+        <p style="color:#a1a1aa;margin-top:10px;">Real public mentions from X, Reddit, and Instagram.</p>
+        <div style="margin-top:22px;display:grid;gap:12px;">
+          ${[
+            {platform:'x',author:'@chronowise',content:'Looking for a vintage diver that holds value.',status:'contacted'},
+            {platform:'reddit',author:'u/collectr_nyc',content:'Anyone selling authenticated vintage pieces in DFW?',status:'interested'},
+            {platform:'instagram',author:'@horologist_daily',content:'Condition matters more than box + papers for 1980s pieces.',status:'new'},
+          ].map(m => `
+            <div style="background:#111;border:1px solid rgba(201,168,76,0.15);padding:16px;border-radius:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#C9A84C;">${m.platform}</span><span style="font-size:10px;color:${m.status==='contacted'?'#60a5fa':m.status==='interested'?'#6ee7b7':'#C9A84C'};">${m.status.replace('_',' ')}</span></div>
+              <div style="color:#F5EED8;font-weight:700;font-size:12px;margin-bottom:6px;">${m.author}</div>
+              <p style="color:#C8BC98;font-size:12px;line-height:1.6;margin-bottom:8px;">"${m.content}"</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button onclick="alert('Mark contacted')" style="padding:8px 10px;background:transparent;color:#C9A84C;border:1px solid rgba(201,168,76,0.35);border-radius:10px;cursor:pointer;">Contacted</button>
+                <button onclick="alert('Mark interested')" style="padding:8px 10px;background:transparent;color:#f5f5f5;border:1px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;">Interested</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     </section>
   `,
