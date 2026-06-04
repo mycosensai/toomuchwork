@@ -1,43 +1,114 @@
-// The Vault DFW API client stub
-// TODO: replace with real backend URL and auth headers.
-
-const DEFAULT_BASE = '/api';
+// The Vault DFW API client — production build integration.
+// Base URL is injected at build time via VITE_API_BASE and falls back to `/api`.
+// Auth state lives in sessionStorage with expiry; no global window secrets are used.
 
 const resolveBase = () => {
-  if (typeof window !== 'undefined' && window.__VAULT_API_BASE__) return window.__VAULT_API_BASE__;
-  return DEFAULT_BASE;
-};
-
-const headers = () => {
-  const h = { 'content-type': 'application/json' };
-  if (typeof window !== 'undefined' && window.__VAULT_API_TOKEN__) {
-    h['authorization'] = `Bearer ${window.__VAULT_API_TOKEN__}`;
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) {
+    return String(import.meta.env.VITE_API_BASE).replace(/\/+$/, '');
   }
-  return h;
+  return '/api';
 };
 
-const request = async (path, payload = {}) => {
-  const base = resolveBase().replace(/\/+$/, '');
+const JSON_HEADERS = { 'content-type': 'application/json' };
+
+const getAuthHeaders = () => {
+  const token = getToken();
+  if (!token) return JSON_HEADERS;
+  return { ...JSON_HEADERS, authorization: `Bearer ${token}` };
+};
+
+const getToken = () => {
+  try {
+    if (typeof sessionStorage === 'undefined') return null;
+    const raw = sessionStorage.getItem('vault_session');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.expiresAt) return null;
+    if (Date.now() > Number(parsed.expiresAt)) {
+      sessionStorage.removeItem('vault_session');
+      return null;
+    }
+    return parsed.token || null;
+  } catch {
+    return null;
+  }
+};
+
+const setToken = (token, ttlMs = 1000 * 60 * 60) => {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const payload = { token, expiresAt: Date.now() + ttlMs };
+    sessionStorage.setItem('vault_session', JSON.stringify(payload));
+  } catch {
+    // ignore storage failures
+  }
+};
+
+const clearToken = () => {
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    sessionStorage.removeItem('vault_session');
+  } catch {
+    // ignore
+  }
+};
+
+const buildBody = (payload = {}, opts = {}) => {
+  const { strict = true } = opts;
+  const base = { ...payload };
+  if (strict) {
+    base.model = payload.model || 'hermes-2-free';
+    base.timestamp = payload.timestamp || Date.now();
+    base.source = payload.source || 'web_client';
+  }
+  return base;
+};
+
+const normalizeResponse = (raw) => {
+  if (!raw || typeof raw !== 'object') return { data: raw };
+  if ('data' in raw || 'error' in raw) return raw;
+  return { data: raw };
+};
+
+const request = async (path, payload = {}, options = {}) => {
+  const { signal, strict = true, headers: extraHeaders = {} } = options;
+  const base = resolveBase();
   const url = `${base}${path}`;
-  const res = await fetch(url, {
+
+  const fetcher = () => fetch(url, {
     method: 'POST',
-    headers: headers(),
-    body: JSON.stringify({
-      ...payload,
-      model: payload.model || 'hermes-2-free',
-      timestamp: payload.timestamp || Date.now(),
-      source: payload.source || 'web_client',
-    }),
+    headers: { ...getAuthHeaders(), ...extraHeaders },
+    body: JSON.stringify(buildBody(payload, { strict })),
+    signal,
   });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`API ${res.status}: ${text || res.statusText}`);
+  let res;
+  try {
+    res = await fetcher();
+  } catch (err) {
+    if (err?.name === 'AbortError') throw err;
+    throw new Error('Network error: ' + (err?.message || 'request failed'));
   }
 
-  return res.json().catch(() => ({}));
+  const text = await res.text().catch(() => '');
+  let parsed;
+  try {
+    parsed = text ? JSON.parse(text) : {};
+  } catch {
+    parsed = { raw: text };
+  }
+
+  if (!res.ok) {
+    const message = (parsed && parsed.error && parsed.error.message) || text || res.statusText || `API ${res.status}`;
+    const error = new Error(String(message));
+    error.status = res.status;
+    error.body = parsed;
+    throw error;
+  }
+
+  return normalizeResponse(parsed);
 };
 
 if (typeof window !== 'undefined') {
-  window.VAULT_API = { request };
+  window.VAULT_API = { request, getToken, setToken, clearToken };
 }
