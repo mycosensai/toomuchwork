@@ -19,17 +19,24 @@ import { env } from "./lib/env";
 import { getSessionCookieOptions } from "./lib/cookies";
 import { logAudit, getClientIP } from "./security";
 
-const JWT_SECRET = new TextEncoder().encode(env.appSecret);
+async function getJwtSecret() {
+  const secret = env.appSecret;
+  if (!secret) {
+    throw new Error("APP_SECRET is required");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 async function createOAuthSessionToken(payload: {
   userId: number;
   provider: string;
 }): Promise<string> {
+  const jwtSecret = await getJwtSecret();
   return new jose.SignJWT(payload as unknown as jose.JWTPayload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(JWT_SECRET);
+    .sign(jwtSecret);
 }
 
 export async function handleOAuthCallback(c: Context, provider: OAuthProvider) {
@@ -194,7 +201,8 @@ export async function verifyOAuthSession(
   if (!token) return null;
 
   try {
-    const { payload } = await jose.jwtVerify(token, JWT_SECRET, {
+    const jwtSecret = await getJwtSecret();
+    const { payload } = await jose.jwtVerify(token, jwtSecret, {
       clockTolerance: 60,
     });
     const userId = payload.userId as number;

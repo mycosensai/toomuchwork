@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { trpc } from '@/providers/trpc'
 import {
-  Diamond, LogIn, Loader2, UserPlus, ArrowLeft, Eye, EyeOff
+  Diamond, Loader2, UserPlus, ArrowLeft, Eye, EyeOff
 } from 'lucide-react'
 
-// ─── Brand Icons ───
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24">
@@ -33,15 +31,6 @@ function GitHubIcon({ className }: { className?: string }) {
   )
 }
 
-function KimiIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6H8v6H6V7h2v4h1V7h2v10zm6 0h-2v-4h-1v4h-2V7h2v4h1V7h2v10z" />
-    </svg>
-  )
-}
-
-// ─── Provider Button ───
 function ProviderButton({
   label,
   icon,
@@ -74,83 +63,18 @@ function ProviderButton({
 
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
 
-  const loginMutation = trpc.localAuth.login.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem('local_auth_token', data.token)
-      window.location.href = '/'
-    },
-    onError: (err) => setError(err.message),
-  })
+  const handleProviderLogin = async (provider: 'google' | 'x' | 'github') => {
+    setError('')
+  }
 
-  const registerMutation = trpc.localAuth.register.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem('local_auth_token', data.token)
-      window.location.href = '/'
-    },
-    onError: (err) => setError(err.message),
-  })
-
-  // OAuth URL generators
-  const getOAuthUrl = trpc.oauth.getAuthUrl.useMutation({
-    onSuccess: (data) => {
-      if (data.url) {
-        window.location.href = data.url
-      } else if (data.error) {
-        setError(data.error)
-      }
-    },
-    onError: (err) => setError(err.message),
-  })
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-
-    if (mode === 'login') {
-      loginMutation.mutate({ email, password })
-    } else {
-      if (!name || !email || !password) {
-        setError('All fields are required')
-        return
-      }
-      if (password.length < 8) {
-        setError('Password must be at least 8 characters')
-        return
-      }
-      registerMutation.mutate({ name, email, password })
-    }
   }
 
-  // Kimi OAuth (legacy direct flow)
-  const handleKimiOAuth = () => {
-    const appID = import.meta.env.VITE_APP_ID
-    const authURL = import.meta.env.VITE_KIMI_AUTH_URL
-    const redirectUri = `${window.location.origin}/api/oauth/callback`
-    const state = btoa(redirectUri)
-
-    const url = new URL(`${authURL}/oauth/authorize`)
-    url.searchParams.set('client_id', appID)
-    url.searchParams.set('redirect_uri', redirectUri)
-    url.searchParams.set('response_type', 'code')
-    url.searchParams.set('scope', 'profile')
-    url.searchParams.set('state', state)
-
-    window.location.href = url.toString()
-  }
-
-  // Google, X, GitHub OAuth via tRPC
-  const handleProviderOAuth = (provider: 'google' | 'x' | 'github') => {
-    setError('')
-    getOAuthUrl.mutate({ provider })
-  }
-
-  const isPending = loginMutation.isPending || registerMutation.isPending || getOAuthUrl.isPending
+  const isPending = false
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -173,61 +97,40 @@ export default function Login() {
           <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#C9A84C]" />
           <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#C9A84C]" />
 
-          {/* ─── OAuth Providers ─── */}
+          {/* ─── OAuth Providers ─ */}
           <div className="space-y-3 mb-6">
-            <ProviderButton
-              label="Sign In with Kimi"
-              icon={<KimiIcon className="w-4 h-4" />}
-              onClick={handleKimiOAuth}
-              pending={isPending}
-            />
             <ProviderButton
               label="Sign In with Google"
               icon={<GoogleIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('google')}
-              pending={getOAuthUrl.isPending}
+              onClick={() => handleProviderLogin('google')}
+              pending={isPending}
             />
             <ProviderButton
               label="Sign In with X"
               icon={<XIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('x')}
-              pending={getOAuthUrl.isPending}
+              onClick={() => handleProviderLogin('x')}
+              pending={isPending}
             />
             <ProviderButton
               label="Sign In with GitHub"
               icon={<GitHubIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('github')}
-              pending={getOAuthUrl.isPending}
+              onClick={() => handleProviderLogin('github')}
+              pending={isPending}
             />
           </div>
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-[#C9A84C]/15" />
-            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or use email</span>
+            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or continue with email</span>
             <div className="flex-1 h-px bg-[#C9A84C]/15" />
           </div>
 
-          {/* Local Auth Form */}
+          {/* Email Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {mode === 'register' && (
-              <div>
-                <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Collector"
-                  className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
-                />
-              </div>
-            )}
-
             <div>
               <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Email</label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 placeholder="collector@vault.com"
                 className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
               />
@@ -237,18 +140,15 @@ export default function Login() {
               <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Password</label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
                   placeholder="Min 8 characters"
                   className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 pr-12 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A6E2F] hover:text-[#C9A84C] transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <EyeOff className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -266,15 +166,10 @@ export default function Login() {
             >
               {isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
-              ) : mode === 'login' ? (
-                <>
-                  <LogIn className="w-4 h-4" />
-                  Sign In
-                </>
               ) : (
                 <>
                   <UserPlus className="w-4 h-4" />
-                  Create Account
+                  {mode === 'login' ? 'Sign In' : 'Create Account'}
                 </>
               )}
             </button>

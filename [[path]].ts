@@ -1,25 +1,23 @@
 /**
  * Cloudflare Pages Functions Entry Point
- * Hono app running as a Cloudflare Worker with D1 database
+ * Replaces Node.js boot.ts — runs as a Cloudflare Worker with D1
  */
-
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { appRouter } from "../src/server/router";
-import { createContext } from "../src/server/context";
-import { createOAuthCallbackHandler } from "../src/server/kimi/auth";
-import { handleOAuthCallback } from "../src/server/oauth-handlers";
+import { appRouter } from "../api/router";
+import { createContext } from "../api/context";
+import { setDb } from "../api/queries/connection";
+import { setCloudflareEnv } from "../api/lib/env";
 import {
   getSecurityHeaders,
   checkRateLimit,
   getCorsConfig,
   getClientIP,
   STRICT_RATE_LIMIT,
-} from "../src/server/security";
-import { createDb } from "../src/server/db-d1";
-import { setD1Database } from "../api/queries/connection";
+  logAudit,
+} from "../api/security";
 
 export interface Env {
   DB: D1Database;
@@ -32,22 +30,22 @@ export interface Env {
   GOOGLE_CLIENT_SECRET?: string;
   X_CLIENT_ID?: string;
   X_CLIENT_SECRET?: string;
-  GITHUB_CLIENT_ID?: string;
-  GITHUB_CLIENT_SECRET?: string;
+  NODE_ENV?: string;
+  VAULT_DOMAIN?: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Initialize D1 and attach to context
+// ─── Initialize environment & DB ───
 app.use(async (c, next) => {
-  // Set the D1 database for this request
-  setD1Database(createDb(c.env.DB));
-  // Also set APP_SECRET in env for downstream use
-  (c.env as any).appSecret = c.env.APP_SECRET;
+  setCloudflareEnv(c.env as unknown as Record<string, unknown>);
+  if (c.env.DB) {
+    setDb(c.env.DB);
+  }
   await next();
 });
 
-// Security headers
+// ─── Security headers ───
 app.use(async (c, next) => {
   await next();
   const headers = getSecurityHeaders();
@@ -56,17 +54,17 @@ app.use(async (c, next) => {
   }
 });
 
-// CORS
+// ─── CORS ───
 app.use("/api/*", cors(getCorsConfig()));
 app.use(trimTrailingSlash());
 
-// Rate limiting
+// ─── Rate limiting ───
 app.use("/api/*", async (c, next) => {
-  const isAuthEndpoint =
+  const isAuth =
     c.req.path.includes("localAuth.login") ||
     c.req.path.includes("localAuth.register") ||
-    c.req.path.includes("auth.");
-  const config = isAuthEndpoint ? STRICT_RATE_LIMIT : undefined;
+    c.req.path.includes("stripe");
+  const config = isAuth ? STRICT_RATE_LIMIT : undefined;
   const result = checkRateLimit(c.req.raw, config);
   if (!result.allowed) {
     return c.json(
@@ -77,18 +75,12 @@ app.use("/api/*", async (c, next) => {
   await next();
 });
 
-// OAuth callbacks
-app.get("/api/oauth/callback", createOAuthCallbackHandler());
-app.get("/api/oauth/callback/google", (c) => handleOAuthCallback(c, "google"));
-app.get("/api/oauth/callback/x", (c) => handleOAuthCallback(c, "x"));
-app.get("/api/oauth/callback/github", (c) => handleOAuthCallback(c, "github"));
-
-// Health check
+// ─── Health check ───
 app.get("/api/health", (c) =>
   c.json({ status: "ok", timestamp: Date.now(), environment: "production" })
 );
 
-// tRPC handler
+// ─── tRPC handler ───
 app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
     endpoint: "/api/trpc",
@@ -101,7 +93,7 @@ app.use("/api/trpc/*", async (c) => {
   });
 });
 
-// Catch-all for API
+// ─── 404 for unmatched API routes ───
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export const onRequest = app.fetch;

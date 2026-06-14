@@ -15,6 +15,11 @@ async function exchangeAuthCode(
   code: string,
   redirectUri: string,
 ): Promise<TokenResponse> {
+  const tokenUrl = env.kimiAuthUrl
+    ? `${env.kimiAuthUrl}/api/oauth/token`
+    : undefined;
+  if (!tokenUrl) return { access_token: "", error: "KIMI_AUTH_URL is not configured" };
+
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
@@ -23,7 +28,7 @@ async function exchangeAuthCode(
     client_secret: env.appSecret,
   });
 
-  const resp = await fetch(`${env.kimiAuthUrl}/api/oauth/token`, {
+  const resp = await fetch(tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
@@ -37,13 +42,17 @@ async function exchangeAuthCode(
   return resp.json() as Promise<TokenResponse>;
 }
 
-const jwks = jose.createRemoteJWKSet(
-  new URL(`${env.kimiAuthUrl}/api/.well-known/jwks.json`),
-);
+async function getJwks() {
+  if (!env.kimiAuthUrl) {
+    throw new Error("KIMI_AUTH_URL is required for token verification");
+  }
+  return jose.createRemoteJWKSet(new URL(`${env.kimiAuthUrl}/api/.well-known/jwks.json`));
+}
 
 async function verifyAccessToken(
   accessToken: string,
 ): Promise<{ userId: string; clientId: string }> {
+  const jwks = await getJwks();
   const { payload } = await jose.jwtVerify(accessToken, jwks);
   const userId = payload.user_id as string;
   const clientId = payload.client_id as string;
@@ -95,6 +104,9 @@ export function createOAuthCallbackHandler() {
     try {
       const redirectUri = atob(state);
       const tokenResp = await exchangeAuthCode(code, redirectUri);
+      if (!tokenResp.access_token) {
+        return c.json({ error: "Token exchange failed" }, 401);
+      }
       const { userId } = await verifyAccessToken(tokenResp.access_token);
       const userProfile = await kimiUsers.getProfile(tokenResp.access_token);
       if (!userProfile) {

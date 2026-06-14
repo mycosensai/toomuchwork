@@ -88,7 +88,13 @@ export function generatePKCE() {
 
 // ─── Secure State JWT ───
 
-const STATE_SECRET = new TextEncoder().encode(env.appSecret);
+async function getStateSecret() {
+  const secret = env.appSecret;
+  if (!secret) {
+    throw new Error("APP_SECRET is required");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 interface StatePayload {
   provider: OAuthProvider;
@@ -98,18 +104,20 @@ interface StatePayload {
 }
 
 export async function signState(payload: StatePayload): Promise<string> {
+  const stateSecret = await getStateSecret();
   return new jose.SignJWT(payload as unknown as jose.JWTPayload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("10m")
-    .sign(STATE_SECRET);
+    .sign(stateSecret);
 }
 
 export async function verifyState(
   token: string
 ): Promise<StatePayload | null> {
   try {
-    const { payload } = await jose.jwtVerify(token, STATE_SECRET, {
+    const stateSecret = await getStateSecret();
+    const { payload } = await jose.jwtVerify(token, stateSecret, {
       clockTolerance: 30,
     });
     return {

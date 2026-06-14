@@ -1,31 +1,39 @@
-import "dotenv/config";
+/**
+ * Worker-safe env access for Cloudflare Pages Functions.
+ * Uses bindings-provided env via Pages bindings / lazy process access.
+ */
+
+function workerValue(name: string): string {
+  return typeof (globalThis as any).process?.env?.[name] === "string"
+    ? ((globalThis as any).process.env[name] as string)
+    : "";
+}
 
 function required(name: string): string {
-  const value = process.env[name];
-  if (!value && process.env.NODE_ENV === "production") {
+  const value = workerValue(name);
+  if (!value && workerValue("NODE_ENV") === "production") {
     throw new Error(`Missing required environment variable: ${name}`);
   }
-  return value ?? "";
+  return value;
 }
 
 export const env = {
-  appId: required("APP_ID"),
+  appId: workerValue("APP_ID"),
   appSecret: required("APP_SECRET"),
-  isProduction: process.env.NODE_ENV === "production",
-  databaseUrl: required("DATABASE_URL"),
-  kimiAuthUrl: required("KIMI_AUTH_URL"),
-  kimiOpenUrl: required("KIMI_OPEN_URL"),
-  ownerUnionId: process.env.OWNER_UNION_ID ?? "",
-  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
-  stripePublishableKey: process.env.VITE_STRIPE_PUBLISHABLE_KEY ?? "",
-  coinbaseApiKey: process.env.COINBASE_API_KEY ?? "",
-  coinbaseWebhookSecret: process.env.COINBASE_WEBHOOK_SECRET ?? "",
-  openaiApiKey: process.env.OPENAI_API_KEY ?? "",
-  // OAuth providers (optional)
-  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-  xClientId: process.env.X_CLIENT_ID ?? "",
-  xClientSecret: process.env.X_CLIENT_SECRET ?? "",
-  githubClientId: process.env.GITHUB_CLIENT_ID ?? "",
-  githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "",
+  isProduction: workerValue("NODE_ENV") === "production",
+  databaseUrl: workerValue("DATABASE_URL"),
+  kimiAuthUrl: workerValue("KIMI_AUTH_URL"),
+  kimiOpenUrl: workerValue("KIMI_OPEN_URL"),
+  ownerUnionId: workerValue("OWNER_UNION_ID"),
+  stripeSecretKey: workerValue("STRIPE_SECRET_KEY"),
+  stripePublishableKey: workerValue("VITE_STRIPE_PUBLISHABLE_KEY"),
+  coinbaseApiKey: workerValue("COINBASE_API_KEY"),
+  coinbaseWebhookSecret: workerValue("COINBASE_WEBHOOK_SECRET"),
+  openaiApiKey: workerValue("OPENAI_API_KEY"),
+  googleClientId: workerValue("GOOGLE_CLIENT_ID"),
+  googleClientSecret: workerValue("GOOGLE_CLIENT_SECRET"),
+  xClientId: workerValue("X_CLIENT_ID"),
+  xClientSecret: workerValue("X_CLIENT_SECRET"),
+  githubClientId: workerValue("GITHUB_CLIENT_ID"),
+  githubClientSecret: workerValue("GITHUB_CLIENT_SECRET"),
 };

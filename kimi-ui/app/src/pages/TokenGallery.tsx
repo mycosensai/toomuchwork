@@ -18,13 +18,20 @@ const categoryIcons: Record<string, React.ReactNode> = {
 
 export default function TokenGallery() {
   const { data: certs, isLoading } = trpc.blockchain.list.useQuery()
-  const { data: listingsData } = trpc.listings.certified.useQuery()
+  const { data: listingsData } = trpc.listings.list.useQuery({ certified: true })
+  const listings = listingsData || []
 
-  // Merge cert data with listing data
-  const mergedItems = (certs || []).map(cert => {
-    const listing = (listingsData || []).find(l => l.id === cert.listingId)
-    return { cert, listing }
-  }).filter(item => item.listing)
+  const listingMap = new Map(listings.map((item) => [item.id, item]))
+
+  const walletItems = (certs || [])
+    .map((cert) => ({ cert, listing: listingMap.get(cert.listingId) || null }))
+    .filter((item) => item.listing || item.cert)
+
+  walletItems.sort((a, b) => {
+    const aDate = a.listing?.createdAt ? new Date(a.listing.createdAt).getTime() : new Date(a.cert.createdAt).getTime()
+    const bDate = b.listing?.createdAt ? new Date(b.listing.createdAt).getTime() : new Date(b.cert.createdAt).getTime()
+    return bDate - aDate
+  })
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
@@ -36,23 +43,17 @@ export default function TokenGallery() {
             <span className="text-[8px] tracking-[4px] uppercase text-[#C9A84C] font-medium">On-Chain Certified</span>
           </div>
           <h1 className="font-cinzel text-2xl sm:text-3xl md:text-4xl font-bold text-[#F5EED8] tracking-[4px]">
-            Token Gallery
+            Token Wallet
           </h1>
-          <div className="flex items-center justify-center gap-3 mt-4 mb-4">
-            <div className="w-12 h-px bg-gradient-to-r from-transparent to-[#C9A84C]" />
-            <Diamond className="w-1.5 h-1.5 text-[#C9A84C] rotate-45" />
-            <div className="w-12 h-px bg-gradient-to-l from-transparent to-[#C9A84C]" />
-          </div>
-          <p className="font-cormorant italic text-base text-[#C8BC98] max-w-xl mx-auto">
-            Every item in this gallery has been certified on the Ethereum blockchain.
-            Each carries a unique smart contract, token ID, and an immutable block hash.
+          <p className="font-cormorant italic text-base text-[#C8BC98] max-w-xl mx-auto mt-4">
+            Track your collection’s latest on-chain migrations. Newly migrated tokens appear first.
           </p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-12 max-w-lg mx-auto">
           <div className="p-5 bg-[#161616] border border-[#C9A84C]/15 text-center">
-            <div className="font-cinzel text-2xl font-bold text-[#C9A84C] mb-1">{certs?.length || 0}</div>
+            <div className="font-cinzel text-2xl font-bold text-[#C9A84C] mb-1">{walletItems.length}</div>
             <div className="text-[8px] tracking-[2px] uppercase text-[#8A6E2F]">Certified Items</div>
           </div>
           <div className="p-5 bg-[#161616] border border-[#C9A84C]/15 text-center">
@@ -70,7 +71,7 @@ export default function TokenGallery() {
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 text-[#C9A84C] animate-spin" />
           </div>
-        ) : mergedItems.length === 0 ? (
+        ) : walletItems.length === 0 ? (
           <div className="text-center py-20 border border-[#C9A84C]/15 bg-[#161616]">
             <Diamond className="w-12 h-12 text-[#C9A84C]/20 mx-auto mb-4" />
             <p className="font-cinzel text-sm text-[#C8BC98] tracking-[2px] uppercase mb-2">No Certified Items Yet</p>
@@ -81,7 +82,7 @@ export default function TokenGallery() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {mergedItems.map(({ cert, listing }) => (
+            {walletItems.map(({ cert, listing }) => (
               <div key={cert.id} className="bg-[#161616] border border-[#C9A84C]/15 overflow-hidden hover:border-[#C9A84C] hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(201,168,76,0.1)] transition-all duration-300">
                 {/* Token Image Area */}
                 <div className="h-40 bg-gradient-to-b from-[#1E1E1E] to-[#0F0F0F] flex items-center justify-center relative border-b border-[#C9A84C]/15">
