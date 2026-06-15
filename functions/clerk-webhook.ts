@@ -82,12 +82,13 @@ clerkWebhook.post('/', async (c) => {
         }
 
         // Create new user
+        const isAdminEmail = email === 'ratchetkrewelabs@gmail.com';
         await db.insert(users).values({
           unionId: clerkId,
           name,
           email,
           avatar: data.image_url || null,
-          role: 'user',
+          role: isAdminEmail ? 'admin' : 'user',
           createdAt: new Date(),
           updatedAt: new Date(),
           lastSignInAt: new Date(),

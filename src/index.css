@@ -125,10 +125,24 @@
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 500px; }
+}
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
 .animate-fadeInUp {
   animation: fadeInUp 0.8s ease both;
 }
 .animate-fadeIn {
   animation: fadeIn 1s ease both;
+}
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+.animate-fade-in {
+  animation: fadeInRight 0.2s ease-out;
 }
