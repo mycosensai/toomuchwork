@@ -1,10 +1,73 @@
-import { useState } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Link } from 'react-router'
 import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
 import {
-  Diamond, Plus, X, Loader2, Sparkles, CheckCircle2, ShieldCheck, Bitcoin
+  Diamond, Plus, X, Loader2, Sparkles, CheckCircle2, ShieldCheck, Bitcoin, ImageIcon, AlertCircle, Trash2
 } from 'lucide-react'
+
+// Client-side file validation constants
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILES = 20
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+
+interface ImageFile {
+  file: File
+  preview: string
+  id: string
+}
+
+function validateFile(file: File): { valid: boolean; error?: string } {
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return { valid: false, error: `Unsupported file type: ${file.type}. Please use JPEG, PNG, WebP, or GIF.` }
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return { valid: false, error: `File too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum size is 10MB.` }
+  }
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+  if (!ALLOWED_EXTENSIONS.includes(ext)) {
+    return { valid: false, error: `Invalid file extension: ${ext}` }
+  }
+  return { valid: true }
+}
+
+async function validateMagicBytes(file: File): Promise<{ valid: boolean; error?: string }> {
+  const blob = file.slice(0, 16)
+  const arrayBuffer = await blob.arrayBuffer()
+  const bytes = new Uint8Array(arrayBuffer)
+
+  const magicBytes: Record<string, number[]> = {
+    'image/jpeg': [0xff, 0xd8, 0xff],
+    'image/png': [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+    'image/webp': [0x52, 0x49, 0x46, 0x46],
+    'image/gif': [0x47, 0x49, 0x46, 0x38],
+  }
+
+  const magic = magicBytes[file.type]
+  if (!magic) return { valid: false, error: 'Unknown file type' }
+
+  if (file.type === 'image/webp') {
+    if (bytes.length < 12) return { valid: false, error: 'File too small to verify' }
+    const riff = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46
+    const webp = bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+    if (!riff || !webp) return { valid: false, error: 'File content does not match WebP format' }
+    return { valid: true }
+  }
+
+  if (file.type === 'image/gif') {
+    if (bytes.length < 6) return { valid: false, error: 'File too small to verify' }
+    const gif87a = bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38 && bytes[4] === 0x37 && bytes[5] === 0x61
+    const gif89a = bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38 && bytes[4] === 0x39 && bytes[5] === 0x61
+    if (!gif87a && !gif89a) return { valid: false, error: 'File content does not match GIF format' }
+    return { valid: true }
+  }
+
+  if (bytes.length < magic.length) return { valid: false, error: 'File too small to verify' }
+  const matches = magic.every((byte, i) => bytes[i] === byte)
+  if (!matches) return { valid: false, error: `File content does not match ${file.type} format` }
+  return { valid: true }
+}
 
 export default function Sell() {
   const { isAuthenticated } = useAuth()
@@ -20,6 +83,11 @@ export default function Sell() {
   const [isConsignment, setIsConsignment] = useState(false)
   const [certifyOnChain, setCertifyOnChain] = useState(false)
   const [walletAddress, setWalletAddress] = useState('')
+  // Image upload state
+  const [images, setImages] = useState<ImageFile[]>([])
+  const [imageErrors, setImageErrors] = useState<Record<string, string>>({})
+  const [imageValidating, setImageValidating] = useState<Set<string>>(new Set())
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { data: categories } = trpc.categories.list.useQuery()
   const utils = trpc.useUtils()
@@ -37,6 +105,13 @@ export default function Sell() {
       setCreatedListingId(data.id)
       setSubmitted(true)
       utils.listings.invalidate()
+    },
+    onError: (error) => {
+      if (error.message.includes('Image validation failed')) {
+        // Find which image caused the error and mark it
+        const errMsg = error.message.replace('Image validation failed: ', '')
+        setImageErrors(prev => ({ ...prev, global: errMsg }))
+      }
     },
   })
 
@@ -61,9 +136,67 @@ export default function Sell() {
     setFeatures(features.filter((feat) => feat !== f))
   }
 
+  const handleImageSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    if (images.length + files.length > MAX_FILES) {
+      setImageErrors(prev => ({ ...prev, global: `Maximum ${MAX_FILES} images allowed` }))
+      e.target.value = ''
+      return
+    }
+
+    setImageErrors(prev => ({ ...prev, global: undefined }))
+
+    for (const file of files) {
+      const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+
+      // Basic validation
+      const basicValidation = validateFile(file)
+      if (!basicValidation.valid) {
+        setImageErrors(prev => ({ ...prev, [fileId]: basicValidation.error! }))
+        continue
+      }
+
+      // Mark as validating
+      setImageValidating(prev => new Set(prev).add(fileId))
+
+      // Magic bytes validation
+      const magicValidation = await validateMagicBytes(file)
+      if (!magicValidation.valid) {
+        setImageErrors(prev => ({ ...prev, [fileId]: magicValidation.error! }))
+        setImageValidating(prev => { const next = new Set(prev); next.delete(fileId); return next })
+        continue
+      }
+
+      // Create preview
+      const preview = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      setImages(prev => [...prev, { file, preview, id: fileId }])
+      setImageValidating(prev => { const next = new Set(prev); next.delete(fileId); return next })
+    }
+
+    e.target.value = ''
+  }, [])
+
+  const removeImage = (id: string) => {
+    setImages(prev => prev.filter(img => img.id !== id))
+    setImageErrors(prev => { const next = { ...prev }; delete next[id]; return next })
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!title || !categoryId || !price) return
+
+    setImageErrors(prev => ({ ...prev, global: undefined }))
+
+    // Convert images to base64 data URLs for submission
+    const imageUrls = images.map(img => img.preview)
 
     createListing.mutate({
       title,
@@ -74,6 +207,7 @@ export default function Sell() {
       features: features.length > 0 ? features : undefined,
       isConsignment,
       badge: 'new',
+      images: imageUrls.length > 0 ? imageUrls : undefined,
     })
   }
 
@@ -163,6 +297,8 @@ export default function Sell() {
                 setCategoryId('')
                 setPrice('')
                 setFeatures([])
+                setImages([])
+                setImageErrors({})
               }}
               className="text-[10px] text-[#8A6E2F] hover:text-[#C9A84C] transition-colors"
             >
@@ -313,6 +449,70 @@ export default function Sell() {
                 rows={4}
                 className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3.5 px-5 outline-none focus:border-[#C9A84C] transition-colors resize-none placeholder:text-[#8A6E2F]"
               />
+            </div>
+
+            {/* Image Upload */}
+            <div className="mb-6">
+              <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-3">Upload Photos (max 20)</label>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed cursor-pointer transition-all overflow-hidden ${images.length > 0 ? 'border-[#C9A84C]' : imageErrors.global ? 'border-red-500 bg-red-500/5' : 'border-[#C9A84C]/30 bg-[#1E1E1E] hover:border-[#C9A84C]/60'}`}
+                style={{ minHeight: '180px' }}
+              >
+                {images.length > 0 ? (
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-3">
+                      {images.map((img) => (
+                        <div key={img.id} className="relative aspect-square">
+                          <img src={img.preview} alt="Preview" className="w-full h-full object-cover rounded" />
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); removeImage(img.id) }}
+                            className="absolute top-1 right-1 w-5 h-5 bg-red-500/90 text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          {imageValidating.has(img.id) && (
+                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded">
+                              <Loader2 className="w-5 h-5 text-white animate-spin" />
+                            </div>
+                          )}
+                          {imageErrors[img.id] && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-red-500/90 text-white text-[9px] p-1 truncate">{imageErrors[img.id]}</div>
+                          )}
+                        </div>
+                      ))}
+                      {images.length < MAX_FILES && (
+                        <div className="relative aspect-square border-2 border-dashed border-[#C9A84C]/40 flex items-center justify-center hover:border-[#C9A84C] transition-colors">
+                          <Plus className="w-8 h-8 text-[#C9A84C]/60" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-[#8A6E2F] text-center">{images.length}/{MAX_FILES} images • JPG, PNG, WebP, GIF up to 10MB each</p>
+                  </div>
+                ) : imageErrors.global ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                    <AlertCircle className="w-10 h-10 text-red-500 mb-3" />
+                    <p className="text-xs text-red-400 mb-1">{imageErrors.global}</p>
+                    <p className="text-[10px] text-[#8A6E2F]">Click to try again</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <ImageIcon className="w-10 h-10 text-[#C9A84C]/40 mb-3" />
+                    <p className="text-xs text-[#C8BC98] mb-1">Click to upload photos</p>
+                    <p className="text-[10px] text-[#8A6E2F]">JPG, PNG, WebP, GIF up to 10MB each • Max 20 images</p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                  disabled={images.length >= MAX_FILES}
+                />
+              </div>
             </div>
 
             {/* Features */}

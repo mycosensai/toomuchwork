@@ -6,6 +6,7 @@ import { eq, desc } from "drizzle-orm";
 import { openaiChat, openaiVision } from "./lib/openai";
 import { autoTriggerFromAction } from "./lib/auto-trigger";
 import { getCommissionRateFromTiers } from "./lib/commission";
+import { validateImageDataUri, imageDataUriSchema } from "./lib/file-upload";
 
 /**
  * Build a strict anti-hallucination appraisal prompt.
@@ -71,14 +72,19 @@ export const appraisalRouter = createRouter({
         category: z.string().min(1).max(100),
         condition: z.string().optional(),
         description: z.string().max(2000).optional(),
-        imageUrl: z.string().optional().refine(
-          (v) => !v || v.startsWith("data:") || /^https?:\/\//.test(v),
-          "Must be a URL or base64 data URI"
-        ),
+        imageUrl: imageDataUriSchema.optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
+
+      // Validate image if provided
+      if (input.imageUrl) {
+        const validation = validateImageDataUri(input.imageUrl);
+        if (!validation.valid) {
+          throw new Error(`Image validation failed: ${validation.error}`);
+        }
+      }
 
       // Create pending appraisal
       const insertResult = await db.insert(appraisals).values({

@@ -6,6 +6,7 @@ import { eq, desc, sql } from "drizzle-orm";
 import { sanitizeInput, logAudit, getClientIP } from "./security";
 import { autoTriggerFromAction } from "./lib/auto-trigger";
 import { getCommissionRateFromTiers } from "./lib/commission";
+import { validateImageDataUri, validateImageDataUris } from "./lib/file-upload";
 
 export const listingsRouter = createRouter({
   list: publicQuery
@@ -90,7 +91,12 @@ export const listingsRouter = createRouter({
         categoryId: z.number(),
         price: z.number().positive(),
         condition: z.enum(["mint", "excellent", "very_good", "good", "fair"]).default("very_good"),
-        images: z.array(z.string().url().max(2000)).max(20).optional(),
+        images: z.array(
+          z.string().refine(
+            (v) => /^https?:\/\//.test(v) || /^data:image\/[^;]+;base64,/.test(v),
+            "Must be a valid URL or base64 data URI"
+          ).max(2000)
+        ).max(20).optional(),
         features: z.array(z.string().max(200)).max(50).optional(),
         isBuyNow: z.boolean().default(true),
         isConsignment: z.boolean().default(false),
@@ -99,6 +105,33 @@ export const listingsRouter = createRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
+
+      // Validate images if provided
+      if (input.images && input.images.length > 0) {
+        // Separate data URIs from URLs
+        const dataUris = input.images.filter((img) => img.startsWith("data:"));
+        const urls = input.images.filter((img) => img.startsWith("http"));
+
+        // Validate data URIs
+        if (dataUris.length > 0) {
+          const { valid, errors } = validateImageDataUris(dataUris);
+          if (errors.length > 0) {
+            throw new Error(`Image validation failed: ${errors.join("; ")}`);
+          }
+          // Replace data URIs with validated versions
+          const validatedDataUris = valid.map((v) => `data:${v.mimeType};base64,${v.base64}`);
+          input.images = [...validatedDataUris, ...urls];
+        }
+
+        // Validate URLs (basic check)
+        for (const url of urls) {
+          try {
+            new URL(url);
+          } catch {
+            throw new Error(`Invalid image URL: ${url}`);
+          }
+        }
+      }
 
       const rate = await getCommissionRateFromTiers(db, input.price);
 

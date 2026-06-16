@@ -7,6 +7,7 @@ import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { openaiChat, openaiStructured } from "./lib/openai";
 import { runOutreachRound } from "./outreach-router";
 import { sanitizeForPrompt } from "./security";
+import { validateImageDataUris, imageDataUriArraySchema } from "./lib/file-upload";
 
 // Match experts to item category
 function matchExpertsToCategory(category: string, experts: any[]): any[] {
@@ -43,12 +44,22 @@ export const expertRouter = createRouter({
       dimensions: z.string().optional(),
       materials: z.string().optional(),
       markings: z.string().optional(),
-      imageUrls: z.array(z.string()).optional(),
+      imageUrls: imageDataUriArraySchema.optional(),
       estimatedValue: z.number().optional(),
       priority: z.enum(["standard", "express", "rush"]).default("standard"),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
+
+      // Validate all images if provided
+      if (input.imageUrls && input.imageUrls.length > 0) {
+        const { valid, errors } = validateImageDataUris(input.imageUrls);
+        if (errors.length > 0) {
+          throw new Error(`Image validation failed: ${errors.join("; ")}`);
+        }
+        // Replace with validated images (sanitized base64)
+        input.imageUrls = valid.map(v => `data:${v.mimeType};base64,${v.base64}`);
+      }
 
       // Calculate review fee based on priority
       const feeMap = { standard: "49.99", express: "99.99", rush: "199.99" };
