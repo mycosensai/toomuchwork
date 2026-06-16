@@ -14,9 +14,22 @@ type UnifiedUser = {
 export function useAuth() {
   const utils = trpc.useUtils()
 
-  // Clerk auth hooks
-  const { isSignedIn: clerkSignedIn, userId: clerkUserId } = useClerkAuth()
-  const { user: clerkUser } = useUser()
+  // Clerk hooks - wrapped in try/catch via the global check
+  let clerkSignedIn = false
+  let clerkUserId: string | null = null
+  let clerkUser: any = null
+  let isClerkLoaded = false
+
+  try {
+    const clerk = useClerkAuth()
+    clerkSignedIn = clerk.isSignedIn ?? false
+    clerkUserId = clerk.userId ?? null
+    const user = useUser()
+    clerkUser = user.user ?? null
+    isClerkLoaded = true
+  } catch {
+    // Clerk not configured - fall through to local auth
+  }
 
   // Query OAuth user (existing custom auth)
   const {
@@ -81,7 +94,7 @@ export function useAuth() {
     return null
   }, [clerkSignedIn, clerkUser, oauthUser, localUser])
 
-  const isLoading = oauthLoading || localLoading
+  const isLoading = oauthLoading || localLoading || !isClerkLoaded
   const isAuthenticated = clerkSignedIn || !!user
   const isAdmin = user?.role === "admin"
 
