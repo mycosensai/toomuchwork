@@ -20,6 +20,7 @@ const ProVerifyResult = lazy(() => import('./pages/ProVerifyResult'))
 const Leads = lazy(() => import('./pages/Leads'))
 const Login = lazy(() => import('./pages/Login'))
 const SSOCallback = lazy(() => import('./pages/SSOCallback'))
+const AuthSuccess = lazy(() => import('./pages/AuthSuccess'))
 const Admin = lazy(() => import('./pages/Admin'))
 const About = lazy(() => import('./pages/About'))
 const FAQ = lazy(() => import('./pages/FAQ'))
@@ -91,6 +92,7 @@ export default function App() {
             <Route path="/admin/marketing" element={<MarketingDashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/sso-callback" element={<SSOCallback />} />
+            <Route path="/auth-success" element={<AuthSuccess />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
