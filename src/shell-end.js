@@ -17,7 +17,7 @@ const loginForm = `
     <div style="display:grid;gap:14px;margin-top:18px;">
       ${[
         { provider: 'google', label: 'Continue with Google', accent: '#ffffff', icon: `gl` },
-        { provider: 'github', label: 'Continue with GitHub', accent: '#e5c07b', icon: `oct` },
+        { provider: 'apple', label: 'Continue with Apple', accent: '#C8BC98', icon: `apple` },
         { provider: 'x', label: 'Continue with X', accent: '#C8BC98', icon: `x` },
       ].map((item) => `
         <button type="button" onclick="window._login('${item.provider}')" style="display:inline-flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px;background:transparent;color:${item.accent};border:1px solid rgba(201,168,76,0.35);border-radius:14px;font-weight:700;cursor:pointer;">${svg.icon} ${item.label}</button>
