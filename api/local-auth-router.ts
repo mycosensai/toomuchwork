@@ -8,6 +8,9 @@ import { TRPCError } from "@trpc/server";
 import { validatePasswordStrength, logAudit, getClientIP } from "./security";
 import { env } from "./lib/env";
 
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const ABSOLUTE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
 // Lazy JWT secret — resolves at first use, not at module load
 let jwtSecretCache: Uint8Array | null = null;
 function getJwtSecret(): Uint8Array {
@@ -21,23 +24,80 @@ function getJwtSecret(): Uint8Array {
   return jwtSecretCache;
 }
 
+interface LocalAuthTokenPayload {
+  sub: string;
+  lastActivity: number; // Unix timestamp
+  iat: number; // Issued at
+}
+
+/**
+ * Create local auth token with lastActivity timestamp
+ */
 async function createToken(userId: number): Promise<string> {
-  return new SignJWT({ sub: String(userId) })
+  const now = Date.now();
+  return new SignJWT({
+    sub: String(userId),
+    lastActivity: now,
+    iat: Math.floor(now / 1000),
+  } as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d") // Reduced from 30 days to 7 days
+    .setExpirationTime("7d") // Absolute max: 7 days
     .sign(getJwtSecret());
 }
 
-export async function verifyLocalToken(token: string) {
+/**
+ * Verify local auth token and optionally return new token (sliding expiration)
+ * Returns { userId, newToken } where newToken is set if session was refreshed
+ */
+export async function verifyLocalTokenAndRefresh(token: string): Promise<{
+  userId: number | null;
+  newToken: string | null;
+}> {
   try {
-    const { payload } = await jwtVerify(token, getJwtSecret(), {
+    const { payload } = await jwtVerify<LocalAuthTokenPayload>(token, getJwtSecret(), {
       clockTolerance: 60,
     });
-    return payload.sub ? parseInt(payload.sub, 10) : null;
+
+    const userId = payload.sub ? parseInt(payload.sub, 10) : null;
+    const lastActivity = payload.lastActivity as number | undefined;
+    const iat = payload.iat as number | undefined;
+
+    if (!userId) return { userId: null, newToken: null };
+
+    const now = Date.now();
+
+    // Check idle timeout (30 minutes)
+    if (lastActivity && now - lastActivity > IDLE_TIMEOUT_MS) {
+      console.log(`[LocalAuth] Token expired due to idle timeout for user ${userId}`);
+      return { userId: null, newToken: null };
+    }
+
+    // Check absolute max age (7 days) - iat is in seconds
+    if (iat && now - iat * 1000 > ABSOLUTE_MAX_AGE_MS) {
+      console.log(`[LocalAuth] Token expired due to absolute max age for user ${userId}`);
+      return { userId: null, newToken: null };
+    }
+
+    // Refresh token if lastActivity is older than 5 minutes (avoid updating on every request)
+    let newToken: string | null = null;
+    if (lastActivity && now - lastActivity > 5 * 60 * 1000) {
+      newToken = await createToken(userId);
+    }
+
+    return { userId, newToken };
   } catch {
-    return null;
+    return { userId: null, newToken: null };
   }
+}
+
+/**
+ * Verify local auth token (without refresh)
+ * Kept for backward compatibility
+ */
+export async function verifyLocalToken(token: string): Promise<number | null> {
+  const result = await verifyLocalTokenAndRefresh(token);
+  return result.userId;
 }
 
 export const localAuthRouter = createRouter({
@@ -180,8 +240,13 @@ export const localAuthRouter = createRouter({
     const authHeader = ctx.req.headers.get("x-local-auth-token");
     if (!authHeader) return null;
 
-    const userId = await verifyLocalToken(authHeader);
+    const { userId, newToken } = await verifyLocalTokenAndRefresh(authHeader);
     if (!userId) return null;
+
+    // If token was refreshed, set header for client to pick up
+    if (newToken) {
+      ctx.resHeaders.set("x-local-auth-token", newToken);
+    }
 
     const db = getDb();
     const [user] = await db
@@ -193,6 +258,7 @@ export const localAuthRouter = createRouter({
     return user || null;
   }),
 });
+
 function bytesToBase64(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes));
 }
@@ -203,7 +269,8 @@ function base64ToBytes(input: string): Uint8Array {
 }
 
 async function hashPassword(password: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const salt = new Uint8Array(16);
+  crypto.getRandomValues(salt);
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 120_000, hash: "SHA-256" }, key, 256);
   return `pbkdf2$120000$${bytesToBase64(salt)}$${bytesToBase64(new Uint8Array(bits))}`;

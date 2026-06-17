@@ -10,8 +10,8 @@ export const oauthRouter = createRouter({
   getAuthUrl: publicQuery
     .input(
       z.object({
-        provider: z.enum(["google", "x", "github"]),
-      })
+        provider: z.enum(["google", "x", "apple"]),
+      }),
     )
     .mutation(async ({ input }) => {
       const result = await buildAuthUrl(input.provider as OAuthProvider);
@@ -35,9 +35,9 @@ export const oauthRouter = createRouter({
         configured: isProviderConfigured("x"),
       },
       {
-        id: "github" as const,
-        name: "GitHub",
-        configured: isProviderConfigured("github"),
+        id: "apple" as const,
+        name: "Apple",
+        configured: isProviderConfigured("apple"),
       },
     ];
   }),

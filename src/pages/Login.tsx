@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { useSignIn } from '@clerk/clerk-react'
 import { trpc } from '@/providers/trpc'
 import {
   Diamond, LogIn, Loader2, UserPlus, ArrowLeft, Eye, EyeOff
@@ -25,33 +24,12 @@ function XIcon({ className }: { className?: string }) {
   )
 }
 
-function GitHubIcon({ className }: { className?: string }) {
+function AppleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 1C5.922 1 1 5.922 1 12c0 4.86 3.152 8.983 7.523 10.437.55.102.753-.238.753-.53 0-.26-.009-.952-.014-1.87-3.06.664-3.706-1.475-3.706-1.475-.5-1.27-1.222-1.61-1.222-1.61-.998-.682.076-.668.076-.668 1.104.078 1.684 1.133 1.684 1.133.98 1.68 2.57 1.195 3.198.914.1-.71.384-1.196.698-1.47-2.442-.278-5.01-1.222-5.01-5.437 0-1.2.43-2.183 1.134-2.953-.114-.278-.492-1.397.108-2.91 0 0 .924-.296 3.026 1.128A10.59 10.59 0 0 1 12 5.803c.94.005 1.884.127 2.77.372 2.1-1.424 3.022-1.128 3.022-1.128.602 1.513.224 2.632.11 2.91.706.77 1.132 1.753 1.132 2.953 0 4.225-2.572 5.156-5.022 5.428.395.34.747 1.01.747 2.037 0 1.47-.014 2.657-.014 3.017 0 .295.2.637.757.53C19.85 20.98 23 16.858 23 12c0-6.078-4.922-11-11-11z" />
+      <path d="M17.296 7.54c-.006-1.301 1.07-1.928 1.115-1.947-1.173-.723-2.623-.608-3.319-.263-.361.178-.682.172-.972.067-.4-.137-.688-.188-1.036-1.036C10.546 4.099 9.483 4 9.24 4L9 4c-1.656 0-2.985 1.273-2.985 3.047-.005 1.29.775 2.249 1.627 2.438.808.185 1.21.635 1.21 1.43 0 1.021-.433 1.933-1.17 2.59-.579.506-.492 1.642.164 1.975.6.305 1.45.01 2.218-.717.698-.629 1.19-1.671 1.136-2.671-.015-.334.117-.628.378-.86.246-.217.1.082.354-.216.3-.36.524-1.023.415-1.336-.31-.878-.913-1.365-1.901-1.365-.289 0-.49.06-.776.055-.793-.027-1.752.663-2.215.663-.462 0-1.49-.434-2.497-.369-1.297.078-2.905.994-3.473 2.52-.6 1.617-.092 4.222 1.138 5.359.815.765 1.88 1 3.067 1.01 1.356.011 2.347-.357 3.465-1.053 1.127-.686 2.33-2.043 2.703-2.043.074 0 .817.59 1.052.62.235.039.509-.174.779-.462.27-.287.551-.823.456-1.237-.726-.086-1.2-.514-1.553-1.208-.36-.71-.567-1.539-.398-2.428z" />
     </svg>
   )
-}
-
-function normalizeEmail(value: string) {
-  return value.trim().toLowerCase()
-}
-
-function cleanAuthError(message: string) {
-  if (!message) {
-    return 'Authentication failed. Please try again.'
-  }
-  if (
-    message.includes('Unable to transform response') ||
-    message.includes('Unexpected token') ||
-    message.includes('Unexpected end of JSON')
-  ) {
-    return 'Authentication service temporarily unavailable. The API may still be deploying or restarting.'
-  }
-  if (message.includes('Failed to fetch')) {
-    return 'Unable to reach authentication servers. Please check your connection and try again.'
-  }
-  return message
 }
 
 function ProviderButton({
@@ -80,6 +58,27 @@ function ProviderButton({
   )
 }
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase()
+}
+
+function cleanAuthError(message: string) {
+  if (!message) {
+    return 'Authentication failed. Please try again.'
+  }
+  if (
+    message.includes('Unable to transform response') ||
+    message.includes('Unexpected token') ||
+    message.includes('Unexpected end of JSON')
+  ) {
+    return 'Authentication service temporarily unavailable. The API may still be deploying or restarting.'
+  }
+  if (message.includes('Failed to fetch')) {
+    return 'Unable to reach authentication servers. Please check your connection and try again.'
+  }
+  return message
+}
+
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -88,73 +87,26 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
 
-  const { signIn, isLoaded: signInLoaded } = useSignIn()
-
-  // ── Clerk OAuth ──
-  const handleProviderOAuth = async (provider: 'google' | 'x' | 'github') => {
-    if (!signInLoaded || !signIn) {
-      setError('Sign-in service not ready. Please try again.')
-      return
-    }
-
-    setError('')
-
-    try {
-      await signIn.authenticateWithRedirect({
-        strategy: `oauth_${provider}`,
-        redirectUrl: window.location.origin + '/sso-callback',
-        redirectUrlComplete: window.location.origin + '/auth-success',
-      })
-    } catch (err: any) {
-      setError(cleanAuthError(err?.errors?.[0]?.message || err?.message || 'OAuth failed'))
-    }
-  }
-
-  // ── Clerk Email/Password ──
-  const handleClerkEmailAuth = async (type: 'login' | 'register') => {
-    if (!signInLoaded || !signIn) {
-      setError('Sign-in service not ready. Please try again.')
-      return
-    }
-
-    const normalizedEmail = normalizeEmail(email)
-
-    if (type === 'login') {
-      // Sign in with email + password via Clerk
-      try {
-        const result = await signIn.create({
-          identifier: normalizedEmail,
-          password,
-        })
-
-        if (result.status === 'complete') {
-          window.location.href = '/auth-success'
-        } else {
-          setError('Sign-in requires additional verification.')
-        }
-      } catch (err: any) {
-        setError(cleanAuthError(err?.errors?.[0]?.message || err?.message || 'Invalid email or password'))
+  // Custom OAuth via tRPC (Google, X, Apple)
+  const getOAuthUrl = trpc.oauth.getAuthUrl.useMutation({
+    onSuccess: (data) => {
+      if (data?.url) {
+        window.location.href = data.url
+        return
       }
-    } else {
-      // For registration via Clerk, we redirect to the Clerk sign-up UI
-      // but keep the user on our page using Clerk's sign-up flow
-      try {
-        await signIn.authenticateWithRedirect({
-          strategy: 'oauth_google',
-          redirectUrl: window.location.origin + '/sso-callback',
-          redirectUrlComplete: window.location.origin + '/auth-success',
-        })
-      } catch (err: any) {
-        setError(cleanAuthError(err?.errors?.[0]?.message || err?.message || 'Registration failed'))
-      }
-    }
-  }
+      setError(data?.error || 'OAuth provider unavailable.')
+    },
+    onError: (err) => setError(cleanAuthError(err.message)),
+  })
 
-  // ── Existing trpc auth fallback ──
+  // Local email/password auth
   const loginMutation = trpc.localAuth.login.useMutation({
     onSuccess: (data) => {
       if (data?.token) {
-        try { sessionStorage.setItem('local_auth_token', data.token); localStorage.setItem('vault_auth_present', 'true') } catch {}
+        try {
+          sessionStorage.setItem('local_auth_token', data.token)
+          localStorage.setItem('vault_auth_present', 'true')
+        } catch {}
         window.location.href = '/auth-success'
       } else {
         setError('Authentication completed but no token was returned.')
@@ -166,19 +118,30 @@ export default function Login() {
   const registerMutation = trpc.localAuth.register.useMutation({
     onSuccess: (data) => {
       if (data?.token) {
-        try { sessionStorage.setItem('local_auth_token', data.token); localStorage.setItem('vault_auth_present', 'true') } catch {}
+        try {
+          sessionStorage.setItem('local_auth_token', data.token)
+          localStorage.setItem('vault_auth_present', 'true')
+        } catch {}
         window.location.href = '/auth-success'
       } else {
-        setError('Registration completed but no token was returned.')
+        setError('Authentication completed but no token was returned.')
       }
     },
     onError: (err) => setError(cleanAuthError(err.message)),
   })
 
+  const handleProviderOAuth = (provider: 'google' | 'x' | 'apple') => {
+    if (getOAuthUrl.isPending) {
+      return
+    }
+    setError('')
+    getOAuthUrl.mutate({ provider })
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (loginMutation.isPending || registerMutation.isPending || !signInLoaded) {
+    if (loginMutation.isPending || registerMutation.isPending || getOAuthUrl.isPending) {
       return
     }
 
@@ -192,10 +155,7 @@ export default function Login() {
         setError('Email and password are required')
         return
       }
-      // Try Clerk first, fall back to local auth
-      handleClerkEmailAuth('login').catch(() => {
-        loginMutation.mutate({ email: normalizedEmail, password })
-      })
+      loginMutation.mutate({ email: normalizedEmail, password })
       return
     }
 
@@ -209,7 +169,6 @@ export default function Login() {
       return
     }
 
-    // For registration, fall back to local auth via trpc
     registerMutation.mutate({
       name: trimmedName,
       email: normalizedEmail,
@@ -217,7 +176,7 @@ export default function Login() {
     })
   }
 
-  const isPending = loginMutation.isPending || registerMutation.isPending || !signInLoaded
+  const isPending = loginMutation.isPending || registerMutation.isPending || getOAuthUrl.isPending
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -243,19 +202,19 @@ export default function Login() {
               label="Sign In with Google"
               icon={<GoogleIcon className="w-4 h-4" />}
               onClick={() => handleProviderOAuth('google')}
-              pending={!signInLoaded}
+              pending={getOAuthUrl.isPending}
             />
             <ProviderButton
-              label="Sign In with X"
+              label="Continue with X"
               icon={<XIcon className="w-4 h-4" />}
               onClick={() => handleProviderOAuth('x')}
-              pending={!signInLoaded}
+              pending={getOAuthUrl.isPending}
             />
             <ProviderButton
-              label="Sign In with GitHub"
-              icon={<GitHubIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('github')}
-              pending={!signInLoaded}
+              label="Sign In with Apple"
+              icon={<AppleIcon className="w-4 h-4" />}
+              onClick={() => handleProviderOAuth('apple')}
+              pending={getOAuthUrl.isPending}
             />
           </div>
 

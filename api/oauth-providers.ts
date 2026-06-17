@@ -1,13 +1,13 @@
 /**
  * Multi-Provider OAuth 2.0 Configuration
- * Supports: Google, X (Twitter), GitHub
+ * Supports: Google, X, Apple
  * Uses PKCE + Web Crypto API (Cloudflare Workers compatible)
  */
 
 import { env } from "./lib/env";
 import * as jose from "jose";
 
-export type OAuthProvider = "google" | "x" | "github";
+export type OAuthProvider = "google" | "x" | "apple";
 
 interface ProviderConfig {
   name: string;
@@ -52,17 +52,17 @@ export const PROVIDER_CONFIGS: Record<OAuthProvider, ProviderConfig> = {
       avatar: data.data?.profile_image_url || null,
     }),
   },
-  github: {
-    name: "GitHub",
-    authUrl: "https://github.com/login/oauth/authorize",
-    tokenUrl: "https://github.com/login/oauth/access_token",
-    profileUrl: "https://api.github.com/user",
-    scope: "read:user user:email",
+  apple: {
+    name: "Apple",
+    authUrl: "https://appleid.apple.com/auth/authorize",
+    tokenUrl: "https://appleid.apple.com/auth/token",
+    profileUrl: "https://appleid.apple.com/auth/userinfo",
+    scope: "name email",
     profileParser: (data) => ({
-      id: String(data.id),
-      name: data.name || data.login || "GitHub User",
+      id: data.sub || data.id || "apple-user",
+      name: data.name || "Apple User",
       email: data.email || null,
-      avatar: data.avatar_url || null,
+      avatar: data.picture || null,
     }),
   },
 };
@@ -139,14 +139,14 @@ export async function verifyState(
 export function getClientId(provider: OAuthProvider): string {
   if (provider === "google") return env.googleClientId;
   if (provider === "x") return env.xClientId;
-  if (provider === "github") return env.githubClientId;
+  if (provider === "apple") return env.appleClientId;
   return "";
 }
 
 export function getClientSecret(provider: OAuthProvider): string {
   if (provider === "google") return env.googleClientSecret;
   if (provider === "x") return env.xClientSecret;
-  if (provider === "github") return env.githubClientSecret;
+  if (provider === "apple") return env.appleClientSecret;
   return "";
 }
 

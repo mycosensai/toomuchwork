@@ -1,6 +1,7 @@
 /**
  * OAuth 2.0 Callback Handlers
- * Handles the authorization code callback for Google, X, and GitHub
+ * Handles the authorization code callback for Google, X, and Apple
+ * Includes sliding expiration: 30-minute idle timeout with 7-day absolute max
  */
 
 import type { Context } from "hono";
@@ -21,16 +22,114 @@ import { getSessionCookieOptions } from "./lib/cookies";
 import { logAudit, getClientIP } from "./security";
 
 const JWT_SECRET = new TextEncoder().encode(env.appSecret);
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const ABSOLUTE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+interface OAuthTokenPayload {
+  userId: number;
+  provider: string;
+  lastActivity: number; // Unix timestamp
+  iat: number; // Issued at
+}
+
+/**
+ * Create OAuth session token with lastActivity timestamp
+ */
 async function createOAuthSessionToken(payload: {
   userId: number;
   provider: string;
 }): Promise<string> {
-  return new jose.SignJWT(payload as unknown as jose.JWTPayload)
+  const now = Date.now();
+  return new jose.SignJWT({
+    userId: payload.userId,
+    provider: payload.provider,
+    lastActivity: now,
+    iat: now,
+  } as unknown as jose.JWTPayload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime("7d") // Absolute max: 7 days
     .sign(JWT_SECRET);
+}
+
+/**
+ * Verify OAuth session and optionally refresh token (sliding expiration)
+ * Returns { user, newToken } where newToken is set if session was refreshed
+ */
+export async function verifyOAuthSessionAndRefresh(
+  headers: Headers
+): Promise<{
+  user: { id: number; name: string | null; email: string | null; avatar: string | null; role: string } | null;
+  newToken: string | null;
+}> {
+  const cookieHeader = headers.get("cookie");
+  if (!cookieHeader) return { user: null, newToken: null };
+
+  // Parse cookies manually
+  const cookies: Record<string, string> = {};
+  for (const pair of cookieHeader.split(";")) {
+    const [key, ...rest] = pair.trim().split("=");
+    if (key && rest.length > 0) cookies[key] = rest.join("=");
+  }
+
+  const token = cookies["vault_session"];
+  if (!token) return { user: null, newToken: null };
+
+  try {
+    const { payload } = await jose.jwtVerify<OAuthTokenPayload>(token, JWT_SECRET, {
+      clockTolerance: 60,
+    });
+
+    const userId = payload.userId as number;
+    const lastActivity = payload.lastActivity as number | undefined;
+    const iat = payload.iat as number | undefined;
+
+    if (!userId) return { user: null, newToken: null };
+
+    const now = Date.now();
+
+    // Check idle timeout (30 minutes)
+    if (lastActivity && now - lastActivity > IDLE_TIMEOUT_MS) {
+      console.log(`[OAuth] Session expired due to idle timeout for user ${userId}`);
+      return { user: null, newToken: null };
+    }
+
+    // Check absolute max age (7 days) - iat is in seconds, convert to ms
+    if (iat && now - iat * 1000 > ABSOLUTE_MAX_AGE_MS) {
+      console.log(`[OAuth] Session expired due to absolute max age for user ${userId}`);
+      return { user: null, newToken: null };
+    }
+
+    const db = getDb();
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) return { user: null, newToken: null };
+
+    // Refresh token if lastActivity is older than 5 minutes (avoid updating on every request)
+    let newToken: string | null = null;
+    if (lastActivity && now - lastActivity > 5 * 60 * 1000) {
+      newToken = await createOAuthSessionToken({ userId, provider: payload.provider as string });
+    }
+
+    return { user, newToken };
+  } catch {
+    return { user: null, newToken: null };
+  }
+}
+
+/**
+ * Verify an OAuth session cookie and return the user (without refresh)
+ * Used for simple verification without token rotation
+ */
+export async function verifyOAuthSession(
+  headers: Headers
+): Promise<{ id: number; name: string | null; email: string | null; avatar: string | null; role: string } | null> {
+  const result = await verifyOAuthSessionAndRefresh(headers);
+  return result.user;
 }
 
 export async function handleOAuthCallback(c: Context, provider: OAuthProvider) {
@@ -169,44 +268,5 @@ export async function handleOAuthCallback(c: Context, provider: OAuthProvider) {
         ),
       302
     );
-  }
-}
-
-/**
- * Verify an OAuth session cookie and return the user
- */
-export async function verifyOAuthSession(
-  headers: Headers
-): Promise<{ id: number; name: string | null; email: string | null; avatar: string | null; role: string } | null> {
-  const cookieHeader = headers.get("cookie");
-  if (!cookieHeader) return null;
-
-  // Parse cookies manually
-  const cookies: Record<string, string> = {};
-  for (const pair of cookieHeader.split(";")) {
-    const [key, ...rest] = pair.trim().split("=");
-    if (key && rest.length > 0) cookies[key] = rest.join("=");
-  }
-
-  const token = cookies["vault_session"];
-  if (!token) return null;
-
-  try {
-    const { payload } = await jose.jwtVerify(token, JWT_SECRET, {
-      clockTolerance: 60,
-    });
-    const userId = payload.userId as number;
-    if (!userId) return null;
-
-    const db = getDb();
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    return user || null;
-  } catch {
-    return null;
   }
 }
