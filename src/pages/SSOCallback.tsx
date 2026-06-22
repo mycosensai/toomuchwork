@@ -14,13 +14,12 @@ export default function SSOCallback() {
 
     const delay = setTimeout(() => {
       if (!cancelled) {
-        // Check if Clerk managed to sign us in by looking for storage indicators
-        const clerkPresent = !!document.cookie.includes('__session') || 
-                             !!localStorage.getItem('clerk-db') ||
-                             !!sessionStorage.getItem('local_auth_token') ||
-                             !!localStorage.getItem('vault_auth_present')
-        
-        // Always redirect to auth-success page - it will verify auth state there
+        // Check for custom OAuth or local auth session indicators
+        const hasOAuth = !!document.cookie.includes('vault_session')
+        const hasLocalAuth = !!sessionStorage.getItem('local_auth_token') ||
+                             !!localStorage.getItem('local_auth_token')
+        const authenticated = hasOAuth || hasLocalAuth
+
         navigate('/auth-success')
       }
     }, 1500)

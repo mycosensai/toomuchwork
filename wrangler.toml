@@ -17,6 +17,9 @@ binding = "DB"
 database_name = "thevault-db"
 database_id = "375949ce-7c7d-4822-8235-461446769258"
 
+# Local development: wrangler pages dev --d1=DB=thevault-db-local
+# Local DB ID: 150b02d5-4199-44ec-8d12-c44a7d6e6e9b
+
 [vars]
 ENVIRONMENT = "production"
 VAULT_DOMAIN = "thevaultdfw.win"
@@ -24,7 +27,7 @@ API_RUNTIME = "cloudflare-pages"
 ENABLE_STRIPE_WEBHOOKS = "true"
 ENABLE_RATE_LIMITING = "true"
 ENABLE_SECURITY_HEADERS = "true"
-VITE_CLERK_PUBLISHABLE_KEY = "LmBdIbVDpbQSATaP"
+VITE_CLERK_PUBLISHABLE_KEY = "pk_test_ZXhvdGljLWFyYWNobmlkLTQ1LmNsZXJrLmFjY291bnRzLmRldiQ"
 
 # ─── Clerk Configuration (set via dashboard / wrangler pages secret put) ───
 # CLERK_SECRET_KEY = "sk_test_..."

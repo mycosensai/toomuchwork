@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { trpc } from '@/providers/trpc'
 import {
-  Diamond, LogIn, Loader2, UserPlus, ArrowLeft, Eye, EyeOff
+  Diamond, Loader2, UserPlus, ArrowLeft, Eye, EyeOff
 } from 'lucide-react'
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -27,7 +26,7 @@ function XIcon({ className }: { className?: string }) {
 function AppleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M17.296 7.54c-.006-1.301 1.07-1.928 1.115-1.947-1.173-.723-2.623-.608-3.319-.263-.361.178-.682.172-.972.067-.4-.137-.688-.188-1.036-1.036C10.546 4.099 9.483 4 9.24 4L9 4c-1.656 0-2.985 1.273-2.985 3.047-.005 1.29.775 2.249 1.627 2.438.808.185 1.21.635 1.21 1.43 0 1.021-.433 1.933-1.17 2.59-.579.506-.492 1.642.164 1.975.6.305 1.45.01 2.218-.717.698-.629 1.19-1.671 1.136-2.671-.015-.334.117-.628.378-.86.246-.217.1.082.354-.216.3-.36.524-1.023.415-1.336-.31-.878-.913-1.365-1.901-1.365-.289 0-.49.06-.776.055-.793-.027-1.752.663-2.215.663-.462 0-1.49-.434-2.497-.369-1.297.078-2.905.994-3.473 2.52-.6 1.617-.092 4.222 1.138 5.359.815.765 1.88 1 3.067 1.01 1.356.011 2.347-.357 3.465-1.053 1.127-.686 2.33-2.043 2.703-2.043.074 0 .817.59 1.052.62.235.039.509-.174.779-.462.27-.287.551-.823.456-1.237-.726-.086-1.2-.514-1.553-1.208-.36-.71-.567-1.539-.398-2.428z" />
+      <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
     </svg>
   )
 }
@@ -38,149 +37,90 @@ function ProviderButton({
   onClick,
   disabled,
   pending,
+  variant = 'outline',
 }: {
   label: string
   icon: React.ReactNode
   onClick: () => void
   disabled?: boolean
   pending?: boolean
+  variant?: 'gold' | 'outline'
 }) {
+  const base =
+    'w-full flex items-center justify-center gap-3 py-3.5 text-xs tracking-[2px] uppercase font-cinzel font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed'
+  const styles =
+    variant === 'gold'
+      ? 'bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] hover:shadow-[0_0_40px_rgba(201,168,76,0.4)]'
+      : 'border border-[#C9A84C]/30 text-[#C9A84C] hover:bg-[#C9A84C]/8'
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled || pending}
-      className="w-full flex items-center justify-center gap-3 py-3.5 text-xs tracking-[2px] uppercase font-cinzel font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-[#C9A84C]/30 text-[#C9A84C] hover:bg-[#C9A84C]/8"
-    >
+    <button onClick={onClick} disabled={disabled || pending} className={`${base} ${styles}`}>
       {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : icon}
       {label}
     </button>
   )
 }
 
-function normalizeEmail(value: string) {
-  return value.trim().toLowerCase()
-}
-
-function cleanAuthError(message: string) {
-  if (!message) {
-    return 'Authentication failed. Please try again.'
-  }
-  if (
-    message.includes('Unable to transform response') ||
-    message.includes('Unexpected token') ||
-    message.includes('Unexpected end of JSON')
-  ) {
-    return 'Authentication service temporarily unavailable. The API may still be deploying or restarting.'
-  }
-  if (message.includes('Failed to fetch')) {
-    return 'Unable to reach authentication servers. Please check your connection and try again.'
-  }
-  return message
-}
-
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [pendingProvider, setPendingProvider] = useState<string | null>(null)
 
-  // Custom OAuth via tRPC (Google, X, Apple)
-  const getOAuthUrl = trpc.oauth.getAuthUrl.useMutation({
-    onSuccess: (data) => {
-      if (data?.url) {
-        window.location.href = data.url
-        return
-      }
-      setError(data?.error || 'OAuth provider unavailable.')
-    },
-    onError: (err) => setError(cleanAuthError(err.message)),
-  })
-
-  // Local email/password auth
-  const loginMutation = trpc.localAuth.login.useMutation({
-    onSuccess: (data) => {
-      if (data?.token) {
-        try {
-          sessionStorage.setItem('local_auth_token', data.token)
-          localStorage.setItem('vault_auth_present', 'true')
-        } catch {}
-        window.location.href = '/auth-success'
-      } else {
-        setError('Authentication completed but no token was returned.')
-      }
-    },
-    onError: (err) => setError(cleanAuthError(err.message)),
-  })
-
-  const registerMutation = trpc.localAuth.register.useMutation({
-    onSuccess: (data) => {
-      if (data?.token) {
-        try {
-          sessionStorage.setItem('local_auth_token', data.token)
-          localStorage.setItem('vault_auth_present', 'true')
-        } catch {}
-        window.location.href = '/auth-success'
-      } else {
-        setError('Authentication completed but no token was returned.')
-      }
-    },
-    onError: (err) => setError(cleanAuthError(err.message)),
-  })
-
-  const handleProviderOAuth = (provider: 'google' | 'x' | 'apple') => {
-    if (getOAuthUrl.isPending) {
-      return
-    }
+  const handleProviderLogin = async (provider: 'google' | 'x' | 'apple') => {
     setError('')
-    getOAuthUrl.mutate({ provider })
+    setPendingProvider(provider)
+    try {
+      window.location.href = `/api/oauth/${provider}/initiate`
+    } catch {
+      setError('Unable to start sign-in. Please try again.')
+      setPendingProvider(null)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-
-    if (loginMutation.isPending || registerMutation.isPending || getOAuthUrl.isPending) {
-      return
-    }
-
     setError('')
 
-    const normalizedEmail = normalizeEmail(email)
-    const trimmedName = name.trim()
+    const form = e.currentTarget
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim()
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value
 
-    if (mode === 'login') {
-      if (!normalizedEmail || !password) {
-        setError('Email and password are required')
+    if (!email || !password) {
+      setError('Please enter both email and password.')
+      return
+    }
+
+    setPendingProvider('email')
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.ok) {
+        setError(data.error || 'Login failed')
         return
       }
-      loginMutation.mutate({ email: normalizedEmail, password })
-      return
-    }
 
-    if (!trimmedName || !normalizedEmail || !password) {
-      setError('All fields are required')
-      return
+      if (data.token) {
+        sessionStorage.setItem('local_auth_token', data.token)
+      }
+      window.location.href = '/auth-success'
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setPendingProvider(null)
     }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
-      return
-    }
-
-    registerMutation.mutate({
-      name: trimmedName,
-      email: normalizedEmail,
-      password,
-    })
   }
-
-  const isPending = loginMutation.isPending || registerMutation.isPending || getOAuthUrl.isPending
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="max-w-md w-full">
+        {/* Header */}
         <div className="text-center mb-10">
           <div className="w-12 h-12 border border-[#C9A84C] rotate-45 flex items-center justify-center mx-auto mb-4">
             <Diamond className="w-5 h-5 text-[#C9A84C] -rotate-45" />
@@ -193,59 +133,46 @@ export default function Login() {
           </p>
         </div>
 
+        {/* Form Card */}
         <div className="bg-[#161616] border border-[#C9A84C]/25 p-8 relative">
           <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#C9A84C]" />
           <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#C9A84C]" />
 
+          {/* ─── OAuth Providers ─ */}
           <div className="space-y-3 mb-6">
             <ProviderButton
               label="Sign In with Google"
               icon={<GoogleIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('google')}
-              pending={getOAuthUrl.isPending}
+              onClick={() => handleProviderLogin('google')}
+              pending={pendingProvider === 'google'}
             />
             <ProviderButton
-              label="Continue with X"
+              label="Sign In with X"
               icon={<XIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('x')}
-              pending={getOAuthUrl.isPending}
+              onClick={() => handleProviderLogin('x')}
+              pending={pendingProvider === 'x'}
             />
             <ProviderButton
               label="Sign In with Apple"
               icon={<AppleIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('apple')}
-              pending={getOAuthUrl.isPending}
+              onClick={() => handleProviderLogin('apple')}
+              pending={pendingProvider === 'apple'}
             />
           </div>
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-[#C9A84C]/15" />
-            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or use email</span>
+            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or continue with email</span>
             <div className="flex-1 h-px bg-[#C9A84C]/15" />
           </div>
 
+          {/* Email Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {mode === 'register' && (
-              <div>
-                <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Collector"
-                  maxLength={80}
-                  className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
-                />
-              </div>
-            )}
-
             <div>
               <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Email</label>
               <input
                 type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                name="email"
                 placeholder="collector@vault.com"
                 className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
               />
@@ -255,19 +182,16 @@ export default function Login() {
               <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Password</label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  name="password"
                   placeholder="Min 8 characters"
                   className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 pr-12 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A6E2F] hover:text-[#C9A84C] transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <EyeOff className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -280,20 +204,15 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isPending}
+              disabled={pendingProvider === 'email'}
               className="w-full flex items-center justify-center gap-3 py-3.5 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] transition-all disabled:opacity-50"
             >
-              {isPending ? (
+              {pendingProvider === 'email' ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
-              ) : mode === 'login' ? (
-                <>
-                  <LogIn className="w-4 h-4" />
-                  Sign In
-                </>
               ) : (
                 <>
                   <UserPlus className="w-4 h-4" />
-                  Create Account
+                  {mode === 'login' ? 'Sign In' : 'Create Account'}
                 </>
               )}
             </button>

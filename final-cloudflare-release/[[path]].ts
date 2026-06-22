@@ -262,6 +262,24 @@ app.post("/api/stripe/webhook", async (c) => {
   return c.json({ ok: true, eventId: event.id, type: event.type });
 });
 
+// ─── OAuth routes ─────────────────────────────────────────────────────────
+app.get("/api/oauth/:provider/initiate", async (c) => {
+  const provider = c.req.param("provider") as "google" | "x" | "apple";
+  const host = c.req.header("host") || undefined;
+  const { buildAuthUrl } = await import("../api/oauth-providers");
+  const result = await buildAuthUrl(provider, host);
+  if (result.error || !result.url) {
+    return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
+  }
+  return c.redirect(result.url, 302);
+});
+
+app.get("/api/oauth/callback/:provider", async (c) => {
+  const provider = c.req.param("provider") as "google" | "x" | "apple";
+  const { handleOAuthCallback } = await import("../api/oauth-handlers");
+  return handleOAuthCallback(c as any, provider);
+});
+
 app.post("/api/auth/register", async (c) => {
   let input: AuthInput;
   try {

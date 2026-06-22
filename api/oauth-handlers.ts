@@ -156,7 +156,7 @@ export async function handleOAuthCallback(c: Context, provider: OAuthProvider) {
 
   try {
     // Exchange code for access token
-    const tokenResult = await exchangeCode(provider, code, stateData.pkce);
+    const tokenResult = await exchangeCode(provider, code, stateData.pkce, stateData.redirectUri);
     if (tokenResult.error || !tokenResult.access_token) {
       console.warn(`[OAuth ${provider}] Token exchange failed:`, tokenResult.error);
       return c.redirect("/?oauth_error=token_exchange_failed", 302);

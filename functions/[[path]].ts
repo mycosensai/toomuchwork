@@ -13,6 +13,7 @@ import { setDb } from "../api/queries/connection";
 import { setCloudflareEnv } from "../api/lib/env";
 import { checkRateLimit, getSecurityHeaders, getCorsConfig } from "../api/security";
 import clerkWebhook from "./clerk-webhook";
+import intercomWebhook from "./intercom-webhook";
 
 type Env = Record<string, unknown> & {
   DB?: D1Database;
@@ -280,6 +281,27 @@ app.post("/api/stripe/webhook", async (c) => {
 
 // ─── Clerk webhook ───
 app.route("/api/webhooks/clerk", clerkWebhook);
+
+// ─── Intercom webhook ───
+app.route("/api/webhooks/intercom", intercomWebhook);
+
+// ─── OAuth routes ─────────────────────────────────────────────────────────
+app.get("/api/oauth/:provider/initiate", async (c) => {
+  const provider = c.req.param("provider") as "google" | "x" | "apple";
+  const host = c.req.header("host") || undefined;
+  const { buildAuthUrl } = await import("../api/oauth-providers");
+  const result = await buildAuthUrl(provider, host);
+  if (result.error || !result.url) {
+    return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
+  }
+  return c.redirect(result.url, 302);
+});
+
+app.get("/api/oauth/callback/:provider", async (c) => {
+  const provider = c.req.param("provider") as "google" | "x" | "apple";
+  const { handleOAuthCallback } = await import("../api/oauth-handlers");
+  return handleOAuthCallback(c as any, provider);
+});
 
 // ─── Auth routes ───
 app.post("/api/auth/register", async (c) => {

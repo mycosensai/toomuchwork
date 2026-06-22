@@ -23,8 +23,6 @@ interface ProviderConfig {
   };
 }
 
-const CALLBACK_BASE = `${env.isProduction ? "https" : "http"}://localhost:3000`;
-
 export const PROVIDER_CONFIGS: Record<OAuthProvider, ProviderConfig> = {
   google: {
     name: "Google",
@@ -155,7 +153,8 @@ export function isProviderConfigured(provider: OAuthProvider): boolean {
 }
 
 export async function buildAuthUrl(
-  provider: OAuthProvider
+  provider: OAuthProvider,
+  hostOverride?: string
 ): Promise<{ url: string; error?: string }> {
   const config = PROVIDER_CONFIGS[provider];
   const clientId = getClientId(provider);
@@ -167,7 +166,11 @@ export async function buildAuthUrl(
     };
   }
 
-  const redirectUri = `${CALLBACK_BASE}/api/oauth/callback/${provider}`;
+  let base = hostOverride
+    ? `${env.isProduction ? "https" : "http"}://${hostOverride}`
+    : `${env.isProduction ? "https" : "http"}://localhost:3000`;
+
+  const redirectUri = `${base}/api/oauth/callback/${provider}`;
   const { verifier, challenge } = await generatePKCE();
   const nonceBytes = new Uint8Array(16);
   crypto.getRandomValues(nonceBytes);
@@ -202,17 +205,17 @@ export async function buildAuthUrl(
 export async function exchangeCode(
   provider: OAuthProvider,
   code: string,
-  pkce: string
+  pkce: string,
+  redirectUri?: string
 ): Promise<{ access_token: string; error?: string }> {
   const config = PROVIDER_CONFIGS[provider];
   const clientId = getClientId(provider);
   const clientSecret = getClientSecret(provider);
-  const redirectUri = `${CALLBACK_BASE}/api/oauth/callback/${provider}`;
 
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: redirectUri,
+    redirect_uri: redirectUri || "",
     client_id: clientId,
     client_secret: clientSecret,
     code_verifier: pkce,
