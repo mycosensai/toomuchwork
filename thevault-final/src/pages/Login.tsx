@@ -23,10 +23,10 @@ function XIcon({ className }: { className?: string }) {
   )
 }
 
-function GitHubIcon({ className }: { className?: string }) {
+function AppleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 1C5.922 1 1 5.922 1 12c0 4.86 3.152 8.983 7.523 10.437.55.102.753-.238.753-.53 0-.26-.009-.952-.014-1.87-3.06.664-3.706-1.475-3.706-1.475-.5-1.27-1.222-1.61-1.222-1.61-.998-.682.076-.668.076-.668 1.104.078 1.684 1.133 1.684 1.133.98 1.68 2.57 1.195 3.198.914.1-.71.384-1.196.698-1.47-2.442-.278-5.01-1.222-5.01-5.437 0-1.2.43-2.183 1.134-2.953-.114-.278-.492-1.397.108-2.91 0 0 .924-.296 3.026 1.128A10.59 10.59 0 0 1 12 5.803c.94.005 1.884.127 2.77.372 2.1-1.424 3.022-1.128 3.022-1.128.602 1.513.224 2.632.11 2.91.706.77 1.132 1.753 1.132 2.953 0 4.225-2.572 5.156-5.022 5.428.395.34.747 1.01.747 2.037 0 1.47-.014 2.657-.014 3.017 0 .295.2.637.757.53C19.85 20.98 23 16.858 23 12c0-6.078-4.922-11-11-11z" />
+      <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
     </svg>
   )
 }
@@ -64,17 +64,58 @@ function ProviderButton({
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [error, setError] = useState('')
+  const [pendingProvider, setPendingProvider] = useState<string | null>(null)
 
-  const handleProviderLogin = async (provider: 'google' | 'x' | 'github') => {
+  const handleProviderLogin = async (provider: 'google' | 'x' | 'apple') => {
     setError('')
+    setPendingProvider(provider)
+    try {
+      window.location.href = `/api/oauth/${provider}/initiate`
+    } catch {
+      setError('Unable to start sign-in. Please try again.')
+      setPendingProvider(null)
+    }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
-  }
 
-  const isPending = false
+    const form = e.currentTarget
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value.trim()
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+
+    if (!email || !password) {
+      setError('Please enter both email and password.')
+      return
+    }
+
+    setPendingProvider('email')
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.ok) {
+        setError(data.error || 'Login failed')
+        return
+      }
+
+      if (data.token) {
+        sessionStorage.setItem('local_auth_token', data.token)
+      }
+      window.location.href = '/auth-success'
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setPendingProvider(null)
+    }
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -103,19 +144,19 @@ export default function Login() {
               label="Sign In with Google"
               icon={<GoogleIcon className="w-4 h-4" />}
               onClick={() => handleProviderLogin('google')}
-              pending={isPending}
+              pending={pendingProvider === 'google'}
             />
             <ProviderButton
               label="Sign In with X"
               icon={<XIcon className="w-4 h-4" />}
               onClick={() => handleProviderLogin('x')}
-              pending={isPending}
+              pending={pendingProvider === 'x'}
             />
             <ProviderButton
-              label="Sign In with GitHub"
-              icon={<GitHubIcon className="w-4 h-4" />}
-              onClick={() => handleProviderLogin('github')}
-              pending={isPending}
+              label="Sign In with Apple"
+              icon={<AppleIcon className="w-4 h-4" />}
+              onClick={() => handleProviderLogin('apple')}
+              pending={pendingProvider === 'apple'}
             />
           </div>
 
@@ -131,6 +172,7 @@ export default function Login() {
               <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Email</label>
               <input
                 type="email"
+                name="email"
                 placeholder="collector@vault.com"
                 className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
               />
@@ -141,6 +183,7 @@ export default function Login() {
               <div className="relative">
                 <input
                   type="password"
+                  name="password"
                   placeholder="Min 8 characters"
                   className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 pr-12 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
                 />
@@ -161,10 +204,10 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isPending}
+              disabled={pendingProvider === 'email'}
               className="w-full flex items-center justify-center gap-3 py-3.5 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] transition-all disabled:opacity-50"
             >
-              {isPending ? (
+              {pendingProvider === 'email' ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
