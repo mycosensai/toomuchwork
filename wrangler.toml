@@ -28,6 +28,7 @@ ENABLE_STRIPE_WEBHOOKS = "true"
 ENABLE_RATE_LIMITING = "true"
 ENABLE_SECURITY_HEADERS = "true"
 VITE_CLERK_PUBLISHABLE_KEY = "pk_test_ZXhvdGljLWFyYWNobmlkLTQ1LmNsZXJrLmFjY291bnRzLmRldiQ"
+VITE_STRIPE_PUBLISHABLE_KEY = "pk_test_51TLQZKLDbsXQkF1yjXlPIp5vFPALP9qgMgqigWCqmycA7fBNK5hqARHqo9E5pXEZ32ErXHsOc1m46mFUTzQ9gsmk006pc2UfR2"
 
 # ─── Clerk Configuration (set via dashboard / wrangler pages secret put) ───
 # CLERK_SECRET_KEY = "sk_test_..."
