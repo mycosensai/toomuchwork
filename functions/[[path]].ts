@@ -367,5 +367,10 @@ app.all("/api/*", (c) => c.json({ error: "API route not found", path: c.req.path
 
 // Cloudflare Pages onRequest
 export const onRequest = async (context: any) => {
-  return app.fetch(context.request, context.env, context);
+  const url = new URL(context.request.url);
+  if (url.pathname.startsWith('/api/')) {
+    return app.fetch(context.request, context.env, context);
+  }
+  // Non-API requests fall through to Pages static asset serving
+  return context.next();
 };
