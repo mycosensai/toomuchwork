@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import {
-  Diamond, Loader2, UserPlus, ArrowLeft, Eye, EyeOff, Mail, KeyRound
+  Diamond, Loader2, ArrowLeft, Eye, EyeOff, KeyRound
 } from 'lucide-react'
-import { useSignIn, useSignUp } from '@clerk/clerk-react'
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -20,6 +19,14 @@ function GitHubIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+    </svg>
+  )
+}
+
+function XIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   )
 }
@@ -66,114 +73,18 @@ export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [error, setError] = useState('')
   const [pendingProvider, setPendingProvider] = useState<string | null>(null)
-
-  // ─── OTP state ───
-  const [otpMode, setOtpMode] = useState(false)
-  const [otpEmail, setOtpEmail] = useState('')
-  const [otpCode, setOtpCode] = useState('')
-  const [otpSent, setOtpSent] = useState(false)
-
-  // Clerk hooks — called unconditionally at top level (ClerkProvider wraps app)
-  const { signIn, isLoaded: signInLoaded, setActive } = useSignIn()
-  const { signUp, isLoaded: signUpLoaded } = useSignUp()
-  const clerkReady = signInLoaded && signUpLoaded
+  const [showPassword, setShowPassword] = useState(false)
 
   const clearError = () => { setError('') }
 
-  // ─── Clerk OAuth (Google, Apple, GitHub) ───
-  const handleClerkOAuth = async (provider: 'google' | 'apple' | 'github') => {
+  // ─── Custom OAuth provider redirect ───
+  const handleProviderOAuth = (provider: 'google' | 'github' | 'x' | 'apple') => {
     setError('')
     setPendingProvider(provider)
-    try {
-      if (!signIn || !signInLoaded) {
-        setError('Sign-in service not ready. Please try again.')
-        setPendingProvider(null)
-        return
-      }
-      await signIn.authenticateWithRedirect({
-        strategy: `oauth_${provider}`,
-        redirectUrl: window.location.origin + '/sso-callback',
-        redirectUrlComplete: window.location.origin + '/auth-success',
-      })
-    } catch (err: any) {
-      const msg = err?.errors?.[0]?.message || err?.message || 'OAuth sign-in failed'
-      setError(msg)
-      setPendingProvider(null)
-    }
+    window.location.href = `/api/oauth/${provider}/initiate`
   }
 
-  // ─── Clerk OTP (email code) — send code ───
-  const handleOtpSend = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!otpEmail.trim()) {
-      setError('Please enter your email address.')
-      return
-    }
-    setPendingProvider('otp')
-    try {
-      if (!signIn || !signInLoaded) {
-        setError('Sign-in service not ready.')
-        setPendingProvider(null)
-        return
-      }
-      const { supportedFirstFactors } = await signIn.create({
-        identifier: otpEmail.trim().toLowerCase(),
-      })
-      // Find email_code strategy
-      const emailCodeFactor = supportedFirstFactors?.find(
-        (f: any) => f.strategy === 'email_code'
-      )
-      if (emailCodeFactor) {
-        await signIn.prepareFirstFactor({
-          strategy: 'email_code',
-          emailAddressId: emailCodeFactor.emailAddressId,
-        })
-        setOtpSent(true)
-        setError('')
-      } else {
-        setError('OTP sign-in not available for this email. Use social sign-in or password.')
-      }
-    } catch (err: any) {
-      setError(err?.errors?.[0]?.message || 'Failed to send OTP code.')
-    } finally {
-      setPendingProvider(null)
-    }
-  }
-
-  // ─── Clerk OTP — verify code ───
-  const handleOtpVerify = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    if (!otpCode.trim()) {
-      setError('Please enter the verification code.')
-      return
-    }
-    setPendingProvider('otp')
-    try {
-      if (!signIn || !signInLoaded) {
-        setError('Sign-in service not ready.')
-        setPendingProvider(null)
-        return
-      }
-      const result = await signIn.attemptFirstFactor({
-        strategy: 'email_code',
-        code: otpCode.trim(),
-      })
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId })
-        window.location.href = '/auth-success'
-      } else {
-        setError('Verification incomplete. Please try again.')
-      }
-    } catch (err: any) {
-      setError(err?.errors?.[0]?.message || 'Invalid code. Please try again.')
-    } finally {
-      setPendingProvider(null)
-    }
-  }
-
-  // ─── Clerk Email/Password ───
+  // ─── Email/Password Login via custom backend ───
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
@@ -189,45 +100,29 @@ export default function Login() {
 
     setPendingProvider('email')
     try {
-      if (clerkReady && signIn) {
-        // Clerk email/password login
-        const result = await signIn.create({
-          identifier: email.toLowerCase(),
-          password,
-        })
-        if (result.status === 'complete') {
-          await setActive({ session: result.createdSessionId })
-          window.location.href = '/auth-success'
-          return
-        }
-        // Additional steps may be required (MFA, etc.)
-        setError('Sign-in requires additional verification.')
-      } else {
-        // Fallback: custom backend login (when Clerk unavailable)
-        const res = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-          credentials: 'include',
-        })
-        const data = await res.json()
-        if (!res.ok || !data.ok) {
-          setError(data.error || 'Login failed')
-          return
-        }
-        if (data.token) {
-          localStorage.setItem('local_auth_token', data.token)
-        }
-        window.location.href = '/auth-success'
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase(), password }),
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        setError(data.error || 'Login failed')
+        setPendingProvider(null)
+        return
       }
+      if (data.token) {
+        localStorage.setItem('local_auth_token', data.token)
+      }
+      window.location.href = '/auth-success'
     } catch (err: any) {
-      setError(err?.errors?.[0]?.message || 'Login failed. Check your credentials.')
-    } finally {
+      setError(err?.message || 'Login failed. Check your credentials.')
       setPendingProvider(null)
     }
   }
 
-  // ─── Clerk Email/Password Register ───
+  // ─── Email/Password Register via custom backend ───
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
@@ -244,132 +139,26 @@ export default function Login() {
 
     setPendingProvider('email')
     try {
-      if (clerkReady && signUp) {
-        // Clerk registration
-        const result = await signUp.create({
-          emailAddress: email.toLowerCase(),
-          password,
-          username: name || undefined,
-        })
-        await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
-        // Clerk email verification sent — user needs to check inbox
-        window.location.href = '/auth-success'
-      } else {
-        // Fallback: custom backend register
-        const res = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password }),
-          credentials: 'include',
-        })
-        const data = await res.json()
-        if (!res.ok || !data.ok) {
-          setError(data.error || 'Registration failed')
-          return
-        }
-        if (data.token) {
-          localStorage.setItem('local_auth_token', data.token)
-        }
-        window.location.href = '/auth-success'
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email: email.toLowerCase(), password }),
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (!res.ok || !data.ok) {
+        setError(data.error || 'Registration failed')
+        setPendingProvider(null)
+        return
       }
+      if (data.token) {
+        localStorage.setItem('local_auth_token', data.token)
+      }
+      window.location.href = '/auth-success'
     } catch (err: any) {
-      setError(err?.errors?.[0]?.message || 'Registration failed. Please try again.')
-    } finally {
+      setError(err?.message || 'Registration failed. Please try again.')
       setPendingProvider(null)
     }
-  }
-
-  // Show OTP verification screen
-  if (otpMode && otpSent) {
-    return (
-      <div className="min-h-screen pt-24 pb-16 px-4 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-10">
-            <div className="w-12 h-12 border border-[#C9A84C] rotate-45 flex items-center justify-center mx-auto mb-4">
-              <Diamond className="w-5 h-5 text-[#C9A84C] -rotate-45" />
-            </div>
-            <h1 className="font-cinzel text-xl font-bold text-[#F5EED8] tracking-[6px]">THE VAULT</h1>
-            <p className="text-[9px] tracking-[4px] uppercase text-[#8A6E2F] mt-2">Verify Code</p>
-          </div>
-          <div className="bg-[#161616] border border-[#C9A84C]/25 p-8 relative">
-            <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#C9A84C]" />
-            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#C9A84C]" />
-            <p className="text-xs text-[#C8BC98] mb-6 text-center">
-              A verification code was sent to <span className="text-[#C9A84C]">{otpEmail}</span>
-            </p>
-            <form onSubmit={handleOtpVerify} className="space-y-5">
-              <div>
-                <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Verification Code</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={otpCode}
-                  onChange={(e) => { setOtpCode(e.target.value); clearError() }}
-                  placeholder="123456"
-                  maxLength={6}
-                  className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-lg py-3 px-4 text-center tracking-[8px] outline-none focus:border-[#C9A84C] transition-colors"
-                />
-              </div>
-              {error && (
-                <div className="p-3 bg-red-500/5 border border-red-500/20 text-red-400 text-xs text-center">{error}</div>
-              )}
-              <button type="submit" disabled={pendingProvider === 'otp'}
-                className="w-full py-3.5 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold disabled:opacity-50">
-                {pendingProvider === 'otp' ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Verify & Sign In'}
-              </button>
-            </form>
-            <button onClick={() => { setOtpMode(false); setOtpSent(false); setOtpCode('') }}
-              className="mt-4 w-full text-xs text-[#C8BC98] hover:text-[#C9A84C] transition-colors">
-              Back to sign in
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Show OTP email input screen
-  if (otpMode && !otpSent) {
-    return (
-      <div className="min-h-screen pt-24 pb-16 px-4 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-10">
-            <div className="w-12 h-12 border border-[#C9A84C] rotate-45 flex items-center justify-center mx-auto mb-4">
-              <Diamond className="w-5 h-5 text-[#C9A84C] -rotate-45" />
-            </div>
-            <h1 className="font-cinzel text-xl font-bold text-[#F5EED8] tracking-[6px]">THE VAULT</h1>
-            <p className="text-[9px] tracking-[4px] uppercase text-[#8A6E2F] mt-2">One-Time Passcode</p>
-          </div>
-          <div className="bg-[#161616] border border-[#C9A84C]/25 p-8 relative">
-            <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#C9A84C]" />
-            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#C9A84C]" />
-            <form onSubmit={handleOtpSend} className="space-y-5">
-              <div>
-                <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Email Address</label>
-                <input
-                  type="email"
-                  value={otpEmail}
-                  onChange={(e) => { setOtpEmail(e.target.value); clearError() }}
-                  placeholder="collector@vault.com"
-                  className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
-                />
-              </div>
-              {error && (
-                <div className="p-3 bg-red-500/5 border border-red-500/20 text-red-400 text-xs text-center">{error}</div>
-              )}
-              <button type="submit" disabled={pendingProvider === 'otp'}
-                className="w-full py-3.5 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold disabled:opacity-50">
-                {pendingProvider === 'otp' ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Send Code'}
-              </button>
-            </form>
-            <button onClick={() => { setOtpMode(false); setOtpEmail('') }}
-              className="mt-4 w-full text-xs text-[#C8BC98] hover:text-[#C9A84C] transition-colors">
-              Back to sign in
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   // ─── Main Login/Register screen ───
@@ -401,41 +190,32 @@ export default function Login() {
             <ProviderButton
               label="Continue with Google"
               icon={<GoogleIcon className="w-4 h-4" />}
-              onClick={() => handleClerkOAuth('google')}
+              onClick={() => handleProviderOAuth('google')}
               pending={pendingProvider === 'google'}
-            />
-            <ProviderButton
-              label="Continue with Apple"
-              icon={<AppleIcon className="w-4 h-4" />}
-              onClick={() => handleClerkOAuth('apple')}
-              pending={pendingProvider === 'apple'}
             />
             <ProviderButton
               label="Continue with GitHub"
               icon={<GitHubIcon className="w-4 h-4" />}
-              onClick={() => handleClerkOAuth('github')}
+              onClick={() => handleProviderOAuth('github')}
               pending={pendingProvider === 'github'}
+            />
+            <ProviderButton
+              label="Continue with X"
+              icon={<XIcon className="w-4 h-4" />}
+              onClick={() => handleProviderOAuth('x')}
+              pending={pendingProvider === 'x'}
+            />
+            <ProviderButton
+              label="Continue with Apple"
+              icon={<AppleIcon className="w-4 h-4" />}
+              onClick={() => handleProviderOAuth('apple')}
+              pending={pendingProvider === 'apple'}
             />
           </div>
 
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-1 h-px bg-[#C9A84C]/15" />
-            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or</span>
-            <div className="flex-1 h-px bg-[#C9A84C]/15" />
-          </div>
-
-          {/* ─── OTP Button ─── */}
-          <button
-            onClick={() => { setOtpMode(true); setError('') }}
-            className="w-full flex items-center justify-center gap-3 py-3.5 border border-[#C9A84C]/30 text-[#C9A84C] text-xs tracking-[2px] uppercase font-cinzel font-semibold hover:bg-[#C9A84C]/8 transition-all mb-6"
-          >
-            <Mail className="w-4 h-4" />
-            Sign in with One-Time Passcode
-          </button>
-
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-[#C9A84C]/15" />
-            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or use password</span>
+            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or use email</span>
             <div className="flex-1 h-px bg-[#C9A84C]/15" />
           </div>
 
@@ -467,14 +247,17 @@ export default function Login() {
               <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Password</label>
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   placeholder="Min 8 characters"
                   className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 pr-12 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
                 />
-                <button type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A6E2F] hover:text-[#C9A84C] transition-colors">
-                  <EyeOff className="w-4 h-4" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A6E2F] hover:text-[#C9A84C] transition-colors"
+                >
+                  {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
               </div>
             </div>
@@ -487,7 +270,7 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={pendingProvider === 'email' || !clerkReady}
+              disabled={pendingProvider === 'email'}
               className="w-full flex items-center justify-center gap-3 py-3.5 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] transition-all disabled:opacity-50"
             >
               {pendingProvider === 'email' ? (

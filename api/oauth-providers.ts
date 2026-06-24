@@ -7,7 +7,7 @@
 import { env } from "./lib/env";
 import * as jose from "jose";
 
-export type OAuthProvider = "google" | "x" | "apple";
+export type OAuthProvider = "google" | "x" | "apple" | "github";
 
 interface ProviderConfig {
   name: string;
@@ -61,6 +61,19 @@ export const PROVIDER_CONFIGS: Record<OAuthProvider, ProviderConfig> = {
       name: data.name || "Apple User",
       email: data.email || null,
       avatar: data.picture || null,
+    }),
+  },
+  github: {
+    name: "GitHub",
+    authUrl: "https://github.com/login/oauth/authorize",
+    tokenUrl: "https://github.com/login/oauth/access_token",
+    profileUrl: "https://api.github.com/user",
+    scope: "read:user user:email",
+    profileParser: (data) => ({
+      id: String(data.id),
+      name: data.name || data.login || "GitHub User",
+      email: data.email || null,
+      avatar: data.avatar_url || null,
     }),
   },
 };
@@ -138,6 +151,7 @@ export function getClientId(provider: OAuthProvider): string {
   if (provider === "google") return env.googleClientId;
   if (provider === "x") return env.xClientId;
   if (provider === "apple") return env.appleClientId;
+  if (provider === "github") return env.githubClientId;
   return "";
 }
 
@@ -145,6 +159,7 @@ export function getClientSecret(provider: OAuthProvider): string {
   if (provider === "google") return env.googleClientSecret;
   if (provider === "x") return env.xClientSecret;
   if (provider === "apple") return env.appleClientSecret;
+  if (provider === "github") return env.githubClientSecret;
   return "";
 }
 
