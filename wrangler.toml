@@ -4,7 +4,7 @@ compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "dist"
 
-main = "functions/[[path]].ts"
+main = "./functions/[[path]].ts"
 
 [observability]
 enabled = true
@@ -17,9 +17,6 @@ binding = "DB"
 database_name = "thevault-db"
 database_id = "375949ce-7c7d-4822-8235-461446769258"
 
-# Local development: wrangler pages dev --d1=DB=thevault-db-local
-# Local DB ID: 150b02d5-4199-44ec-8d12-c44a7d6e6e9b
-
 [vars]
 ENVIRONMENT = "production"
 VAULT_DOMAIN = "thevaultdfw.win"
@@ -27,8 +24,7 @@ API_RUNTIME = "cloudflare-pages"
 ENABLE_STRIPE_WEBHOOKS = "true"
 ENABLE_RATE_LIMITING = "true"
 ENABLE_SECURITY_HEADERS = "true"
-VITE_CLERK_PUBLISHABLE_KEY = "pk_test_ZXhvdGljLWFyYWNobmlkLTQ1LmNsZXJrLmFjY291bnRzLmRldiQ"
-VITE_STRIPE_PUBLISHABLE_KEY = "pk_test_51TLQZKLDbsXQkF1yjXlPIp5vFPALP9qgMgqigWCqmycA7fBNK5hqARHqo9E5pXEZ32ErXHsOc1m46mFUTzQ9gsmk006pc2UfR2"
+VITE_CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsudGhldmF1bHRkZncud2luJA"
 
 # ─── Clerk Configuration (set via dashboard / wrangler pages secret put) ───
 # CLERK_SECRET_KEY = "sk_test_..."
@@ -38,5 +34,5 @@ VITE_STRIPE_PUBLISHABLE_KEY = "pk_test_51TLQZKLDbsXQkF1yjXlPIp5vFPALP9qgMgqigWCq
 # ─── Web3 Treasury Configuration ───
 # Set your treasury wallet address (Solana public key)
 # SOLANA_TREASURY = "YOUR_SOLANA_TREASURY_ADDRESS"
-# SOL_USD_RATE = ""
-# USDC_USD_RATE = "1.00"
+SOL_USD_RATE = "69.52"
+USDC_USD_RATE = "1.00"

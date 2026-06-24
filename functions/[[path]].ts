@@ -197,6 +197,14 @@ app.get("/api/health", (c) =>
   }),
 );
 
+// ─── ENV DIAGNOSTIC (temporary) ───
+app.get("/api/env-keys", (c) => {
+  const keys = Object.keys(c.env as Record<string, unknown>).filter(k => !k.startsWith("__"));
+  const solanaKeys = keys.filter(k => k.includes("SOL") || k.includes("TREASURY") || k.includes("RATE"));
+  const allKeys = keys.sort();
+  return c.json({ total: allKeys.length, solanaKeys, allKeys });
+});
+
 app.get("/api/db/health", async (c) => {
   const db = getD1(c.env);
 

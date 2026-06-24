@@ -12,12 +12,8 @@ export interface CloudflareEnv {
   OPENAI_API_KEY?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
-  X_CLIENT_ID?: string;
-  X_CLIENT_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
-  APPLE_CLIENT_ID?: string;
-  APPLE_CLIENT_SECRET?: string;
   NODE_ENV?: string;
   VAULT_DOMAIN?: string;
   RESEND_API_KEY?: string;
@@ -34,6 +30,10 @@ export interface CloudflareEnv {
 let cfEnv: CloudflareEnv = {
   APP_SECRET: "development-secret-change-in-production",
 };
+
+export function getRawEnv(): Record<string, unknown> {
+  return cfEnv as unknown as Record<string, unknown>;
+}
 
 export function setCloudflareEnv(env: Record<string, unknown>) {
   cfEnv = { ...(env as any) } as CloudflareEnv;
@@ -76,23 +76,11 @@ export const env = {
   get googleClientSecret(): string {
     return cfEnv.GOOGLE_CLIENT_SECRET || "";
   },
-  get xClientId(): string {
-    return cfEnv.X_CLIENT_ID || "";
-  },
-  get xClientSecret(): string {
-    return cfEnv.X_CLIENT_SECRET || "";
-  },
   get githubClientId(): string {
     return cfEnv.GITHUB_CLIENT_ID || "";
   },
   get githubClientSecret(): string {
     return cfEnv.GITHUB_CLIENT_SECRET || "";
-  },
-  get appleClientId(): string {
-    return cfEnv.APPLE_CLIENT_ID || "";
-  },
-  get appleClientSecret(): string {
-    return cfEnv.APPLE_CLIENT_SECRET || "";
   },
   get vaultDomain(): string {
     return cfEnv.VAULT_DOMAIN || "";

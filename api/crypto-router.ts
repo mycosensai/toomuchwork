@@ -5,7 +5,7 @@ import { cryptoPayments, listings } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
-import { env } from "./lib/env";
+import { getRawEnv } from "./lib/env";
 import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 // ─── Constants ───
@@ -59,13 +59,13 @@ type ParsedSolanaTransaction = {
 
 // ─── Treasury Wallet Management ───
 function getRuntimeValue(name: string): string {
-  const runtimeEnv = env as unknown as Record<string, string>;
+  const rawEnv = getRawEnv();
   const mapping: Record<string, string> = {
-    SOLANA_TREASURY: runtimeEnv.solanaTreasury || "",
-    TREASURY_WALLET: runtimeEnv.treasuryWallet || "",
-    SOLANA_RPC_URL: runtimeEnv.solanaRpcUrl || "",
-    SOL_USD_RATE: runtimeEnv.solUsdRate || "",
-    USDC_USD_RATE: runtimeEnv.usdcUsdRate || "1.00",
+    SOLANA_TREASURY: (rawEnv.SOLANA_TREASURY as string) || "",
+    TREASURY_WALLET: (rawEnv.TREASURY_WALLET as string) || "",
+    SOLANA_RPC_URL: (rawEnv.SOLANA_RPC_URL as string) || "",
+    SOL_USD_RATE: (rawEnv.SOL_USD_RATE as string) || "",
+    USDC_USD_RATE: (rawEnv.USDC_USD_RATE as string) || "1.00",
   };
   return mapping[name] || "";
 }
