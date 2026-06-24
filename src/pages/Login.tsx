@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import {
   Diamond, Loader2, UserPlus, ArrowLeft, Eye, EyeOff
 } from 'lucide-react'
+import { useSignIn } from '@clerk/clerk-react'
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -66,10 +67,25 @@ export default function Login() {
   const [error, setError] = useState('')
   const [pendingProvider, setPendingProvider] = useState<string | null>(null)
 
+  // Clerk sign-in hook — only call if ClerkProvider is rendering (pub key present)
+  const clerkPubKey: string | undefined = (import.meta as any).env?.VITE_CLERK_PUBLISHABLE_KEY
+  const clerk: ReturnType<typeof useSignIn> | null = clerkPubKey ? (() => { try { return useSignIn() } catch { return null } })() : null
+  const clerkReady = clerk?.isLoaded && !!clerk?.signIn
+
   const handleProviderLogin = async (provider: 'google' | 'x' | 'apple') => {
     setError('')
     setPendingProvider(provider)
     try {
+      // Use Clerk OAuth for Google/X (Apple falls back to custom OAuth)
+      if (provider !== 'apple' && clerk?.signIn) {
+        await clerk.signIn.authenticateWithRedirect({
+          strategy: `oauth_${provider}`,
+          redirectUrl: window.location.origin + '/sso-callback',
+          redirectUrlComplete: window.location.origin + '/auth-success',
+        })
+        return
+      }
+      // Fallback: custom OAuth backend (Apple + Clerk-unavailable)
       window.location.href = `/api/oauth/${provider}/initiate`
     } catch {
       setError('Unable to start sign-in. Please try again.')
