@@ -6,9 +6,7 @@ export default function SSOCallback() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Clerk automatically processes the OAuth callback when coming back from
-    // the OAuth provider. We just wait a moment for the cookie/session to settle,
-    // then redirect to the success/auth-success page which will verify auth state.
+    // wait a moment for the cookie/session to settle, then redirect.
 
     let cancelled = false
 

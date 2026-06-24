@@ -275,23 +275,18 @@ app.post("/api/stripe/webhook", async (c) => {
 // Intercom webhook disabled pending schema fix
 // app.route("/api/webhooks/intercom", intercomWebhook);
 
-// ─── OAuth routes ─────────────────────────────────────────────────────────
-app.get("/api/oauth/:provider/initiate", async (c) => {
-  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
-  const host = c.req.header("host") || undefined;
-  const { buildAuthUrl } = await import("../api/oauth-providers");
-  const result = await buildAuthUrl(provider, host);
-  if (result.error || !result.url) {
-    return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
-  }
-  return c.redirect(result.url, 302);
-});
+// ─── Auth routes ───
+app.post("/api/auth/login", async (c) => {
+    const { email, password } = await c.req.json();
+    const { localAuthRouter } = await import("../api/local-auth-router");
+    // Use the auth-router instead
+    const { authRouter } = await import("../api/auth-router");
+    return c.json({ ok: false, error: "Direct auth route not exposed — use tRPC" });
+  });
 
-app.get("/api/oauth/callback/:provider", async (c) => {
-  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
-  const { handleOAuthCallback } = await import("../api/oauth-handlers");
-  return handleOAuthCallback(c as any, provider);
-});
+  app.post("/api/auth/register", async (c) => {
+    return c.json({ ok: false, error: "Register via Clerk or tRPC" });
+  });
 
 // ─── Auth routes ───
 app.post("/api/auth/register", async (c) => {
