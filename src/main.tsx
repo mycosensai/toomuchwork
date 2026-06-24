@@ -42,7 +42,29 @@ function Root() {
   }
 
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      signInUrl="/login"
+      signUpUrl="/login"
+      afterSignInUrl="/auth-success"
+      afterSignUpUrl="/auth-success"
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
+      proxyUrl="clerk.thevaultdfw.win"
+      appearance={{
+        variables: {
+          colorPrimary: '#C9A84C',
+          colorBackground: '#080808',
+          colorText: '#F5EED8',
+          colorTextSecondary: '#C8BC98',
+          colorInputBackground: '#1E1E1E',
+          colorInputText: '#F5EED8',
+          colorInputBorder: '#C9A84C33',
+          borderRadius: '0px',
+          fontFamily: 'Cinzel, serif',
+        },
+      }}
+    >
       <BrowserRouter>
         <TRPCProvider>
           <App />
