@@ -1,7 +1,6 @@
 /**
  * Cloudflare Pages Functions Entry Point
  * Replaces Node.js boot.ts -- runs as a Cloudflare Worker with D1
- * Cache bust: 2026-06-23T22:33:00Z — Clerk OAuth + OTP + registration deploy
  */
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -13,7 +12,6 @@ import { createContext } from "../api/context";
 import { setDb } from "../api/queries/connection";
 import { setCloudflareEnv } from "../api/lib/env";
 import { checkRateLimit, getSecurityHeaders, getCorsConfig } from "../api/security";
-import clerkWebhook from "./clerk-webhook";
 import intercomWebhook from "./intercom-webhook";
 
 type Env = Record<string, unknown> & {
@@ -126,12 +124,6 @@ const app = new Hono<{ Bindings: Env }>();
 app.use(async (c, next) => {
   setCloudflareEnv(c.env as unknown as Record<string, unknown>);
   (globalThis as any).__cfExecCtx = c.executionCtx;
-
-  // Expose Clerk secret key for tRPC context to use
-  const clerkSecretKey = typeof c.env.CLERK_SECRET_KEY === "string" ? c.env.CLERK_SECRET_KEY : "";
-  if (clerkSecretKey) {
-    (globalThis as any).__CLERK_SECRET_KEY = clerkSecretKey;
-  }
 
   const db = getD1(c.env);
   if (db) {
@@ -288,15 +280,12 @@ app.post("/api/stripe/webhook", async (c) => {
   return c.json({ ok: true, eventId: event.id, type: event.type });
 });
 
-// ─── Clerk webhook ───
-app.route("/api/webhooks/clerk", clerkWebhook);
-
 // ─── Intercom webhook ───
 app.route("/api/webhooks/intercom", intercomWebhook);
 
 // ─── OAuth routes ─────────────────────────────────────────────────────────
 app.get("/api/oauth/:provider/initiate", async (c) => {
-  const provider = c.req.param("provider") as "google" | "x" | "apple";
+  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
   const host = c.req.header("host") || undefined;
   const { buildAuthUrl } = await import("../api/oauth-providers");
   const result = await buildAuthUrl(provider, host);
@@ -307,7 +296,7 @@ app.get("/api/oauth/:provider/initiate", async (c) => {
 });
 
 app.get("/api/oauth/callback/:provider", async (c) => {
-  const provider = c.req.param("provider") as "google" | "x" | "apple";
+  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
   const { handleOAuthCallback } = await import("../api/oauth-handlers");
   return handleOAuthCallback(c as any, provider);
 });

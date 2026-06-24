@@ -28,11 +28,6 @@ if (!localStorage.getItem('vault_session_id')) {
 }
 
 function Root() {
-  // If Clerk key is missing, log warning (OAuth disabled)
-  if (!clerkPubKey) {
-    console.warn('[Vault] Clerk publishable key missing — OAuth disabled')
-  }
-
   return (
     <BrowserRouter>
       <TRPCProvider>

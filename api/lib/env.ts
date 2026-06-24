@@ -10,6 +10,7 @@ export interface CloudflareEnv {
   STRIPE_SECRET_KEY?: string;
   VITE_STRIPE_PUBLISHABLE_KEY?: string;
   OPENAI_API_KEY?: string;
+  OPENAI_BASE_URL?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
@@ -69,6 +70,9 @@ export const env = {
   },
   get openaiApiKey(): string {
     return cfEnv.OPENAI_API_KEY || "";
+  },
+  get openaiBaseUrl(): string {
+    return cfEnv.OPENAI_BASE_URL || "https://api.openai.com/v1";
   },
   get googleClientId(): string {
     return cfEnv.GOOGLE_CLIENT_ID || "";
