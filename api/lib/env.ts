@@ -105,7 +105,7 @@ export const env = {
     return cfEnv.CLOUDFLARE_API_TOKEN || "";
   },
   get adminEmails(): string[] {
-    const raw = cfEnv.ADMIN_EMAILS || "";
+    const raw = cfEnv.ADMIN_EMAILS || "ratchetkrewelabs@gmail.com,dakotavanalstyne318@gmail.com";
     return raw
       .split(",")
       .map((item) => item.trim().toLowerCase())
