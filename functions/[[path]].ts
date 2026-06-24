@@ -12,7 +12,6 @@ import { createContext } from "../api/context";
 import { setDb } from "../api/queries/connection";
 import { setCloudflareEnv } from "../api/lib/env";
 import { checkRateLimit, getSecurityHeaders, getCorsConfig } from "../api/security";
-import intercomWebhook from "./intercom-webhook";
 
 type Env = Record<string, unknown> & {
   DB?: D1Database;
@@ -280,8 +279,8 @@ app.post("/api/stripe/webhook", async (c) => {
   return c.json({ ok: true, eventId: event.id, type: event.type });
 });
 
-// ─── Intercom webhook ───
-app.route("/api/webhooks/intercom", intercomWebhook);
+// Intercom webhook disabled pending schema fix
+// app.route("/api/webhooks/intercom", intercomWebhook);
 
 // ─── OAuth routes ─────────────────────────────────────────────────────────
 app.get("/api/oauth/:provider/initiate", async (c) => {
