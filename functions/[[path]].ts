@@ -1,6 +1,7 @@
 /**
  * Cloudflare Pages Functions Entry Point
  * Replaces Node.js boot.ts -- runs as a Cloudflare Worker with D1
+ * Cache bust: 2026-06-23T22:33:00Z — Clerk OAuth + OTP + registration deploy
  */
 import { Hono } from "hono";
 import { cors } from "hono/cors";
