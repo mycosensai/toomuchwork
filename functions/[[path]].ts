@@ -12,6 +12,7 @@ import { createContext } from "../api/context";
 import { setDb } from "../api/queries/connection";
 import { setCloudflareEnv } from "../api/lib/env";
 import { checkRateLimit, getSecurityHeaders, getCorsConfig } from "../api/security";
+import clerkWebhook from "./clerk-webhook";
 
 type Env = Record<string, unknown> & {
   DB?: D1Database;
@@ -275,60 +276,8 @@ app.post("/api/stripe/webhook", async (c) => {
 // Intercom webhook disabled pending schema fix
 // app.route("/api/webhooks/intercom", intercomWebhook);
 
-// ─── Auth routes ───
-app.post("/api/auth/login", async (c) => {
-    const { email, password } = await c.req.json();
-    const { localAuthRouter } = await import("../api/local-auth-router");
-    // Use the auth-router instead
-    const { authRouter } = await import("../api/auth-router");
-    return c.json({ ok: false, error: "Direct auth route not exposed — use tRPC" });
-  });
-
-  app.post("/api/auth/register", async (c) => {
-    return c.json({ ok: false, error: "Register via Clerk or tRPC" });
-  });
-
-// ─── Auth routes ───
-app.post("/api/auth/register", async (c) => {
-  let input: AuthInput;
-  try {
-    input = await c.req.json<AuthInput>();
-  } catch {
-    return c.json({ ok: false, error: "Invalid request body" }, 400);
-  }
-
-  try {
-    const caller = appRouter.createCaller(await createContext(getRequestContext(c) as any));
-    const result = await caller.localAuth.register({
-      name: String(input.name || ""),
-      email: String(input.email || ""),
-      password: String(input.password || ""),
-    });
-    return c.json({ ok: true, ...result });
-  } catch (error) {
-    return c.json({ ok: false, error: getPublicAuthError(error) }, 400);
-  }
-});
-
-app.post("/api/auth/login", async (c) => {
-  let input: AuthInput;
-  try {
-    input = await c.req.json<AuthInput>();
-  } catch {
-    return c.json({ ok: false, error: "Invalid request body" }, 400);
-  }
-
-  try {
-    const caller = appRouter.createCaller(await createContext(getRequestContext(c) as any));
-    const result = await caller.localAuth.login({
-      email: String(input.email || ""),
-      password: String(input.password || ""),
-    });
-    return c.json({ ok: true, ...result });
-  } catch (error) {
-    return c.json({ ok: false, error: getPublicAuthError(error) }, 400);
-  }
-});
+// ─── Clerk webhook ───
+app.route("/api/webhooks/clerk", clerkWebhook);
 
 // ─── tRPC handler ───
 async function handleTRPC(c: any) {
