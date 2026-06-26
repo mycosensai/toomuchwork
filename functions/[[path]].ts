@@ -323,11 +323,31 @@ app.post("/api/auth/login", async (c) => {
 // ─── OAuth routes ───
 app.get("/api/oauth/:provider/initiate", async (c) => {
   const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
+  
+  // Diagnostic: log available env keys (not values)
+  const envKeys = Object.keys(c.env || {}).filter((k) => /CLIENT|OAUTH|GOOGLE|GITHUB|APPLE|X_.*ID|SECRET/i.test(k)).sort();
+  console.log("[OAuth DEBUG] env keys:", JSON.stringify(envKeys));
+  
+  // Direct env read to bypass module caching
+  const rawEnv = c.env as Record<string, unknown>;
+  const directClientId = rawEnv[`${provider.toUpperCase()}_CLIENT_ID`];
+  const directClientSecret = rawEnv[`${provider.toUpperCase()}_CLIENT_SECRET`];
+  
   const host = c.req.header("host") || undefined;
   const { buildAuthUrl } = await import("../api/oauth-providers");
   const result = await buildAuthUrl(provider, host);
   if (result.error || !result.url) {
-    return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
+    return c.json({ 
+      ok: false, 
+      error: result.error || "Failed to build auth URL", 
+      debug: { 
+        envKeys,
+        directRead: {
+          clientId: directClientId ? String(directClientId).slice(0, 8) + "..." : null,
+          clientSecret: directClientSecret ? "***" : null,
+        }
+      } 
+    }, 400);
   }
   return c.redirect(result.url, 302);
 });
