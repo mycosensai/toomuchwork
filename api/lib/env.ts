@@ -56,7 +56,11 @@ export const env = {
     return secret;
   },
   get isProduction(): boolean {
-    return cfEnv.NODE_ENV === "production";
+    const nodeEnv = cfEnv.NODE_ENV;
+    if (nodeEnv) return nodeEnv === "production";
+    const domain = cfEnv.VAULT_DOMAIN as string | undefined;
+    const host = typeof globalThis !== "undefined" ? (globalThis as any).location?.hostname : undefined;
+    return !host || host === domain || domain === "thevaultdfw.win";
   },
   get databaseUrl(): string {
     return cfEnv.DATABASE_URL || "";
