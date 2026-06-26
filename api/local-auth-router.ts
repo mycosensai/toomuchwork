@@ -144,11 +144,12 @@ export const localAuthRouter = createRouter({
       }
 
       const hashedPassword = await hashPassword(input.password);
+      const isAdmin = env.adminEmails.includes(input.email.toLowerCase());
       const insertResult = await db.insert(users).values({
         name: input.name,
         email: input.email,
         password: hashedPassword,
-        role: "user",
+        role: isAdmin ? "admin" : "user",
       });
       const userId = Number(insertResult.meta.last_row_id);
 

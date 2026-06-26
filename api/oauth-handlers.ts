@@ -25,6 +25,11 @@ const getJwtSecret = () => new TextEncoder().encode(env.appSecret);
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const ABSOLUTE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return env.adminEmails.includes(email.toLowerCase());
+}
+
 interface OAuthTokenPayload {
   userId: number;
   provider: string;
@@ -220,7 +225,7 @@ export async function handleOAuthCallback(c: Context, provider: OAuthProvider) {
           name: profile.name,
           email: profile.email,
           avatar: profile.avatar,
-          role: "user",
+          role: isAdminEmail(profile.email) ? "admin" : "user",
         });
         userId = Number(result.meta.last_row_id);
       }
