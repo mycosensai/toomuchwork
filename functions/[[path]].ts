@@ -346,17 +346,11 @@ app.get("/api/oauth/callback/:provider", async (c) => {
 
 // ─── Client config endpoint (exposes public env vars at runtime) ───
 app.get("/api/config", (c) => {
-  // Try reading from multiple sources: env bindings, process.env, and globalThis
-  const clerkKey =
-    (c.env as any)?.VITE_CLERK_PUBLISHABLE_KEY ||
-    (typeof process !== "undefined" && (process as any).env?.VITE_CLERK_PUBLISHABLE_KEY) ||
-    "";
   const stripeKey =
     (c.env as any)?.VITE_STRIPE_PUBLISHABLE_KEY ||
     (typeof process !== "undefined" && (process as any).env?.VITE_STRIPE_PUBLISHABLE_KEY) ||
     "";
   return c.json({
-    VITE_CLERK_PUBLISHABLE_KEY: clerkKey,
     VITE_STRIPE_PUBLISHABLE_KEY: stripeKey,
     VAULT_DOMAIN: (c.env as any)?.VAULT_DOMAIN || "thevaultdfw.win",
   });
