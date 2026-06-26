@@ -1,12 +1,8 @@
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
-import { ClerkProvider } from '@clerk/clerk-react'
 import './index.css'
 import { TRPCProvider } from '@/providers/trpc'
 import App from './App.tsx'
-
-const clerkPubKey: string | undefined =
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 function createSessionId() {
   if (globalThis.crypto?.randomUUID) {
@@ -29,26 +25,12 @@ if (!localStorage.getItem('vault_session_id')) {
 }
 
 function Root() {
-  // If Clerk key is missing, render without ClerkProvider (graceful degradation)
-  if (!clerkPubKey) {
-    console.warn('[Vault] Clerk publishable key missing — Clerk login disabled')
-    return (
-      <BrowserRouter>
-        <TRPCProvider>
-          <App />
-        </TRPCProvider>
-      </BrowserRouter>
-    )
-  }
-
   return (
-    <ClerkProvider publishableKey={clerkPubKey}>
-      <BrowserRouter>
-        <TRPCProvider>
-          <App />
-        </TRPCProvider>
-      </BrowserRouter>
-    </ClerkProvider>
+    <BrowserRouter>
+      <TRPCProvider>
+        <App />
+      </TRPCProvider>
+    </BrowserRouter>
   )
 }
 

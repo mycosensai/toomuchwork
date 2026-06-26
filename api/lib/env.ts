@@ -11,6 +11,14 @@ export interface CloudflareEnv {
   VITE_STRIPE_PUBLISHABLE_KEY?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  X_CLIENT_ID?: string;
+  X_CLIENT_SECRET?: string;
+  APPLE_CLIENT_ID?: string;
+  APPLE_CLIENT_SECRET?: string;
   NODE_ENV?: string;
   VAULT_DOMAIN?: string;
   RESEND_API_KEY?: string;
@@ -73,6 +81,30 @@ export const env = {
   },
   get openaiBaseUrl(): string {
     return cfEnv.OPENAI_BASE_URL || "https://api.openai.com/v1";
+  },
+  get googleClientId(): string {
+    return cfEnv.GOOGLE_CLIENT_ID || "";
+  },
+  get googleClientSecret(): string {
+    return cfEnv.GOOGLE_CLIENT_SECRET || "";
+  },
+  get githubClientId(): string {
+    return cfEnv.GITHUB_CLIENT_ID || "";
+  },
+  get githubClientSecret(): string {
+    return cfEnv.GITHUB_CLIENT_SECRET || "";
+  },
+  get xClientId(): string {
+    return cfEnv.X_CLIENT_ID || "";
+  },
+  get xClientSecret(): string {
+    return cfEnv.X_CLIENT_SECRET || "";
+  },
+  get appleClientId(): string {
+    return cfEnv.APPLE_CLIENT_ID || "";
+  },
+  get appleClientSecret(): string {
+    return cfEnv.APPLE_CLIENT_SECRET || "";
   },
   get vaultDomain(): string {
     return cfEnv.VAULT_DOMAIN || "";

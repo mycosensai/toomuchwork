@@ -1,10 +1,10 @@
 import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import type { User } from "@db/schema";
+import { verifyOAuthSessionAndRefresh } from "./oauth-handlers";
 import { verifyLocalTokenAndRefresh } from "./local-auth-router";
 import { getDb } from "./queries/connection";
 import { users } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { env } from "./lib/env";
 
 export type TrpcContext = {
   req: Request;
@@ -26,86 +26,26 @@ function parseCookies(cookieHeader: string | null): Record<string, string> {
 }
 
 /**
- * Verify Clerk session token from the request.
- * Clerk sets __session cookie (or __clerk_db_jwt) on successful login.
- * We verify it using the Clerk Backend API via the secret key.
+ * Set cookie on response headers
  */
-async function verifyClerkSession(
-  headers: Headers,
-): Promise<{ userId: number; email: string } | null> {
-  const cookieHeader = headers.get("cookie");
-  if (!cookieHeader) return null;
-
-  const cookies = parseCookies(cookieHeader);
-  // Clerk may use __session or __clerk_db_jwt depending on config
-  const sessionToken = cookies["__session"] || cookies["__clerk_db_jwt"];
-  if (!sessionToken) return null;
-
-  const clerkSecret = env.clerkSecretKey;
-  if (!clerkSecret) return null;
-
-  try {
-    // Verify the Clerk session JWT using Clerk's API
-    const resp = await fetch("https://api.clerk.com/v1/sessions/verify", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${clerkSecret}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ token: sessionToken }),
-    });
-
-    if (!resp.ok) return null;
-
-    const sessionData = await resp.json();
-    const clerkUserId = sessionData.user_id as string;
-    if (!clerkUserId) return null;
-
-    // Look up the vault user by Clerk unionId
-    const db = getDb();
-    const [vaultUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.unionId, clerkUserId))
-      .limit(1);
-
-    if (!vaultUser) {
-      // Clerk user doesn't have a vault account yet — create one
-      const clerkUserResp = await fetch(
-        `https://api.clerk.com/v1/users/${clerkUserId}`,
-        { headers: { Authorization: `Bearer ${clerkSecret}` } },
-      );
-      if (!clerkUserResp.ok) return null;
-      const clerkUser = await clerkUserResp.json();
-
-      const name = clerkUser.first_name
-        ? `${clerkUser.first_name} ${clerkUser.last_name || ""}`.trim()
-        : clerkUser.email_addresses?.[0]?.email_address?.split("@")[0] || "User";
-      const email = clerkUser.email_addresses?.[0]?.email_address || null;
-
-      const result = await db.insert(users).values({
-        unionId: clerkUserId,
-        name,
-        email,
-        avatar: clerkUser.image_url || null,
-        role: "user",
-      });
-      const newId = Number(result.meta.last_row_id);
-
-      const [newUser] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, newId))
-        .limit(1);
-
-      return newUser
-        ? { userId: newUser.id, email: newUser.email || "" }
-        : null;
-    }
-
-    return { userId: vaultUser.id, email: vaultUser.email || "" };
-  } catch {
-    return null;
+function setCookieHeader(resHeaders: Headers, name: string, value: string, options: {
+  httpOnly?: boolean;
+  path?: string;
+  sameSite?: "lax" | "strict" | "none";
+  secure?: boolean;
+  maxAge?: number;
+}) {
+  const parts = [`${name}=${value}`];
+  if (options.httpOnly) parts.push("HttpOnly");
+  if (options.path) parts.push(`Path=${options.path}`);
+  if (options.sameSite) parts.push(`SameSite=${options.sameSite}`);
+  if (options.secure) parts.push("Secure");
+  if (options.maxAge) parts.push(`Max-Age=${options.maxAge}`);
+  const existing = resHeaders.get("set-cookie");
+  if (existing) {
+    resHeaders.set("set-cookie", `${existing}, ${parts.join("; ")}`);
+  } else {
+    resHeaders.set("set-cookie", parts.join("; "));
   }
 }
 
@@ -117,26 +57,32 @@ export async function createContext(
     resHeaders: opts.resHeaders,
   };
 
-  // 1. Try Clerk session first (primary auth)
+  // 1. OAuth session auth (with sliding expiration)
   try {
-    const clerkUser = await verifyClerkSession(opts.req.headers);
-    if (clerkUser) {
-      const db = getDb();
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, clerkUser.userId))
-        .limit(1);
-      if (user) {
-        ctx.user = user;
-        return ctx;
+    const { user: oauthUser, newToken } = await verifyOAuthSessionAndRefresh(opts.req.headers);
+
+    if (oauthUser) {
+      ctx.user = oauthUser as User;
+
+      // If token was refreshed, set new cookie
+      if (newToken) {
+        const cookieHeader = opts.req.headers.get("cookie");
+        const isLocalhost = cookieHeader?.includes("localhost:") || cookieHeader?.includes("127.0.0.1:");
+        setCookieHeader(opts.resHeaders, "vault_session", newToken, {
+          httpOnly: true,
+          path: "/",
+          sameSite: isLocalhost ? "lax" : "none",
+          secure: !isLocalhost,
+          maxAge: 7 * 24 * 60 * 60, // 7 days
+        });
       }
+      return ctx;
     }
   } catch {
-    // Clerk auth failed — fall through to local auth
+    // OAuth session invalid
   }
 
-  // 2. Fall back to local auth token (for backward compatibility)
+  // 2. Local auth fallback (with sliding expiration)
   try {
     const localToken = opts.req.headers.get("x-local-auth-token");
 

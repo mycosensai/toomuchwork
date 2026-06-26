@@ -12,7 +12,6 @@ import { createContext } from "../api/context";
 import { setDb } from "../api/queries/connection";
 import { setCloudflareEnv } from "../api/lib/env";
 import { checkRateLimit, getSecurityHeaders, getCorsConfig } from "../api/security";
-import clerkWebhook from "./clerk-webhook";
 
 type Env = Record<string, unknown> & {
   DB?: D1Database;
@@ -277,7 +276,85 @@ app.post("/api/stripe/webhook", async (c) => {
 // app.route("/api/webhooks/intercom", intercomWebhook);
 
 // ─── Clerk webhook ───
-app.route("/api/webhooks/clerk", clerkWebhook);
+// app.route("/api/webhooks/clerk", clerkWebhook);
+
+// ─── Auth routes ───
+app.post("/api/auth/register", async (c) => {
+  let input: AuthInput;
+  try {
+    input = await c.req.json<AuthInput>();
+  } catch {
+    return c.json({ ok: false, error: "Invalid request body" }, 400);
+  }
+
+  try {
+    const caller = appRouter.createCaller(await createContext(getRequestContext(c) as any));
+    const result = await caller.localAuth.register({
+      name: String(input.name || ""),
+      email: String(input.email || ""),
+      password: String(input.password || ""),
+    });
+    return c.json({ ok: true, ...result });
+  } catch (error) {
+    return c.json({ ok: false, error: getPublicAuthError(error) }, 400);
+  }
+});
+
+app.post("/api/auth/login", async (c) => {
+  let input: AuthInput;
+  try {
+    input = await c.req.json<AuthInput>();
+  } catch {
+    return c.json({ ok: false, error: "Invalid request body" }, 400);
+  }
+
+  try {
+    const caller = appRouter.createCaller(await createContext(getRequestContext(c) as any));
+    const result = await caller.localAuth.login({
+      email: String(input.email || ""),
+      password: String(input.password || ""),
+    });
+    return c.json({ ok: true, ...result });
+  } catch (error) {
+    return c.json({ ok: false, error: getPublicAuthError(error) }, 400);
+  }
+});
+
+// ─── OAuth routes ───
+app.get("/api/oauth/:provider/initiate", async (c) => {
+  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
+  const host = c.req.header("host") || undefined;
+  const { buildAuthUrl } = await import("../api/oauth-providers");
+  const result = await buildAuthUrl(provider, host);
+  if (result.error || !result.url) {
+    return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
+  }
+  return c.redirect(result.url, 302);
+});
+
+app.get("/api/oauth/callback/:provider", async (c) => {
+  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
+  const { handleOAuthCallback } = await import("../api/oauth-handlers");
+  return handleOAuthCallback(c as any, provider);
+});
+
+// ─── Client config endpoint (exposes public env vars at runtime) ───
+app.get("/api/config", (c) => {
+  // Try reading from multiple sources: env bindings, process.env, and globalThis
+  const clerkKey =
+    (c.env as any)?.VITE_CLERK_PUBLISHABLE_KEY ||
+    (typeof process !== "undefined" && (process as any).env?.VITE_CLERK_PUBLISHABLE_KEY) ||
+    "";
+  const stripeKey =
+    (c.env as any)?.VITE_STRIPE_PUBLISHABLE_KEY ||
+    (typeof process !== "undefined" && (process as any).env?.VITE_STRIPE_PUBLISHABLE_KEY) ||
+    "";
+  return c.json({
+    VITE_CLERK_PUBLISHABLE_KEY: clerkKey,
+    VITE_STRIPE_PUBLISHABLE_KEY: stripeKey,
+    VAULT_DOMAIN: (c.env as any)?.VAULT_DOMAIN || "thevaultdfw.win",
+  });
+});
 
 // ─── tRPC handler ───
 async function handleTRPC(c: any) {

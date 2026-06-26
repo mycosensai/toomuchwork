@@ -1,5 +1,6 @@
 import { authRouter } from "./auth-router";
 import { localAuthRouter } from "./local-auth-router";
+import { oauthRouter } from "./oauth-router";
 import { listingsRouter } from "./listings-router";
 import { categoriesRouter } from "./categories-router";
 import { appraisalRouter } from "./appraisal-router";
@@ -39,6 +40,7 @@ export const appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
   localAuth: localAuthRouter,
+  oauth: oauthRouter,
   listings: listingsRouter,
   categories: categoriesRouter,
   appraisal: appraisalRouter,
