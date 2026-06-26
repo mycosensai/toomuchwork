@@ -322,34 +322,20 @@ app.post("/api/auth/login", async (c) => {
 
 // ─── OAuth routes ───
 app.get("/api/oauth/:provider/initiate", async (c) => {
-  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
-  
-  // Diagnostic: log available env keys (not values)
-  const envKeys = Object.keys(c.env || {}).filter((k) => /CLIENT|OAUTH|GOOGLE|GITHUB|APPLE|X_.*ID|SECRET/i.test(k)).sort();
-  console.log("[OAuth DEBUG] env keys:", JSON.stringify(envKeys));
-  
-  // Direct env read to bypass module caching
-  const rawEnv = c.env as Record<string, unknown>;
-  const directClientId = rawEnv[`${provider.toUpperCase()}_CLIENT_ID`];
-  const directClientSecret = rawEnv[`${provider.toUpperCase()}_CLIENT_SECRET`];
-  
-  const host = c.req.header("host") || undefined;
-  const { buildAuthUrl } = await import("../api/oauth-providers");
-  const result = await buildAuthUrl(provider, host);
-  if (result.error || !result.url) {
-    return c.json({ 
-      ok: false, 
-      error: result.error || "Failed to build auth URL", 
-      debug: { 
-        envKeys,
-        directRead: {
-          clientId: directClientId ? String(directClientId).slice(0, 8) + "..." : null,
-          clientSecret: directClientSecret ? "***" : null,
-        }
-      } 
-    }, 400);
+  try {
+    const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
+    const host = c.req.header("host") || undefined;
+    
+    const { buildAuthUrl } = await import("../api/oauth-providers");
+    const result = await buildAuthUrl(provider, host);
+    
+    if (result.error || !result.url) {
+      return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
+    }
+    return c.redirect(result.url, 302);
+  } catch (e: any) {
+    return c.json({ ok: false, error: "OAuth init error", detail: e?.message || String(e) }, 500);
   }
-  return c.redirect(result.url, 302);
 });
 
 app.get("/api/oauth/callback/:provider", async (c) => {
@@ -360,17 +346,11 @@ app.get("/api/oauth/callback/:provider", async (c) => {
 
 // ─── Client config endpoint (exposes public env vars at runtime) ───
 app.get("/api/config", (c) => {
-  // Try reading from multiple sources: env bindings, process.env, and globalThis
-  const clerkKey =
-    (c.env as any)?.VITE_CLERK_PUBLISHABLE_KEY ||
-    (typeof process !== "undefined" && (process as any).env?.VITE_CLERK_PUBLISHABLE_KEY) ||
-    "";
   const stripeKey =
     (c.env as any)?.VITE_STRIPE_PUBLISHABLE_KEY ||
     (typeof process !== "undefined" && (process as any).env?.VITE_STRIPE_PUBLISHABLE_KEY) ||
     "";
   return c.json({
-    VITE_CLERK_PUBLISHABLE_KEY: clerkKey,
     VITE_STRIPE_PUBLISHABLE_KEY: stripeKey,
     VAULT_DOMAIN: (c.env as any)?.VAULT_DOMAIN || "thevaultdfw.win",
   });

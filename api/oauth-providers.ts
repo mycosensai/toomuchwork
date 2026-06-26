@@ -250,8 +250,18 @@ export async function exchangeCode(
     return { access_token: "", error: `Token exchange failed: ${text}` };
   }
 
-  const data = (await resp.json()) as { access_token?: string };
-  return { access_token: data.access_token ?? "" };
+  const data = (await resp.json()) as Record<string, unknown>;
+  const token = typeof data.access_token === "string" ? data.access_token : "";
+  const upstreamError = typeof data.error === "string" ? data.error : "";
+  const errorDescription =
+    typeof data.error_description === "string" ? data.error_description : "";
+
+  if (!token && upstreamError) {
+    const detail = errorDescription ? `${upstreamError}: ${errorDescription}` : upstreamError;
+    return { access_token: "", error: `Token exchange failed: ${detail}` };
+  }
+
+  return { access_token: token };
 }
 
 // ─── Profile Fetch ───
