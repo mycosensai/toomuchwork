@@ -1,1 +1,0 @@
-APPV2_PAGES=About,Admin,AgentCommand,AgentProject,Agents,Appraisal,AppraisalEmail,Certificate,Checkout,Contact,CryptoCheckout,FAQ,Home,Leads,ListingDetail,Login,MarketingDashboard,NotFound,Orders,Privacy,ProVerify,ProVerifyResult,Returns,SaleManager,Sell,Shipping,SocialLeads,Storefront,Support,Terms,TokenGallery,WalletPay,Wishlist
