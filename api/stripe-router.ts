@@ -111,54 +111,6 @@ export const stripeRouter = createRouter({
     return { key: env.stripePublishableKey || "" };
   }),
 
-  handleWebhook: publicQuery
-    .input(z.object({ payload: z.string(), signature: z.string(), secret: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      // For Workers, webhook verification is done via endpoint secret comparison
-      // since we can't use the Stripe SDK's crypto. In production, verify the timestamp-signature pair.
-      if (input.secret !== env.stripeSecretKey) {
-        logAudit({
-          ip: getClientIP(ctx.req),
-          method: "POST",
-          path: "stripe.handleWebhook",
-          action: "webhook_rejected",
-          details: "Invalid webhook secret",
-        });
-        throw new Error("Webhook verification failed");
-      }
-
-      const db = getDb();
-      let payload: any;
-      try {
-        payload = JSON.parse(input.payload);
-      } catch {
-        return { status: "invalid", error: "Invalid JSON payload" };
-      }
-
-      if (payload.type !== "checkout.session.completed") {
-        return { status: "ignored", type: payload.type };
-      }
-
-      const session = payload.data?.object;
-      if (!session?.id) return { status: "invalid" };
-
-      await db.update(stripeSessions).set({ status: "completed" }).where(eq(stripeSessions.sessionId, session.id));
-
-      const [sessRecord] = await db.select().from(stripeSessions).where(eq(stripeSessions.sessionId, session.id)).limit(1);
-      if (sessRecord) {
-        await db.update(listings).set({ status: "sold" }).where(eq(listings.id, sessRecord.listingId));
-        logAudit({
-          ip: getClientIP(ctx.req),
-          method: "POST",
-          path: "stripe.handleWebhook",
-          action: "webhook_processed",
-          details: `listing:${sessRecord.listingId} session:${session.id}`,
-        });
-      }
-
-      return { status: "completed", message: "Payment verified and processed" };
-    }),
-
   getBranding: publicQuery.query(() => {
     return { displayName: VAULT_BRANDING.display_name, backgroundColor: VAULT_BRANDING.background_color, buttonColor: VAULT_BRANDING.button_color };
   }),

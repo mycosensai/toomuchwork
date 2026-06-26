@@ -3,10 +3,32 @@ import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { users, listings, appraisals, stripeSessions, aiAgentLogs, agentProjects, agentTasks, agentCycles, agentFleetState, agentLogs } from "@db/schema";
 import { desc, sql, eq, and } from "drizzle-orm";
-import { logAudit, getClientIP } from "./security";
+import { logAudit, getClientIP, checkRateLimit } from "./security";
+import { env } from "./lib/env";
+
+function requireAdmin(ctx: any) {
+  const email = ctx.user?.email?.toLowerCase();
+  if (!email) {
+    throw new Error("Authentication context missing email");
+  }
+
+  const allowed = env.adminEmails;
+  if (!allowed.includes(email)) {
+    logAudit({
+      ip: getClientIP(ctx.req),
+      method: "GET",
+      path: "admin.forbidden",
+      userId: ctx.user?.id,
+      action: "admin_access_denied",
+      details: `email:${email}`,
+    });
+    throw new Error("Forbidden");
+  }
+}
 
 export const adminRouter = createRouter({
-  stats: adminQuery.query(async () => {
+  stats: adminQuery.query(async ({ ctx }) => {
+    requireAdmin(ctx);
     const db = getDb();
 
     const [userCount] = await db.select({ count: sql<number>`count(*)` }).from(users);
@@ -211,7 +233,7 @@ export const adminRouter = createRouter({
   // ─── CLOUDFLARE MANAGEMENT ───
   cloudflareStatus: adminQuery.query(async ({ ctx }) => {
     logAudit({ ip: getClientIP(ctx.req), method: "GET", path: "admin.cloudflareStatus", userId: ctx.user?.id, action: "admin_cf_access" });
-    const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+    const apiToken = env.cloudflareApiToken;
     const accountId = "2ad733f9d698170c202b12924868c60e";
     
     if (!apiToken) {
@@ -233,7 +255,7 @@ export const adminRouter = createRouter({
     .input(z.object({ projectName: z.string().default("thevault") }))
     .mutation(async ({ input, ctx }) => {
       logAudit({ ip: getClientIP(ctx.req), method: "POST", path: "admin.cloudflareDeploy", userId: ctx.user?.id, action: "admin_cf_deploy" });
-      const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+      const apiToken = env.cloudflareApiToken;
       const accountId = "2ad733f9d698170c202b12924868c60e";
       
       if (!apiToken) return { success: false, error: "CLOUDFLARE_API_TOKEN not set" };
@@ -256,7 +278,7 @@ export const adminRouter = createRouter({
     .input(z.object({ projectName: z.string().default("thevault") }))
     .query(async ({ input, ctx }) => {
       logAudit({ ip: getClientIP(ctx.req), method: "GET", path: "admin.cloudflareBindings", userId: ctx.user?.id, action: "admin_cf_bindings" });
-      const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+      const apiToken = env.cloudflareApiToken;
       const accountId = "2ad733f9d698170c202b12924868c60e";
       
       if (!apiToken) return { configured: false, error: "CLOUDFLARE_API_TOKEN not set" };

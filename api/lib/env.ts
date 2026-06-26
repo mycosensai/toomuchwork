@@ -1,7 +1,7 @@
 /** Cloudflare Workers Environment bindings and helper env object. */
 
 export interface CloudflareEnv {
-  APP_SECRET: string;
+  APP_SECRET?: string;
   APP_ID?: string;
   DATABASE_URL?: string;
   KIMI_AUTH_URL?: string;
@@ -15,6 +15,10 @@ export interface CloudflareEnv {
   GOOGLE_CLIENT_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
+  X_CLIENT_ID?: string;
+  X_CLIENT_SECRET?: string;
+  APPLE_CLIENT_ID?: string;
+  APPLE_CLIENT_SECRET?: string;
   NODE_ENV?: string;
   VAULT_DOMAIN?: string;
   RESEND_API_KEY?: string;
@@ -25,12 +29,12 @@ export interface CloudflareEnv {
   SOL_USD_RATE?: string;
   USDC_USD_RATE?: string;
   TREASURY_WALLET?: string;
+  CLOUDFLARE_API_TOKEN?: string;
+  ADMIN_EMAILS?: string;
   DB?: any;
 }
 
-let cfEnv: CloudflareEnv = {
-  APP_SECRET: "development-secret-change-in-production",
-};
+let cfEnv: CloudflareEnv = {};
 
 export function getRawEnv(): Record<string, unknown> {
   return cfEnv as unknown as Record<string, unknown>;
@@ -45,10 +49,18 @@ export const env = {
     return cfEnv.APP_ID || "";
   },
   get appSecret(): string {
-    return cfEnv.APP_SECRET || "fallback-secret";
+    const secret = cfEnv.APP_SECRET;
+    if (!secret) {
+      throw new Error("APP_SECRET is required but not configured");
+    }
+    return secret;
   },
   get isProduction(): boolean {
-    return cfEnv.NODE_ENV === "production";
+    const nodeEnv = cfEnv.NODE_ENV;
+    if (nodeEnv) return nodeEnv === "production";
+    const domain = cfEnv.VAULT_DOMAIN as string | undefined;
+    const host = typeof globalThis !== "undefined" ? (globalThis as any).location?.hostname : undefined;
+    return !host || host === domain || domain === "thevaultdfw.win";
   },
   get databaseUrl(): string {
     return cfEnv.DATABASE_URL || "";
@@ -86,6 +98,18 @@ export const env = {
   get githubClientSecret(): string {
     return cfEnv.GITHUB_CLIENT_SECRET || "";
   },
+  get xClientId(): string {
+    return cfEnv.X_CLIENT_ID || "";
+  },
+  get xClientSecret(): string {
+    return cfEnv.X_CLIENT_SECRET || "";
+  },
+  get appleClientId(): string {
+    return cfEnv.APPLE_CLIENT_ID || "";
+  },
+  get appleClientSecret(): string {
+    return cfEnv.APPLE_CLIENT_SECRET || "";
+  },
   get vaultDomain(): string {
     return cfEnv.VAULT_DOMAIN || "";
   },
@@ -112,5 +136,15 @@ export const env = {
   },
   get treasuryWallet(): string {
     return cfEnv.TREASURY_WALLET || "";
+  },
+  get cloudflareApiToken(): string {
+    return cfEnv.CLOUDFLARE_API_TOKEN || "";
+  },
+  get adminEmails(): string[] {
+    const raw = cfEnv.ADMIN_EMAILS || "ratchetkrewelabs@gmail.com,dakotavanalstyne318@gmail.com";
+    return raw
+      .split(",")
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean);
   },
 };

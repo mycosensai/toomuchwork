@@ -23,46 +23,25 @@ function GitHubIcon({ className }: { className?: string }) {
   )
 }
 
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  )
-}
-
-function AppleIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-    </svg>
-  )
-}
-
 function ProviderButton({
   label,
   icon,
   onClick,
   disabled,
   pending,
-  variant = 'outline',
 }: {
   label: string
   icon: React.ReactNode
   onClick: () => void
   disabled?: boolean
   pending?: boolean
-  variant?: 'gold' | 'outline'
 }) {
-  const base =
-    'w-full flex items-center justify-center gap-3 py-3.5 text-xs tracking-[2px] uppercase font-cinzel font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed'
-  const styles =
-    variant === 'gold'
-      ? 'bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] hover:shadow-[0_0_40px_rgba(201,168,76,0.4)]'
-      : 'border border-[#C9A84C]/30 text-[#C9A84C] hover:bg-[#C9A84C]/8'
-
   return (
-    <button onClick={onClick} disabled={disabled || pending} className={`${base} ${styles}`}>
+    <button
+      onClick={onClick}
+      disabled={disabled || pending}
+      className="w-full flex items-center justify-center gap-3 py-3.5 text-xs tracking-[2px] uppercase font-cinzel font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-[#C9A84C]/30 text-[#C9A84C] hover:bg-[#C9A84C]/8"
+    >
       {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : icon}
       {label}
     </button>
@@ -72,22 +51,23 @@ function ProviderButton({
 export default function Login() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [error, setError] = useState('')
-  const [pendingProvider, setPendingProvider] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
   const clearError = () => { setError('') }
 
-  // ─── Custom OAuth provider redirect ───
-  const handleProviderOAuth = (provider: 'google' | 'github' | 'x' | 'apple') => {
+  // ─── OAuth provider redirect ───
+  const handleOAuth = (provider: string) => {
     setError('')
-    setPendingProvider(provider)
+    setPending(true)
     window.location.href = `/api/oauth/${provider}/initiate`
   }
 
-  // ─── Email/Password Login via custom backend ───
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // ─── Email/Password Login ───
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
+    setPending(true)
 
     const form = e.currentTarget
     const email = (form.elements.namedItem('email') as HTMLInputElement)?.value?.trim()
@@ -95,10 +75,10 @@ export default function Login() {
 
     if (!email || !password) {
       setError('Please enter both email and password.')
+      setPending(false)
       return
     }
 
-    setPendingProvider('email')
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -109,7 +89,7 @@ export default function Login() {
       const data = await res.json()
       if (!res.ok || !data.ok) {
         setError(data.error || 'Login failed')
-        setPendingProvider(null)
+        setPending(false)
         return
       }
       if (data.token) {
@@ -118,14 +98,15 @@ export default function Login() {
       window.location.href = '/auth-success'
     } catch (err: any) {
       setError(err?.message || 'Login failed. Check your credentials.')
-      setPendingProvider(null)
+      setPending(false)
     }
   }
 
-  // ─── Email/Password Register via custom backend ───
+  // ─── Email/Password Register ───
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
+    setPending(true)
 
     const form = e.currentTarget
     const name = (form.elements.namedItem('name') as HTMLInputElement)?.value?.trim() || ''
@@ -134,10 +115,10 @@ export default function Login() {
 
     if (!email || !password) {
       setError('Please enter both email and password.')
+      setPending(false)
       return
     }
 
-    setPendingProvider('email')
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -148,7 +129,7 @@ export default function Login() {
       const data = await res.json()
       if (!res.ok || !data.ok) {
         setError(data.error || 'Registration failed')
-        setPendingProvider(null)
+        setPending(false)
         return
       }
       if (data.token) {
@@ -157,12 +138,11 @@ export default function Login() {
       window.location.href = '/auth-success'
     } catch (err: any) {
       setError(err?.message || 'Registration failed. Please try again.')
-      setPendingProvider(null)
+      setPending(false)
     }
   }
 
-  // ─── Main Login/Register screen ───
-  const formAction = mode === 'login' ? handleSubmit : handleRegister
+  const formAction = mode === 'login' ? handleLogin : handleRegister
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -185,40 +165,6 @@ export default function Login() {
           <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#C9A84C]" />
           <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#C9A84C]" />
 
-          {/* ─── Social OAuth Providers ─── */}
-          <div className="space-y-3 mb-6">
-            <ProviderButton
-              label="Continue with Google"
-              icon={<GoogleIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('google')}
-              pending={pendingProvider === 'google'}
-            />
-            <ProviderButton
-              label="Continue with GitHub"
-              icon={<GitHubIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('github')}
-              pending={pendingProvider === 'github'}
-            />
-            <ProviderButton
-              label="Continue with X"
-              icon={<XIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('x')}
-              pending={pendingProvider === 'x'}
-            />
-            <ProviderButton
-              label="Continue with Apple"
-              icon={<AppleIcon className="w-4 h-4" />}
-              onClick={() => handleProviderOAuth('apple')}
-              pending={pendingProvider === 'apple'}
-            />
-          </div>
-
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 h-px bg-[#C9A84C]/15" />
-            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or use email</span>
-            <div className="flex-1 h-px bg-[#C9A84C]/15" />
-          </div>
-
           {/* Email/Password Form */}
           <form onSubmit={formAction} className="space-y-5">
             {mode === 'register' && (
@@ -238,7 +184,7 @@ export default function Login() {
               <input
                 type="email"
                 name="email"
-                placeholder="collector@vault.com"
+                placeholder="you@vault.com"
                 className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
               />
             </div>
@@ -249,7 +195,7 @@ export default function Login() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
-                  placeholder="Min 8 characters"
+                  placeholder={mode === 'register' ? 'Min 8 characters' : 'Your password'}
                   className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 pr-12 outline-none focus:border-[#C9A84C] transition-colors placeholder:text-[#8A6E2F]"
                 />
                 <button
@@ -270,10 +216,10 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={pendingProvider === 'email'}
+              disabled={pending}
               className="w-full flex items-center justify-center gap-3 py-3.5 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] transition-all disabled:opacity-50"
             >
-              {pendingProvider === 'email' ? (
+              {pending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
@@ -283,6 +229,26 @@ export default function Login() {
               )}
             </button>
           </form>
+
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-[#C9A84C]/15" />
+            <span className="text-[10px] text-[#8A6E2F] tracking-[2px] uppercase">or continue with</span>
+            <div className="flex-1 h-px bg-[#C9A84C]/15" />
+          </div>
+
+          {/* OAuth Buttons */}
+          <div className="space-y-3">
+            <ProviderButton
+              label="Google"
+              icon={<GoogleIcon className="w-4 h-4" />}
+              onClick={() => handleOAuth('google')}
+            />
+            <ProviderButton
+              label="GitHub"
+              icon={<GitHubIcon className="w-4 h-4" />}
+              onClick={() => handleOAuth('github')}
+            />
+          </div>
 
           <div className="mt-6 text-center">
             <button

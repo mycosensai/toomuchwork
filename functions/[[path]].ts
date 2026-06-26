@@ -189,14 +189,7 @@ app.get("/api/health", (c) =>
   }),
 );
 
-// ─── ENV DIAGNOSTIC (temporary) ───
-app.get("/api/env-keys", (c) => {
-  const keys = Object.keys(c.env as Record<string, unknown>).filter(k => !k.startsWith("__"));
-  const solanaKeys = keys.filter(k => k.includes("SOL") || k.includes("TREASURY") || k.includes("RATE"));
-  const allKeys = keys.sort();
-  return c.json({ total: allKeys.length, solanaKeys, allKeys });
-});
-
+// ─── DB Health ───
 app.get("/api/db/health", async (c) => {
   const db = getD1(c.env);
 
@@ -282,23 +275,8 @@ app.post("/api/stripe/webhook", async (c) => {
 // Intercom webhook disabled pending schema fix
 // app.route("/api/webhooks/intercom", intercomWebhook);
 
-// ─── OAuth routes ─────────────────────────────────────────────────────────
-app.get("/api/oauth/:provider/initiate", async (c) => {
-  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
-  const host = c.req.header("host") || undefined;
-  const { buildAuthUrl } = await import("../api/oauth-providers");
-  const result = await buildAuthUrl(provider, host);
-  if (result.error || !result.url) {
-    return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
-  }
-  return c.redirect(result.url, 302);
-});
-
-app.get("/api/oauth/callback/:provider", async (c) => {
-  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
-  const { handleOAuthCallback } = await import("../api/oauth-handlers");
-  return handleOAuthCallback(c as any, provider);
-});
+// ─── Clerk webhook ───
+// app.route("/api/webhooks/clerk", clerkWebhook);
 
 // ─── Auth routes ───
 app.post("/api/auth/register", async (c) => {
@@ -340,6 +318,48 @@ app.post("/api/auth/login", async (c) => {
   } catch (error) {
     return c.json({ ok: false, error: getPublicAuthError(error) }, 400);
   }
+});
+
+// ─── OAuth routes ───
+app.get("/api/oauth/:provider/initiate", async (c) => {
+  try {
+    const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
+    const host = c.req.header("host") || undefined;
+    
+    const { buildAuthUrl } = await import("../api/oauth-providers");
+    const result = await buildAuthUrl(provider, host);
+    
+    if (result.error || !result.url) {
+      return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
+    }
+    return c.redirect(result.url, 302);
+  } catch (e: any) {
+    return c.json({ ok: false, error: "OAuth init error", detail: e?.message || String(e) }, 500);
+  }
+});
+
+app.get("/api/oauth/callback/:provider", async (c) => {
+  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
+  const { handleOAuthCallback } = await import("../api/oauth-handlers");
+  return handleOAuthCallback(c as any, provider);
+});
+
+// ─── Client config endpoint (exposes public env vars at runtime) ───
+app.get("/api/config", (c) => {
+  // Try reading from multiple sources: env bindings, process.env, and globalThis
+  const clerkKey =
+    (c.env as any)?.VITE_CLERK_PUBLISHABLE_KEY ||
+    (typeof process !== "undefined" && (process as any).env?.VITE_CLERK_PUBLISHABLE_KEY) ||
+    "";
+  const stripeKey =
+    (c.env as any)?.VITE_STRIPE_PUBLISHABLE_KEY ||
+    (typeof process !== "undefined" && (process as any).env?.VITE_STRIPE_PUBLISHABLE_KEY) ||
+    "";
+  return c.json({
+    VITE_CLERK_PUBLISHABLE_KEY: clerkKey,
+    VITE_STRIPE_PUBLISHABLE_KEY: stripeKey,
+    VAULT_DOMAIN: (c.env as any)?.VAULT_DOMAIN || "thevaultdfw.win",
+  });
 });
 
 // ─── tRPC handler ───

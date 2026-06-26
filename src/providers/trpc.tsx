@@ -9,17 +9,10 @@ export const trpc = createTRPCReact<AppRouter>();
 
 function getStoredAuthToken() {
   try {
-    const sessionToken = sessionStorage.getItem("local_auth_token");
-    if (sessionToken) {
-      return sessionToken;
-    }
-
-    const legacyToken = localStorage.getItem("local_auth_token");
-
-    if (legacyToken) {
-      sessionStorage.setItem("local_auth_token", legacyToken);
-      localStorage.removeItem("local_auth_token");
-      return legacyToken;
+    // Use localStorage so the token persists across tabs and page reloads
+    const token = localStorage.getItem("local_auth_token");
+    if (token) {
+      return token;
     }
   } catch (err) {
     console.error("Unable to access auth storage", err);
@@ -84,7 +77,7 @@ const trpcClient = trpc.createClient({
 
           if (response.status === 401) {
             try {
-              sessionStorage.removeItem("local_auth_token");
+              localStorage.removeItem("local_auth_token");
             } catch (err) {
               console.error("Unable to clear expired auth token", err);
             }

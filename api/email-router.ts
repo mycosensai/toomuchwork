@@ -16,20 +16,21 @@ import { logAudit, getClientIP } from "./security";
 export const emailRouter = createRouter({
   /**
    * Send appraisal results via email
-   * Requires appraisalId and recipient email
+   * Requires authentication; sends to the logged-in user's email on file
    */
-  sendAppraisalResult: publicQuery
+  sendAppraisalResult: authedQuery
     .input(
       z.object({
         appraisalId: z.number(),
-        email: z.string().email(),
         paymentLink: z.string().url().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
+      if (!ctx.user?.email) {
+        return { success: false, error: "No email on file for this account" };
+      }
 
-      // Fetch the appraisal
       const [appraisal] = await db
         .select()
         .from(appraisals)
@@ -46,12 +47,10 @@ export const emailRouter = createRouter({
       const commissionRate = appraisal.commissionRate || "5.00";
       const commissionEstimate = ev * (parseFloat(commissionRate) / 100);
 
-      // Build payment link if not provided
       const payLink =
         input.paymentLink ||
         `${ctx.req ? new URL(ctx.req.url).origin : "https://thevaultdfw.win"}/proverify?appraisalId=${input.appraisalId}`;
 
-      // Build email content
       const { html, text } = buildAppraisalEmail(
         appraisal.itemName,
         ev,
@@ -65,9 +64,8 @@ export const emailRouter = createRouter({
         payLink
       );
 
-      // Send email
       const result = await sendEmail({
-        to: input.email,
+        to: ctx.user.email,
         subject: `Your AI Appraisal for "${appraisal.itemName}" — $${ev.toLocaleString()}`,
         html,
         text,
@@ -78,9 +76,9 @@ export const emailRouter = createRouter({
           ip: getClientIP(ctx.req),
           method: "POST",
           path: "email.sendAppraisalResult",
-          userId: ctx.user?.id,
+          userId: ctx.user.id,
           action: "email_failed",
-          details: `appraisal:${input.appraisalId} to:${input.email} error:${result.error}`,
+          details: `appraisal:${input.appraisalId} to:${ctx.user.email} error:${result.error}`,
         });
         return { success: false, error: result.error };
       }
@@ -89,14 +87,14 @@ export const emailRouter = createRouter({
         ip: getClientIP(ctx.req),
         method: "POST",
         path: "email.sendAppraisalResult",
-        userId: ctx.user?.id,
+        userId: ctx.user.id,
         action: "email_sent",
-        details: `appraisal:${input.appraisalId} to:${input.email} value:$${ev}`,
+        details: `appraisal:${input.appraisalId} to:${ctx.user.email} value:$${ev}`,
       });
 
       return {
         success: true,
-        message: `Appraisal sent to ${input.email}`,
+        message: `Appraisal sent to ${ctx.user.email}`,
         emailId: result.id,
       };
     }),

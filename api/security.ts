@@ -1,4 +1,7 @@
 import { env } from "./lib/env";
+import { getRawDb } from "./queries/connection";
+import { auditLogs } from "@db/schema";
+import { desc, sql } from "drizzle-orm";
 
 interface RateLimitEntry {
   count: number;
@@ -161,8 +164,8 @@ export function getSecurityHeaders(): Record<string, string> {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "img-src 'self' data: https: blob:; " +
       "font-src 'self' https://fonts.gstatic.com data:; " +
-      "connect-src 'self' https://api.stripe.com https://api.mainnet-beta.solana.com https://api.opensea.io https://api.rarible.org https://api.magiceden.dev https://appleid.apple.com https://accounts.google.com https://oauth2.googleapis.com https://api.github.com https://api.x.com https://api.clerk.com https://clerk.com; " +
-      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://appleid.apple.com https://clerk.com; " +
+      "connect-src 'self' https://api.stripe.com https://api.mainnet-beta.solana.com https://api.opensea.io https://api.rarible.org https://api.magiceden.dev https://appleid.apple.com https://accounts.google.com https://oauth2.googleapis.com https://api.github.com https://api.x.com; " +
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://appleid.apple.com; " +
       "media-src 'none'; " +
       "worker-src 'self' blob:; " +
       "object-src 'none'; " +
@@ -222,7 +225,7 @@ export function getCorsConfig() {
       "X-Client-Version",
     ],
     exposeHeaders: ["Retry-After"],
-    credentials: true,
+    credentials: false,
     maxAge: 86400,
   };
 }
@@ -256,6 +259,33 @@ export function logAudit(entry: Omit<AuditLogEntry, "timestamp">): void {
   console.log(
     `[AUDIT] ${logEntry.timestamp} | ${logEntry.ip} | ${logEntry.method} ${logEntry.path} | ${logEntry.action}${entry.userId ? ` | user:${entry.userId}` : ""}${entry.details ? ` | ${entry.details}` : ""}`,
   );
+
+  try {
+    const db = getRawDb();
+    if (!db) return;
+
+    void db
+      .prepare(
+        `INSERT INTO audit_logs (audit_id, agent_name, check_type, severity, finding, details, auto_fixed, fix_applied, fix_result, requires_human_review, checked_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        `runtime-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+        "runtime",
+        "web_access",
+        entry.action.includes("failed") || entry.action.includes("webhook_rejected") ? "error" : "info",
+        entry.path,
+        JSON.stringify({ ...entry, timestamp: logEntry.timestamp }),
+        false,
+        null,
+        null,
+        false,
+        new Date().toISOString(),
+      )
+      .run();
+  } catch (error) {
+    console.error("[AUDIT] Failed to persist to D1:", error);
+  }
 }
 
 export function getAuditLog(
@@ -290,7 +320,8 @@ export function isTokenRevoked(token: string): boolean {
 
 export function isUserSessionRevoked(userId: number, tokenIssuedAt: number): boolean {
   const revokedAt = revokedUserSessions.get(userId);
-  return revokedAt ? tokenIssuedAt < revokedAt : false;
+  if (!revokedAt) return false;
+  return tokenIssuedAt < revokedAt;
 }
 
 export function validateUrl(url: string, allowedHosts?: string[]): boolean {

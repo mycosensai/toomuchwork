@@ -126,12 +126,6 @@ app.use(async (c, next) => {
   setCloudflareEnv(c.env as unknown as Record<string, unknown>);
   (globalThis as any).__cfExecCtx = c.executionCtx;
 
-  // Expose Clerk secret key for tRPC context to use
-  const clerkSecretKey = typeof c.env.CLERK_SECRET_KEY === "string" ? c.env.CLERK_SECRET_KEY : "";
-  if (clerkSecretKey) {
-    (globalThis as any).__CLERK_SECRET_KEY = clerkSecretKey;
-  }
-
   const db = getD1(c.env);
   if (db) {
     setDb(db);
@@ -197,14 +191,7 @@ app.get("/api/health", (c) =>
   }),
 );
 
-// ─── ENV DIAGNOSTIC (temporary) ───
-app.get("/api/env-keys", (c) => {
-  const keys = Object.keys(c.env as Record<string, unknown>).filter(k => !k.startsWith("__"));
-  const solanaKeys = keys.filter(k => k.includes("SOL") || k.includes("TREASURY") || k.includes("RATE"));
-  const allKeys = keys.sort();
-  return c.json({ total: allKeys.length, solanaKeys, allKeys });
-});
-
+// ─── DB Health ───
 app.get("/api/db/health", async (c) => {
   const db = getD1(c.env);
 

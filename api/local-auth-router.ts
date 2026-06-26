@@ -5,7 +5,7 @@ import { users } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { TRPCError } from "@trpc/server";
-import { validatePasswordStrength, logAudit, getClientIP } from "./security";
+import { validatePasswordStrength, logAudit, getClientIP, isTokenRevoked, isUserSessionRevoked } from "./security";
 import { env } from "./lib/env";
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -16,10 +16,6 @@ let jwtSecretCache: Uint8Array | null = null;
 function getJwtSecret(): Uint8Array {
   if (jwtSecretCache) return jwtSecretCache;
   const secret = env.appSecret;
-  if (!secret || secret === "fallback-secret") {
-    // Allow operation with warning - environment variable should be set for production
-    console.warn("WARNING: APP_SECRET not configured. Using fallback for development.");
-  }
   jwtSecretCache = new TextEncoder().encode(secret);
   return jwtSecretCache;
 }
@@ -76,6 +72,12 @@ export async function verifyLocalTokenAndRefresh(token: string): Promise<{
     // Check absolute max age (7 days) - iat is in seconds
     if (iat && now - iat * 1000 > ABSOLUTE_MAX_AGE_MS) {
       console.log(`[LocalAuth] Token expired due to absolute max age for user ${userId}`);
+      return { userId: null, newToken: null };
+    }
+
+    // Check token revocation and session revocation
+    if (isTokenRevoked(token) || isUserSessionRevoked(userId, (iat || 0) * 1000)) {
+      console.log(`[LocalAuth] Token revoked for user ${userId}`);
       return { userId: null, newToken: null };
     }
 
@@ -142,11 +144,12 @@ export const localAuthRouter = createRouter({
       }
 
       const hashedPassword = await hashPassword(input.password);
+      const isAdmin = env.adminEmails.includes(input.email.toLowerCase());
       const insertResult = await db.insert(users).values({
         name: input.name,
         email: input.email,
         password: hashedPassword,
-        role: "user",
+        role: isAdmin ? "admin" : "user",
       });
       const userId = Number(insertResult.meta.last_row_id);
 

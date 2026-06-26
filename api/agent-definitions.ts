@@ -10,9 +10,14 @@ export type AgentDefinition = {
   verificationCommand: string;
   model: string;
   handsOff: string[];
+  rateLimit: string;
+  retryMax: number;
+  dataRetentionDays: number;
+  piiHandling: string;
 };
 
 export const AGENT_DEFINITIONS: AgentDefinition[] = [
+  // ─── EXISTING AGENTS ───
   {
     projectId: "appraiser",
     name: "AI Appraiser",
@@ -23,6 +28,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Output must contain valid estimatedValue and valueRangeLow/High. Confidence must be one of high/medium/low.",
     model: "gpt-4o",
     handsOff: ["users", "payments", "auth"],
+    rateLimit: "30 requests/min",
+    retryMax: 3,
+    dataRetentionDays: 365,
+    piiHandling: "Mask seller contact info beyond unique seller ID in logs",
   },
   {
     projectId: "outreach",
@@ -34,6 +43,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Each segment must be a professional type, not a fake individual. No invented names or emails.",
     model: "gpt-4o",
     handsOff: ["users", "payments", "stripe"],
+    rateLimit: "10 requests/min",
+    retryMax: 3,
+    dataRetentionDays: 730,
+    piiHandling: "Use hashed IDs for personalization. Do not include explicit PII in agent logs. Comply with CAN-SPAM/GDPR opt-out rules.",
   },
   {
     projectId: "proverify",
@@ -45,6 +58,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Must have 3+ expert reviews with scores 0-100. All scores marked as simulated estimates.",
     model: "gpt-4o",
     handsOff: ["users", "payments"],
+    rateLimit: "10 requests/min",
+    retryMax: 2,
+    dataRetentionDays: 1095,
+    piiHandling: "Anonymize buyer/seller info in logs. Log only anonymized sale IDs.",
   },
   {
     projectId: "content",
@@ -56,6 +73,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Must have exactly 3 variants with correct word counts. No fabricated provenance.",
     model: "gpt-4o-mini",
     handsOff: ["users", "payments", "auth"],
+    rateLimit: "30 requests/min",
+    retryMax: 3,
+    dataRetentionDays: 730,
+    piiHandling: "Do not display seller personal data on public listings. Use hashed IDs for personalization.",
   },
   {
     projectId: "security",
@@ -67,6 +88,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Each finding must have severity and remediation. No invented CVEs.",
     model: "gpt-4o",
     handsOff: ["users", "payments", "production_db"],
+    rateLimit: "Event-driven",
+    retryMax: 3,
+    dataRetentionDays: 365,
+    piiHandling: "No user PII involved. Ensure internal log storage is secure.",
   },
   {
     projectId: "pricing",
@@ -78,6 +103,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Comparables must be general market knowledge only. No specific unverified sales.",
     model: "gpt-4o",
     handsOff: ["users", "payments", "stripe"],
+    rateLimit: "10 requests/min",
+    retryMax: 2,
+    dataRetentionDays: 1095,
+    piiHandling: "No personal client data should be logged. Store valuation results (price, date) permanently.",
   },
   {
     projectId: "support",
@@ -89,6 +118,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Response must be based only on provided policies. Must not fabricate policy details.",
     model: "gpt-4o-mini",
     handsOff: ["users", "payments", "auth", "personal_data"],
+    rateLimit: "Realtime chat limits",
+    retryMax: 3,
+    dataRetentionDays: 365,
+    piiHandling: "When responding, confirm identity without logging personal details. Avoid repeating full names or payment info in chat logs.",
   },
   {
     projectId: "listing",
@@ -100,6 +133,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Compliance flags must be specific. Scores 0-100 integers. No invented violations.",
     model: "gpt-4o",
     handsOff: ["users", "payments", "production_db"],
+    rateLimit: "30 requests/min",
+    retryMax: 3,
+    dataRetentionDays: 365,
+    piiHandling: "Do not display seller personal data on public listings.",
   },
   {
     projectId: "compliance",
@@ -111,6 +148,10 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "Findings must reference general regulations only. No invented section numbers.",
     model: "gpt-4o",
     handsOff: ["users", "payments", "legal_contracts"],
+    rateLimit: "Low frequency",
+    retryMax: 2,
+    dataRetentionDays: 2555,
+    piiHandling: "If analyzing client data, mask personal identifiers in logs. Retain only case IDs, not full identity.",
   },
   {
     projectId: "social",
@@ -122,8 +163,105 @@ export const AGENT_DEFINITIONS: AgentDefinition[] = [
     verificationCommand: "No fabricated usernames, follower counts, or metrics. Use placeholders only.",
     model: "gpt-4o",
     handsOff: ["users", "payments", "personal_data"],
+    rateLimit: "Social API limits (e.g. 60 requests/min)",
+    retryMax: 3,
+    dataRetentionDays: 730,
+    piiHandling: "Use hashed IDs for personalization. No explicit PII in agent logs.",
+  },
+  // ─── NEW AGENTS FROM RESEARCH REPORT ───
+  {
+    projectId: "research",
+    name: "Market Research",
+    description: "Web intelligence. Searches for buyer interest, social discussions, and market trends.",
+    mode: "A",
+    priority: 2,
+    cycleBudgetMinutes: 10,
+    verificationCommand: "Every finding must include source URL. No fabricated URLs or posts.",
+    model: "gpt-4o",
+    handsOff: ["users", "payments", "auth", "personal_data"],
+    rateLimit: "60 requests/min",
+    retryMax: 3,
+    dataRetentionDays: 365,
+    piiHandling: "Analyze only aggregate data. Never reveal individual identities in reports.",
+  },
+  {
+    projectId: "cataloging",
+    name: "Cataloging Agent",
+    description: "Intake and catalog new auction items. Generates structured catalog records from item details.",
+    mode: "A",
+    priority: 1,
+    cycleBudgetMinutes: 5,
+    verificationCommand: "Must have valid title, category, description. No fabricated provenance or maker marks.",
+    model: "gpt-4o",
+    handsOff: ["users", "payments", "auth"],
+    rateLimit: "30 requests/min",
+    retryMax: 3,
+    dataRetentionDays: 365,
+    piiHandling: "Mask seller name/contact beyond unique seller ID in logs. Follow GDPR for any personal seller data.",
+  },
+  {
+    projectId: "photography",
+    name: "Photography Agent",
+    description: "Process and optimize images for auction listings. Crops, color-corrects, generates thumbnails.",
+    mode: "A",
+    priority: 2,
+    cycleBudgetMinutes: 3,
+    verificationCommand: "Must not alter item appearance beyond standard optimization. Quality score 0-100 required.",
+    model: "gpt-4o-mini",
+    handsOff: ["users", "payments", "auth", "personal_data"],
+    rateLimit: "100 transformations/hour",
+    retryMax: 1,
+    dataRetentionDays: 90,
+    piiHandling: "Ensure no personal metadata in image EXIF data.",
+  },
+  {
+    projectId: "logistics",
+    name: "Logistics Agent",
+    description: "Coordinate shipping and tracking for sold items. Generates labels and schedules pickups.",
+    mode: "A",
+    priority: 2,
+    cycleBudgetMinutes: 5,
+    verificationCommand: "Must include carrier, tracking number, and insurance for items over $5,000.",
+    model: "gpt-4o",
+    handsOff: ["users", "payments", "pricing", "legal"],
+    rateLimit: "50 labels/min",
+    retryMax: 3,
+    dataRetentionDays: 90,
+    piiHandling: "Use buyer address only as needed to ship. Do not include full address in non-secure logs.",
+  },
+  {
+    projectId: "inventory",
+    name: "Inventory Agent",
+    description: "Track items in storage. Updates stock counts, location assignments, status transitions.",
+    mode: "B",
+    priority: 3,
+    cycleBudgetMinutes: 3,
+    verificationCommand: "Status transitions must be valid. Flag discrepancies for human review.",
+    model: "gpt-4o-mini",
+    handsOff: ["users", "payments", "auth", "personal_data"],
+    rateLimit: "Batch (daily)",
+    retryMax: 3,
+    dataRetentionDays: 730,
+    piiHandling: "Not applicable — manages items, not people.",
+  },
+  {
+    projectId: "analytics",
+    name: "Analytics Agent",
+    description: "Data analysis and reporting. Revenue trends, forecasts, customer segment insights.",
+    mode: "B",
+    priority: 3,
+    cycleBudgetMinutes: 8,
+    verificationCommand: "All predictions must include confidence levels and ranges. No guaranteed future values.",
+    model: "gpt-4o",
+    handsOff: ["users", "payments", "auth", "personal_data"],
+    rateLimit: "Varies with query complexity",
+    retryMax: 2,
+    dataRetentionDays: 365,
+    piiHandling: "Analyze only aggregate data. Never reveal individual bidder identities in reports.",
   },
 ];
+
+export const REQUIRED_AGENT_IDS = AGENT_DEFINITIONS.map((agent) => agent.projectId);
 
 export function toAgentProject(def: AgentDefinition) {
   return {
@@ -142,4 +280,10 @@ export function toAgentProject(def: AgentDefinition) {
   };
 }
 
-export const REQUIRED_AGENT_IDS = AGENT_DEFINITIONS.map((agent) => agent.projectId);
+/**
+ * Returns the agent definition metadata for a given project ID.
+ * Includes rate limits, retry config, data retention, and PII handling.
+ */
+export function getAgentMetadata(projectId: string): AgentDefinition | undefined {
+  return AGENT_DEFINITIONS.find((a) => a.projectId === projectId);
+}
