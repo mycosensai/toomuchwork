@@ -275,9 +275,6 @@ app.post("/api/stripe/webhook", async (c) => {
 // Intercom webhook disabled pending schema fix
 // app.route("/api/webhooks/intercom", intercomWebhook);
 
-// ─── Clerk webhook ───
-// app.route("/api/webhooks/clerk", clerkWebhook);
-
 // ─── Auth routes ───
 app.post("/api/auth/register", async (c) => {
   let input: AuthInput;

@@ -116,12 +116,6 @@ export const env = {
   get resendApiKey(): string {
     return cfEnv.RESEND_API_KEY || "";
   },
-  get clerkSecretKey(): string {
-    return cfEnv.CLERK_SECRET_KEY || "";
-  },
-  get clerkWebhookSecret(): string {
-    return cfEnv.CLERK_WEBHOOK_SIGNING_SECRET || "";
-  },
   get solanaTreasury(): string {
     return cfEnv.SOLANA_TREASURY || "";
   },
