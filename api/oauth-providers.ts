@@ -42,7 +42,12 @@ export const PROVIDER_CONFIGS: Record<OAuthProvider, ProviderConfig> = {
     authUrl: "https://x.com/i/oauth2/authorize",
     tokenUrl: "https://api.x.com/2/oauth2/token",
     profileUrl: "https://api.x.com/2/users/me?user.fields=profile_image_url",
-    scope: "tweet.read users.read",
+    // DM scopes (dm.read dm.write) are for:
+    //   - upcoming forum tab (threaded discussions via DMs)
+    //   - user-to-owner direct messages
+    //   - user-to-user connections (messaging between collectors)
+    // DM scopes are NOT used for marketing, spam, or bulk messaging.
+    scope: "tweet.read users.read dm.read dm.write",
     profileParser: (data) => ({
       id: data.data?.id,
       name: data.data?.name || "X User",
