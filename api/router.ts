@@ -34,6 +34,9 @@ import { userWorkflowRouter } from "./user-workflow-router";
 import { adminPromptRouter } from "./admin-prompt-router";
 import { coldEmailRouter } from "./cold-email-router";
 import { graphWorkflowRouter } from "./graph-workflow-router";
+import { forumRouter } from "./forum-router";
+import { messagesRouter } from "./messages-router";
+import { siteConfigRouter } from "./site-config-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -74,6 +77,9 @@ export const appRouter = createRouter({
   adminPrompt: adminPromptRouter,
   coldEmail: coldEmailRouter,
   graphWorkflow: graphWorkflowRouter,
+  forum: forumRouter,
+  messages: messagesRouter,
+  siteConfig: siteConfigRouter,
 });
 
 export type AppRouter = typeof appRouter;

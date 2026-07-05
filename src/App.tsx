@@ -38,6 +38,9 @@ const AgentProject = lazy(() => import('./pages/AgentProject'))
 const AgentCommand = lazy(() => import('./pages/AgentCommand'))
 const MarketingDashboard = lazy(() => import('./pages/MarketingDashboard'))
 const NotFound = lazy(() => import('./pages/NotFound'))
+const Forum = lazy(() => import('./pages/Forum'))
+const ForumPost = lazy(() => import('./pages/ForumPost'))
+const Messages = lazy(() => import('./pages/Messages'))
 
 function LoadingFallback() {
   return (
@@ -90,6 +93,9 @@ export default function App() {
             <Route path="/agents/:projectId" element={<AgentProject />} />
             <Route path="/admin/agents" element={<AgentCommand />} />
             <Route path="/admin/marketing" element={<MarketingDashboard />} />
+            <Route path="/forum" element={<Forum />} />
+            <Route path="/forum/:id" element={<ForumPost />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="/login" element={<Login />} />
             <Route path="/sso-callback" element={<SSOCallback />} />
             <Route path="/auth-success" element={<AuthSuccess />} />

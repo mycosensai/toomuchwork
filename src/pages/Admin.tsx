@@ -6,7 +6,8 @@ import {
   Diamond, Users, ShoppingBag, BarChart3, Activity,
   Loader2, ArrowLeft, TrendingUp, DollarSign, Package,
   Bot, Settings, Cloud, PlayCircle, Plus, Edit,
-  Eye, Database, Zap, Shield, Terminal, ChevronDown, X
+  Eye, Database, Zap, Shield, Terminal, ChevronDown, X,
+  MessageSquare, Mail, Globe, Sliders
 } from 'lucide-react'
 
 interface AgentProject {
@@ -71,7 +72,7 @@ export default function Admin() {
   const navigate = useNavigate()
   const { isAuthenticated, isAdmin, isLoading: authLoading } = useAuth()
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'agents' | 'cloudflare' | 'users'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'agents' | 'cloudflare' | 'users' | 'forum' | 'messages' | 'email' | 'config'>('overview')
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [showCreateTask, setShowCreateTask] = useState<string | null>(null)
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 2, interactiveOnly: false, expectedTouches: '', assignedAgent: '' })
@@ -153,6 +154,10 @@ export default function Admin() {
             { id: 'agents', label: 'Agent Config', icon: <Bot className="w-4 h-4" /> },
             { id: 'cloudflare', label: 'Cloudflare', icon: <Cloud className="w-4 h-4" /> },
             { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
+            { id: 'forum', label: 'Forum', icon: <MessageSquare className="w-4 h-4" /> },
+            { id: 'messages', label: 'Messages', icon: <Mail className="w-4 h-4" /> },
+            { id: 'email', label: 'Email', icon: <Globe className="w-4 h-4" /> },
+            { id: 'config', label: 'Config', icon: <Sliders className="w-4 h-4" /> },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -498,6 +503,399 @@ export default function Admin() {
             </div>
           </div>
         )}
+
+        {/* FORUM TAB (admin) */}
+        {activeTab === 'forum' && (
+          <div className="space-y-6">
+            <ForumAdminPanel />
+          </div>
+        )}
+
+        {/* MESSAGES TAB (admin) */}
+        {activeTab === 'messages' && (
+          <div className="space-y-6">
+            <h2 className="font-cinzel text-lg font-semibold tracking-[3px] text-[#C9A84C] uppercase flex items-center gap-2 mb-4">
+              <Mail className="w-5 h-5" />
+              Message Management
+            </h2>
+            <MessageAdminPanel />
+          </div>
+        )}
+
+        {/* EMAIL CONFIG TAB */}
+        {activeTab === 'email' && (
+          <div className="space-y-6">
+            <EmailConfigPanel />
+          </div>
+        )}
+
+        {/* SITE CONFIG TAB */}
+        {activeTab === 'config' && (
+          <div className="space-y-6">
+            <SiteConfigPanel />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── FORUM ADMIN PANEL ───
+function ForumAdminPanel() {
+  const { data: posts } = trpc.forum.listPosts.useQuery({ page: 1, limit: 50 })
+  const deletePost = trpc.forum.deletePost.useMutation({
+    onSuccess: () => trpc.forum.listPosts.invalidate()
+  })
+  const togglePin = trpc.forum.togglePin.useMutation({
+    onSuccess: () => trpc.forum.listPosts.invalidate()
+  })
+  const toggleLock = trpc.forum.toggleLock.useMutation({
+    onSuccess: () => trpc.forum.listPosts.invalidate()
+  })
+
+  return (
+    <div>
+      <h2 className="font-cinzel text-lg font-semibold tracking-[3px] text-[#C9A84C] uppercase flex items-center gap-2 mb-4">
+        <MessageSquare className="w-5 h-5" />
+        Forum Management
+      </h2>
+      <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#C9A84C]/15 text-left">
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">ID</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Title</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Author</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Replies</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Status</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(posts?.posts || []).map(post => (
+                <tr key={post.id} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
+                  <td className="py-3 text-xs text-[#8A6E2F] font-mono">{post.id}</td>
+                  <td className="py-3 text-xs text-[#F5EED8] max-w-[200px] truncate">
+                    {post.isPinned && <Pin className="w-3 h-3 inline text-[#C9A84C] mr-1" />}
+                    {post.title}
+                  </td>
+                  <td className="py-3 text-xs text-[#C8BC98]">{post.userName}</td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{post.replyCount}</td>
+                  <td className="py-3">
+                    <span className={`px-2 py-1 text-[8px] tracking-[1px] ${
+                      post.isLocked ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'
+                    }`}>
+                      {post.isLocked ? 'LOCKED' : 'OPEN'}
+                    </span>
+                  </td>
+                  <td className="py-3">
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => togglePin.mutate({ id: post.id })}
+                        className={`p-1 border border-[#C9A84C]/20 text-[9px] ${post.isPinned ? 'text-[#C9A84C]' : 'text-[#8A6E2F]'}`}
+                      >
+                        {post.isPinned ? 'UNPIN' : 'PIN'}
+                      </button>
+                      <button
+                        onClick={() => toggleLock.mutate({ id: post.id })}
+                        className={`p-1 border border-[#C9A84C]/20 text-[9px] ${post.isLocked ? 'text-red-400' : 'text-[#8A6E2F]'}`}
+                      >
+                        {post.isLocked ? 'UNLOCK' : 'LOCK'}
+                      </button>
+                      <button
+                        onClick={() => { if (confirm('Delete this post?')) deletePost.mutate({ id: post.id }) }}
+                        className="p-1 border border-red-400/20 text-red-400 text-[9px]"
+                      >
+                        DELETE
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!posts?.posts.length && (
+            <div className="text-center py-8 text-xs text-[#8A6E2F]">No forum posts yet</div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── MESSAGE ADMIN PANEL ───
+function MessageAdminPanel() {
+  const { data: inbox } = trpc.messages.inbox.useQuery({ page: 1, limit: 50 })
+  const { data: outbox } = trpc.messages.outbox.useQuery({ page: 1, limit: 50 })
+  const deleteMsg = trpc.messages.delete.useMutation({
+    onSuccess: () => {
+      trpc.messages.inbox.invalidate()
+      trpc.messages.outbox.invalidate()
+    }
+  })
+
+  const allMessages = [
+    ...(inbox?.messages || []).map(m => ({ ...m, direction: 'incoming' })),
+    ...(outbox?.messages || []).map(m => ({ ...m, direction: 'outgoing' })),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="bg-[#161616] border border-[#C9A84C]/15 p-4 text-center">
+          <div className="font-cinzel text-xl font-bold text-[#F5EED8]">{inbox?.total || 0}</div>
+          <div className="text-[9px] tracking-[2px] text-[#8A6E2F] uppercase">Inbox Messages</div>
+        </div>
+        <div className="bg-[#161616] border border-[#C9A84C]/15 p-4 text-center">
+          <div className="font-cinzel text-xl font-bold text-[#F5EED8]">{outbox?.total || 0}</div>
+          <div className="text-[9px] tracking-[2px] text-[#8A6E2F] uppercase">Sent Messages</div>
+        </div>
+      </div>
+      <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#C9A84C]/15 text-left">
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Subject</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">From</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">To</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Dir</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Date</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allMessages.slice(0, 30).map(msg => (
+                <tr key={msg.id} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
+                  <td className="py-3 text-xs text-[#F5EED8] max-w-[150px] truncate font-medium">{msg.subject}</td>
+                  <td className="py-3 text-xs text-[#C8BC98]">{msg.senderName}</td>
+                  <td className="py-3 text-xs text-[#C8BC98]">{msg.recipientName}</td>
+                  <td className="py-3">
+                    <span className={`px-2 py-1 text-[8px] tracking-[1px] ${
+                      msg.direction === 'incoming' ? 'bg-blue-500/10 text-blue-400' : 'bg-[#C9A84C]/10 text-[#C9A84C]'
+                    }`}>
+                      {msg.direction === 'incoming' ? 'IN' : 'OUT'}
+                    </span>
+                  </td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{new Date(msg.createdAt as any).toLocaleDateString()}</td>
+                  <td className="py-3">
+                    <button
+                      onClick={() => { if (confirm('Delete this message?')) deleteMsg.mutate({ id: msg.id }) }}
+                      className="p-1 border border-red-400/20 text-red-400 text-[9px]"
+                    >
+                      DEL
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!allMessages.length && (
+            <div className="text-center py-8 text-xs text-[#8A6E2F]">No messages yet</div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── EMAIL CONFIG PANEL ───
+function EmailConfigPanel() {
+  const { data: config } = trpc.siteConfig.emailConfig.useQuery()
+  const [form, setForm] = useState({ smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '', fromEmail: '', fromName: '' })
+  const setConfig = trpc.siteConfig.set.useMutation()
+
+  const handleSave = () => {
+    if (form.smtpHost) setConfig.mutate({ key: 'smtp_host', value: form.smtpHost, description: 'SMTP Host' })
+    if (form.smtpPort) setConfig.mutate({ key: 'smtp_port', value: form.smtpPort, description: 'SMTP Port' })
+    if (form.smtpUser) setConfig.mutate({ key: 'smtp_user', value: form.smtpUser, description: 'SMTP Username' })
+    if (form.smtpPass) setConfig.mutate({ key: 'smtp_pass', value: form.smtpPass, description: 'SMTP Password' })
+    if (form.fromEmail) setConfig.mutate({ key: 'from_email', value: form.fromEmail, description: 'From Email Address' })
+    if (form.fromName) setConfig.mutate({ key: 'from_name', value: form.fromName, description: 'From Name' })
+  }
+
+  return (
+    <div>
+      <h2 className="font-cinzel text-lg font-semibold tracking-[3px] text-[#C9A84C] uppercase flex items-center gap-2 mb-4">
+        <Globe className="w-5 h-5" />
+        Email Configuration
+      </h2>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+          <h3 className="font-cinzel text-xs font-semibold tracking-[3px] text-[#C9A84C] uppercase mb-4">SMTP Settings</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[9px] tracking-[2px] uppercase text-[#C9A84C] mb-1">SMTP Host</label>
+              <input
+                type="text" value={form.smtpHost || config?.smtpHost || ''}
+                onChange={(e) => setForm(f => ({ ...f, smtpHost: e.target.value }))}
+                className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] focus:border-[#C9A84C]/50 focus:outline-none"
+                placeholder={config?.resendConfigured ? 'Using Resend API' : 'smtp.example.com'}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[9px] tracking-[2px] uppercase text-[#C9A84C] mb-1">Port</label>
+                <input
+                  type="text" value={form.smtpPort || config?.smtpPort || '587'}
+                  onChange={(e) => setForm(f => ({ ...f, smtpPort: e.target.value }))}
+                  className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] focus:border-[#C9A84C]/50 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] tracking-[2px] uppercase text-[#C9A84C] mb-1">Username</label>
+                <input
+                  type="text" value={form.smtpUser || config?.smtpUser || ''}
+                  onChange={(e) => setForm(f => ({ ...f, smtpUser: e.target.value }))}
+                  className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] focus:border-[#C9A84C]/50 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[9px] tracking-[2px] uppercase text-[#C9A84C] mb-1">Password</label>
+              <input
+                type="password" value={form.smtpPass}
+                onChange={(e) => setForm(f => ({ ...f, smtpPass: e.target.value }))}
+                className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] focus:border-[#C9A84C]/50 focus:outline-none"
+                placeholder={config?.smtpPass ? '•••••••• (currently set)' : ''}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+          <h3 className="font-cinzel text-xs font-semibold tracking-[3px] text-[#C9A84C] uppercase mb-4">Sender Identity</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[9px] tracking-[2px] uppercase text-[#C9A84C] mb-1">From Email</label>
+              <input
+                type="text" value={form.fromEmail || config?.fromEmail || ''}
+                onChange={(e) => setForm(f => ({ ...f, fromEmail: e.target.value }))}
+                className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] focus:border-[#C9A84C]/50 focus:outline-none"
+                placeholder="blakelaurent@thevaultdfw.win"
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] tracking-[2px] uppercase text-[#C9A84C] mb-1">From Name</label>
+              <input
+                type="text" value={form.fromName || config?.fromName || ''}
+                onChange={(e) => setForm(f => ({ ...f, fromName: e.target.value }))}
+                className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] focus:border-[#C9A84C]/50 focus:outline-none"
+                placeholder="The Vault DFW"
+              />
+            </div>
+            {config?.resendConfigured && (
+              <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 text-xs text-emerald-400">
+                Resend API key is configured. SMTP settings are optional when using Resend.
+              </div>
+            )}
+          </div>
+          <div className="mt-6">
+            <button
+              onClick={handleSave}
+              className="w-full py-2.5 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] text-[10px] tracking-[3px] uppercase font-cinzel font-bold"
+            >
+              Save Email Settings
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── SITE CONFIG PANEL ───
+function SiteConfigPanel() {
+  const { data: configs, isLoading } = trpc.siteConfig.list.useQuery()
+  const setConfig = trpc.siteConfig.set.useMutation({
+    onSuccess: () => trpc.siteConfig.list.invalidate()
+  })
+  const deleteConfig = trpc.siteConfig.delete.useMutation({
+    onSuccess: () => trpc.siteConfig.list.invalidate()
+  })
+  const [newKey, setNewKey] = useState('')
+  const [newValue, setNewValue] = useState('')
+  const [newDesc, setNewDesc] = useState('')
+
+  return (
+    <div>
+      <h2 className="font-cinzel text-lg font-semibold tracking-[3px] text-[#C9A84C] uppercase flex items-center gap-2 mb-4">
+        <Sliders className="w-5 h-5" />
+        Site Configuration
+      </h2>
+
+      {/* Add new config */}
+      <div className="bg-[#161616] border border-[#C9A84C]/15 p-6 mb-6">
+        <h3 className="font-cinzel text-xs font-semibold tracking-[3px] text-[#C9A84C] uppercase mb-3">Add Configuration</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          <input
+            type="text" placeholder="Config key" value={newKey}
+            onChange={(e) => setNewKey(e.target.value)}
+            className="bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] placeholder-[#8A6E2F] focus:border-[#C9A84C]/50 focus:outline-none"
+          />
+          <input
+            type="text" placeholder="Config value" value={newValue}
+            onChange={(e) => setNewValue(e.target.value)}
+            className="bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] placeholder-[#8A6E2F] focus:border-[#C9A84C]/50 focus:outline-none"
+          />
+          <input
+            type="text" placeholder="Description (optional)" value={newDesc}
+            onChange={(e) => setNewDesc(e.target.value)}
+            className="bg-[#1E1E1E] border border-[#C9A84C]/20 px-4 py-2 text-xs text-[#F5EED8] placeholder-[#8A6E2F] focus:border-[#C9A84C]/50 focus:outline-none"
+          />
+        </div>
+        <button
+          onClick={() => {
+            if (!newKey.trim()) return
+            setConfig.mutate({ key: newKey.trim(), value: newValue.trim(), description: newDesc.trim() || undefined })
+            setNewKey(''); setNewValue(''); setNewDesc('')
+          }}
+          className="px-4 py-2 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] text-[9px] tracking-[2px] uppercase font-cinzel font-bold"
+        >
+          Add Config
+        </button>
+      </div>
+
+      {/* Config list */}
+      <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#C9A84C]/15 text-left">
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Key</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Value</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Description</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Updated</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={5} className="py-8 text-center"><Loader2 className="w-6 h-6 text-[#C9A84C] animate-spin mx-auto" /></td></tr>
+              ) : (configs || []).length === 0 ? (
+                <tr><td colSpan={5} className="py-8 text-center text-xs text-[#8A6E2F]">No configuration set</td></tr>
+              ) : (
+                (configs || []).map(cfg => (
+                  <tr key={cfg.id} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
+                    <td className="py-3 text-xs text-[#C9A84C] font-mono">{cfg.key}</td>
+                    <td className="py-3 text-xs text-[#F5EED8] max-w-[200px] truncate">{cfg.value}</td>
+                    <td className="py-3 text-xs text-[#8A6E2F]">{cfg.description || '—'}</td>
+                    <td className="py-3 text-xs text-[#8A6E2F]">{cfg.updatedAt ? new Date(cfg.updatedAt as any).toLocaleDateString() : '—'}</td>
+                    <td className="py-3">
+                      <button
+                        onClick={() => { if (confirm('Delete this config?')) deleteConfig.mutate({ key: cfg.key }) }}
+                        className="p-1 border border-red-400/20 text-red-400 text-[9px]"
+                      >
+                        DEL
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

@@ -15,6 +15,7 @@ const navLinks = [
   { label: 'Sell', path: '/sell' },
   { label: 'Tokens', path: '/token-gallery' },
   { label: 'Agents', path: '/agents' },
+  { label: 'Forum', path: '/forum' },
   { label: 'Support', path: '/support' },
 ]
 
@@ -134,6 +135,11 @@ export default function Layout() {
               {isAdmin && (
                 <Link to="/admin" className="text-[#C8BC98] hover:text-[#C9A84C] transition-colors" title="Admin">
                   <Shield className="w-4 h-4" />
+                </Link>
+              )}
+              {isAuthenticated && (
+                <Link to="/messages" className="text-[#C8BC98] hover:text-[#C9A84C] transition-colors" title="Messages">
+                  <Mail className="w-4 h-4" />
                 </Link>
               )}
               {isAuthenticated ? (

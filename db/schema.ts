@@ -1051,3 +1051,75 @@ export const marketingAnalytics = sqliteTable("marketing_analytics", {
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
 });
 export type MarketingAnalytic = typeof marketingAnalytics.$inferSelect;
+
+// ═══════════════════════════════════════════════
+// COMMUNITY FORUM
+// ═══════════════════════════════════════════════
+
+// ─── FORUM POSTS ───
+export const forumPosts = sqliteTable("forum_posts", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  userAvatar: text("user_avatar"),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").default("general").notNull(),
+  isPinned: integer("is_pinned", { mode: "boolean" }).default(false).notNull(),
+  isAdminOnly: integer("is_admin_only", { mode: "boolean" }).default(false).notNull(),
+  replyCount: integer("reply_count").default(0).notNull(),
+  isLocked: integer("is_locked", { mode: "boolean" }).default(false).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type ForumPost = typeof forumPosts.$inferSelect;
+export type InsertForumPost = typeof forumPosts.$inferInsert;
+
+// ─── FORUM REPLIES ───
+export const forumReplies = sqliteTable("forum_replies", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  postId: integer("post_id").notNull(),
+  userId: integer("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  userAvatar: text("user_avatar"),
+  content: text("content").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type ForumReply = typeof forumReplies.$inferSelect;
+export type InsertForumReply = typeof forumReplies.$inferInsert;
+
+// ═══════════════════════════════════════════════
+// USER MESSAGES (inbox / outbox)
+// ═══════════════════════════════════════════════
+
+// ─── MESSAGES ───
+export const messages = sqliteTable("messages", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  senderId: integer("sender_id").notNull(),
+  senderName: text("sender_name").notNull(),
+  recipientId: integer("recipient_id").notNull(),
+  recipientName: text("recipient_name").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
+  parentMessageId: integer("parent_message_id"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;
+
+// ═══════════════════════════════════════════════
+// SITE CONFIG (admin-controlled settings)
+// ═══════════════════════════════════════════════
+
+// ─── SITE CONFIG ───
+export const siteConfig = sqliteTable("site_config", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedBy: integer("updated_by"),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type SiteConfig = typeof siteConfig.$inferSelect;
+export type InsertSiteConfig = typeof siteConfig.$inferInsert;
