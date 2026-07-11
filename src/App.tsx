@@ -41,6 +41,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const Forum = lazy(() => import('./pages/Forum'))
 const ForumPost = lazy(() => import('./pages/ForumPost'))
 const Messages = lazy(() => import('./pages/Messages'))
+const Concierge = lazy(() => import('./pages/Concierge'))
 
 function LoadingFallback() {
   return (
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="/forum" element={<Forum />} />
             <Route path="/forum/:id" element={<ForumPost />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/concierge" element={<Concierge />} />
             <Route path="/login" element={<Login />} />
             <Route path="/sso-callback" element={<SSOCallback />} />
             <Route path="/auth-success" element={<AuthSuccess />} />

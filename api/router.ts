@@ -37,6 +37,8 @@ import { graphWorkflowRouter } from "./graph-workflow-router";
 import { forumRouter } from "./forum-router";
 import { messagesRouter } from "./messages-router";
 import { siteConfigRouter } from "./site-config-router";
+import { conciergeRouter } from "./concierge-router";
+import { assetsRouter } from "./assets-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -80,6 +82,8 @@ export const appRouter = createRouter({
   forum: forumRouter,
   messages: messagesRouter,
   siteConfig: siteConfigRouter,
+  concierge: conciergeRouter,
+  assets: assetsRouter,
 });
 
 export type AppRouter = typeof appRouter;

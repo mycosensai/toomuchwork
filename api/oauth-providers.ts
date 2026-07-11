@@ -7,7 +7,7 @@
 import { env } from "./lib/env";
 import * as jose from "jose";
 
-export type OAuthProvider = "google" | "x" | "apple" | "github";
+export type OAuthProvider = "google" | "x" | "github";
 
 interface ProviderConfig {
   name: string;
@@ -42,30 +42,12 @@ export const PROVIDER_CONFIGS: Record<OAuthProvider, ProviderConfig> = {
     authUrl: "https://x.com/i/oauth2/authorize",
     tokenUrl: "https://api.x.com/2/oauth2/token",
     profileUrl: "https://api.x.com/2/users/me?user.fields=profile_image_url",
-    // DM scopes (dm.read dm.write) are for:
-    //   - upcoming forum tab (threaded discussions via DMs)
-    //   - user-to-owner direct messages
-    //   - user-to-user connections (messaging between collectors)
-    // DM scopes are NOT used for marketing, spam, or bulk messaging.
     scope: "tweet.read users.read dm.read dm.write",
     profileParser: (data) => ({
       id: data.data?.id,
       name: data.data?.name || "X User",
       email: null,
       avatar: data.data?.profile_image_url || null,
-    }),
-  },
-  apple: {
-    name: "Apple",
-    authUrl: "https://appleid.apple.com/auth/authorize",
-    tokenUrl: "https://appleid.apple.com/auth/token",
-    profileUrl: "https://appleid.apple.com/auth/userinfo",
-    scope: "name email",
-    profileParser: (data) => ({
-      id: data.sub || data.id || "apple-user",
-      name: data.name || "Apple User",
-      email: data.email || null,
-      avatar: data.picture || null,
     }),
   },
   github: {
@@ -155,7 +137,6 @@ export async function verifyState(
 export function getClientId(provider: OAuthProvider): string {
   if (provider === "google") return env.googleClientId;
   if (provider === "x") return env.xClientId;
-  if (provider === "apple") return env.appleClientId;
   if (provider === "github") return env.githubClientId;
   return "";
 }
@@ -163,7 +144,6 @@ export function getClientId(provider: OAuthProvider): string {
 export function getClientSecret(provider: OAuthProvider): string {
   if (provider === "google") return env.googleClientSecret;
   if (provider === "x") return env.xClientSecret;
-  if (provider === "apple") return env.appleClientSecret;
   if (provider === "github") return env.githubClientSecret;
   return "";
 }

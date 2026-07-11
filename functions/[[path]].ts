@@ -323,7 +323,7 @@ app.post("/api/auth/login", async (c) => {
 // ─── OAuth routes ───
 app.get("/api/oauth/:provider/initiate", async (c) => {
   try {
-    const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
+    const provider = c.req.param("provider") as "google" | "github" | "x";
     const host = c.req.header("host") || undefined;
     
     const { buildAuthUrl } = await import("../api/oauth-providers");
@@ -339,7 +339,7 @@ app.get("/api/oauth/:provider/initiate", async (c) => {
 });
 
 app.get("/api/oauth/callback/:provider", async (c) => {
-  const provider = c.req.param("provider") as "google" | "github" | "x" | "apple";
+  const provider = c.req.param("provider") as "google" | "github" | "x";
   const { handleOAuthCallback } = await import("../api/oauth-handlers");
   return handleOAuthCallback(c as any, provider);
 });

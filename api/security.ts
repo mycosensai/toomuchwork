@@ -164,13 +164,13 @@ export function getSecurityHeaders(): Record<string, string> {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "img-src 'self' data: https: blob:; " +
       "font-src 'self' https://fonts.gstatic.com data:; " +
-      "connect-src 'self' https://api.stripe.com https://api.mainnet-beta.solana.com https://api.opensea.io https://api.rarible.org https://api.magiceden.dev https://appleid.apple.com https://accounts.google.com https://oauth2.googleapis.com https://api.github.com https://api.x.com; " +
-      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://appleid.apple.com; " +
+      "connect-src 'self' https://api.stripe.com https://api.mainnet-beta.solana.com https://api.opensea.io https://api.rarible.org https://api.magiceden.dev https://accounts.google.com https://oauth2.googleapis.com https://api.github.com https://api.x.com https://openrouter.ai; " +
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; " +
       "media-src 'none'; " +
       "worker-src 'self' blob:; " +
       "object-src 'none'; " +
       "base-uri 'self'; " +
-      "form-action 'self' https://appleid.apple.com https://accounts.google.com https://github.com https://x.com; " +
+      "form-action 'self' https://accounts.google.com https://github.com https://x.com; " +
       "frame-ancestors 'none'; " +
       "upgrade-insecure-requests;",
     "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",

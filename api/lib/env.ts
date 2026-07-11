@@ -17,8 +17,6 @@ export interface CloudflareEnv {
   GITHUB_CLIENT_SECRET?: string;
   X_CLIENT_ID?: string;
   X_CLIENT_SECRET?: string;
-  APPLE_CLIENT_ID?: string;
-  APPLE_CLIENT_SECRET?: string;
   NODE_ENV?: string;
   VAULT_DOMAIN?: string;
   RESEND_API_KEY?: string;
@@ -32,6 +30,11 @@ export interface CloudflareEnv {
   CLOUDFLARE_API_TOKEN?: string;
   ADMIN_EMAILS?: string;
   DB?: any;
+  ASSETS?: any;
+  R2_ACCESS_KEY_ID?: string;
+  R2_SECRET_ACCESS_KEY?: string;
+  R2_ENDPOINT?: string;
+  R2_BUCKET_NAME?: string;
 }
 
 let cfEnv: CloudflareEnv = {};
@@ -104,12 +107,6 @@ export const env = {
   get xClientSecret(): string {
     return cfEnv.X_CLIENT_SECRET || "";
   },
-  get appleClientId(): string {
-    return cfEnv.APPLE_CLIENT_ID || "";
-  },
-  get appleClientSecret(): string {
-    return cfEnv.APPLE_CLIENT_SECRET || "";
-  },
   get vaultDomain(): string {
     return cfEnv.VAULT_DOMAIN || "";
   },
@@ -140,5 +137,20 @@ export const env = {
       .split(",")
       .map((item) => item.trim().toLowerCase())
       .filter(Boolean);
+  },
+  get r2Assets(): any {
+    return cfEnv.ASSETS;
+  },
+  get r2AccessKeyId(): string {
+    return cfEnv.R2_ACCESS_KEY_ID || "";
+  },
+  get r2SecretAccessKey(): string {
+    return cfEnv.R2_SECRET_ACCESS_KEY || "";
+  },
+  get r2Endpoint(): string {
+    return cfEnv.R2_ENDPOINT || "";
+  },
+  get r2BucketName(): string {
+    return cfEnv.R2_BUCKET_NAME || "thevault-assets";
   },
 };

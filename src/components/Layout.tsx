@@ -15,6 +15,7 @@ const navLinks = [
   { label: 'Sell', path: '/sell' },
   { label: 'Tokens', path: '/token-gallery' },
   { label: 'Agents', path: '/agents' },
+  { label: 'Concierge', path: '/concierge' },
   { label: 'Forum', path: '/forum' },
   { label: 'Support', path: '/support' },
 ]

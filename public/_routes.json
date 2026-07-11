@@ -4,6 +4,12 @@
   "exclude": [
     "/assets/*",
     "/favicon.ico",
-    "/robots.txt"
+    "/favicon.svg",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/manifest.json",
+    "/_headers",
+    "/_redirects",
+    "/_routes.json"
   ]
 }
