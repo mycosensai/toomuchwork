@@ -4,7 +4,7 @@ import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
 import { validateFile, validateMagicBytes } from '@/lib/fileValidation'
 import {
-  Diamond, Plus, X, Loader2, Sparkles, CheckCircle2, ShieldCheck, Bitcoin, ImageIcon, AlertCircle
+  Diamond, Plus, X, Loader2, Sparkles, CheckCircle2, ShieldCheck, Bitcoin, ImageIcon, AlertCircle, CloudUpload
 } from 'lucide-react'
 
 const MAX_FILES = 20
@@ -37,6 +37,7 @@ export default function Sell() {
 
   const { data: categories } = trpc.categories.list.useQuery()
   const utils = trpc.useUtils()
+  const uploadAsset = trpc.assets.upload.useMutation()
 
   const createListing = trpc.listings.create.useMutation({
     onSuccess: (data) => {
@@ -141,20 +142,37 @@ export default function Sell() {
 
     setImageErrors(prev => ({ ...prev, global: undefined }))
 
-    // Convert images to base64 data URLs for submission
-    const imageUrls = images.map(img => img.preview)
-
-    createListing.mutate({
-      title,
-      description: description || undefined,
-      categoryId: parseInt(categoryId),
-      price: parseFloat(price),
-      condition,
-      features: features.length > 0 ? features : undefined,
-      isConsignment,
-      badge: 'new',
-      images: imageUrls.length > 0 ? imageUrls : undefined,
-    })
+    // Prefer R2: upload each image via assets.upload (R2) → use permanent URLs; fallback to data URLs if R2 not configured
+    const doCreate = async () => {
+      let imageUrls: string[] = images.map(img => img.preview)
+      if (isAuthenticated && images.length > 0) {
+        try {
+          const urls: string[] = []
+          for (const img of images) {
+            const base64 = img.preview.includes(',') ? img.preview.split(',')[1] : img.preview
+            const mime = img.file.type || 'image/jpeg'
+            const res = await uploadAsset.mutateAsync({ filename: img.file.name, contentType: mime, base64Data: base64 } as any)
+            if ((res as any)?.url) urls.push((res as any).url)
+            else urls.push(img.preview)
+          }
+          if (urls.length) imageUrls = urls
+        } catch {
+          // R2 not configured or upload failed — fall back to data URLs (listings.create validates them)
+        }
+      }
+      createListing.mutate({
+        title,
+        description: description || undefined,
+        categoryId: parseInt(categoryId),
+        price: parseFloat(price),
+        condition,
+        features: features.length > 0 ? features : undefined,
+        isConsignment,
+        badge: 'new',
+        images: imageUrls.length > 0 ? imageUrls : undefined,
+      })
+    }
+    void doCreate()
   }
 
   // Preview commission
@@ -551,15 +569,16 @@ export default function Sell() {
 
             <button
               type="submit"
-              disabled={createListing.isPending || !isAuthenticated}
+              disabled={createListing.isPending || uploadAsset.isPending || !isAuthenticated}
               className="w-full flex items-center justify-center gap-3 py-4 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {createListing.isPending ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+              {createListing.isPending || uploadAsset.isPending ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> {uploadAsset.isPending ? 'Uploading to R2...' : 'Submitting...'}</>
               ) : (
                 <>List Item in The Vault</>
               )}
             </button>
+            {uploadAsset.error && <p className="text-[10px] text-amber-400 mt-2 flex items-center gap-1"><CloudUpload className="w-3 h-3" /> R2 unavailable — will store as data URL. {(uploadAsset.error as any).message}</p>}
           </form>
 
           {/* Commission Preview */}

@@ -1,11 +1,12 @@
 import { useParams, useNavigate, Link } from 'react-router'
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
+import { CartContext } from '@/context/CartContext'
 import {
   Diamond, ArrowLeft, ShieldCheck, Loader2, Gem, Coins,
   Landmark, Palette, Watch, Trophy, BookOpen, ChevronRight,
-  Bitcoin, ExternalLink, CheckCircle2, Star, MessageSquare, ThumbsUp
+  Bitcoin, ExternalLink, CheckCircle2, Star, MessageSquare, ThumbsUp, ShoppingBag
 } from 'lucide-react'
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -30,6 +31,7 @@ export default function ListingDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
+  const cartCtx = useContext(CartContext)
 
   const listingId = parseInt(id || '0')
   const { data: listing, isLoading } = trpc.listings.getById.useQuery({ id: listingId })
@@ -218,6 +220,18 @@ export default function ListingDetail() {
                 className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] hover:-translate-y-0.2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {listing.status === 'sold' ? 'Sold' : listing.status === 'reserved' ? 'On Hold' : listing.status === 'pending_fee' ? 'Listing Pending Activation' : <><ChevronRight className="w-3.5 h-3.5" /> Buy Now with Card</>}
+              </button>
+
+              <button
+                onClick={() => {
+                  if (!listing) return
+                  cartCtx?.add(listing as any)
+                  navigate('/cart')
+                }}
+                disabled={listing.status !== 'active'}
+                className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-[#161616] border border-[#C9A84C]/30 text-[#C9A84C] font-cinzel text-[11px] tracking-[3px] uppercase font-semibold hover:border-[#C9A84C] hover:bg-[#C9A84C]/5 transition-all disabled:opacity-40"
+              >
+                <ShoppingBag className="w-4 h-4" /> Add to Cart — cart.get/add DB-synced
               </button>
 
               {listing.status === 'active' && (
