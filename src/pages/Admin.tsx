@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import {
-  Diamond, Users, BarChart3, Activity, Loader2, ArrowLeft, TrendingUp, DollarSign, Package, Bot, Settings, Cloud, PlayCircle, Plus, Database, Zap, Shield, Terminal, ChevronDown, X, MessageSquare, Mail, Globe, Sliders
+  Diamond, Users, BarChart3, Activity, Loader2, ArrowLeft, TrendingUp, DollarSign, Package, Bot, Settings, Cloud, PlayCircle, Plus, Database, Zap, Shield, Terminal, ChevronDown, X, MessageSquare, Mail, Globe, Sliders, Pin
 } from 'lucide-react'
 
 interface AgentProject {
@@ -27,7 +27,7 @@ export default function Admin() {
   const navigate = useNavigate()
   const { isAuthenticated, isAdmin, isLoading: authLoading } = useAuth()
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'agents' | 'cloudflare' | 'users' | 'forum' | 'messages' | 'email' | 'config'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'agents' | 'cloudflare' | 'users' | 'listings' | 'transactions' | 'payouts' | 'assets' | 'forum' | 'messages' | 'email' | 'config'>('overview')
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [showCreateTask, setShowCreateTask] = useState<string | null>(null)
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 2, interactiveOnly: false, expectedTouches: '', assignedAgent: '' })
@@ -102,13 +102,17 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex gap-2 mb-8 border-b border-[#C9A84C]/15">
+        {/* Tab Navigation — scrollable on mobile */}
+        <div className="flex gap-2 mb-8 border-b border-[#C9A84C]/15 overflow-x-auto scrollbar-none">
           {[
             { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
             { id: 'agents', label: 'Agent Config', icon: <Bot className="w-4 h-4" /> },
             { id: 'cloudflare', label: 'Cloudflare', icon: <Cloud className="w-4 h-4" /> },
             { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
+            { id: 'listings', label: 'Listings', icon: <Package className="w-4 h-4" /> },
+            { id: 'transactions', label: 'Transactions', icon: <TrendingUp className="w-4 h-4" /> },
+            { id: 'payouts', label: 'Payouts', icon: <DollarSign className="w-4 h-4" /> },
+            { id: 'assets', label: 'Assets', icon: <Database className="w-4 h-4" /> },
             { id: 'forum', label: 'Forum', icon: <MessageSquare className="w-4 h-4" /> },
             { id: 'messages', label: 'Messages', icon: <Mail className="w-4 h-4" /> },
             { id: 'email', label: 'Email', icon: <Globe className="w-4 h-4" /> },
@@ -400,7 +404,7 @@ export default function Admin() {
           </div>
         )}
 
-        {/* USERS TAB */}
+        {/* USERS TAB — wired to admin.listUsers (full paginated list) */}
         {activeTab === 'users' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-4">
@@ -413,49 +417,60 @@ export default function Admin() {
               </div>
             </div>
 
-            <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#C9A84C]/15 text-left">
-                      <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">ID</th>
-                      <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Name</th>
-                      <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Email</th>
-                      <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Role</th>
-                      <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Created</th>
-                      <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Last Sign In</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(stats?.recentListings || []).slice(0, 10).map((user: any) => (
-                      <tr key={user.id} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
-                        <td className="py-3 text-xs text-[#8A6E2F] font-mono">{user.id}</td>
-                        <td className="py-3 text-xs text-[#F5EED8]">{user.name || '—'}</td>
-                        <td className="py-3 text-xs text-[#C8BC98] font-mono">{user.email || '—'}</td>
-                        <td className="py-3">
-                          <span className={`px-2 py-1 rounded text-[8px] tracking-[1px] ${
-                            user.role === 'admin' 
-                              ? 'bg-[#C9A84C]/10 text-[#C9A84C]' 
-                              : 'bg-[#8A6E2F]/10 text-[#8A6E2F]'
-                          }`}>
-                            {user.role || 'user'}
-                          </span>
-                        </td>
-                        <td className="py-3 text-xs text-[#8A6E2F]">
-                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}
-                        </td>
-                        <td className="py-3 text-xs text-[#8A6E2F]">
-                          {user.lastSignInAt ? new Date(user.lastSignInAt).toLocaleDateString() : 'Never'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="mt-4 text-center text-xs text-[#8A6E2F]">
-                  Showing recent users. Full user list requires listUsers endpoint.
-                </div>
-              </div>
+            <UsersAdminPanel />
+          </div>
+        )}
+
+        {/* LISTINGS TAB — wired to admin.listListings + updateListingStatus */}
+        {activeTab === 'listings' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-cinzel text-lg font-semibold tracking-[3px] text-[#C9A84C] uppercase flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Listings Management
+              </h2>
+              <div className="text-xs text-[#8A6E2F]">{stats?.counts.listings || 0} total listings</div>
             </div>
+            <ListingsAdminPanel />
+          </div>
+        )}
+
+        {/* TRANSACTIONS TAB — wired to admin.listTransactions */}
+        {activeTab === 'transactions' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-cinzel text-lg font-semibold tracking-[3px] text-[#C9A84C] uppercase flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Transactions
+              </h2>
+              <div className="text-xs text-[#8A6E2F]">{stats?.counts.transactions || 0} total</div>
+            </div>
+            <TransactionsAdminPanel />
+          </div>
+        )}
+
+        {/* PAYOUTS TAB — wired to admin.listPayouts + markPayoutPaid */}
+        {activeTab === 'payouts' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-cinzel text-lg font-semibold tracking-[3px] text-[#C9A84C] uppercase flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Seller Payouts
+              </h2>
+            </div>
+            <PayoutsAdminPanel />
+          </div>
+        )}
+
+        {/* ASSETS TAB — wired to assets.list / assets.delete — R2 */}
+        {activeTab === 'assets' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-cinzel text-lg font-semibold tracking-[3px] text-[#C9A84C] uppercase flex items-center gap-2">
+                <Database className="w-5 h-5" /> R2 Assets
+              </h2>
+            </div>
+            <AssetsAdminPanel />
           </div>
         )}
 
@@ -756,6 +771,204 @@ function EmailConfigPanel() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── USERS ADMIN PANEL — full paginated listUsers ───
+function UsersAdminPanel() {
+  const [page, setPage] = useState(1)
+  const limit = 25
+  const offset = (page - 1) * limit
+  const { data: users, isLoading, error } = trpc.admin.listUsers.useQuery({ limit, offset } as any)
+
+  return (
+    <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs text-[#8A6E2F]">Page {page} — {users?.length ?? 0} users (limit {limit}, offset {offset})</div>
+        <div className="flex gap-2">
+          <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="px-3 py-1.5 bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#C9A84C] text-[10px] tracking-[1px] uppercase disabled:opacity-30">Prev</button>
+          <button disabled={users !== undefined && users.length < limit} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#C9A84C] text-[10px] tracking-[1px] uppercase disabled:opacity-30">Next</button>
+        </div>
+      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#C9A84C] animate-spin" /></div>
+      ) : error ? (
+        <div className="text-center py-8 text-xs text-red-400">{(error as any).message}</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#C9A84C]/15 text-left">
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">ID</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Name</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Email</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Role</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Provider</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Created</th>
+                <th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Last Sign In</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(users as any[] | undefined)?.length ? (users as any[]).map((u: any) => (
+                <tr key={u.id} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
+                  <td className="py-3 text-xs text-[#8A6E2F] font-mono">{u.id}</td>
+                  <td className="py-3 text-xs text-[#F5EED8]">{u.name || '—'}</td>
+                  <td className="py-3 text-xs text-[#C8BC98] font-mono">{u.email || '—'}</td>
+                  <td className="py-3"><span className={`px-2 py-1 rounded text-[8px] tracking-[1px] ${u.role === 'admin' ? 'bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/20' : 'bg-[#8A6E2F]/10 text-[#8A6E2F]'}`}>{u.role || 'user'}</span></td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{u.oauthProvider || (u.password ? 'local' : '—')}</td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '—'}</td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{u.lastSignInAt ? new Date(u.lastSignInAt).toLocaleString() : 'Never'}</td>
+                </tr>
+              )) : (
+                <tr><td colSpan={7} className="py-8 text-center text-xs text-[#8A6E2F]">No users found</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="mt-4 text-center text-[10px] tracking-[1px] text-[#8A6E2F]">Powered by <span className="text-[#C9A84C]">admin.listUsers</span> — paginated {limit}/page</div>
+    </div>
+  )
+}
+
+function ListingsAdminPanel() {
+  const [page, setPage] = useState(1)
+  const limit = 25
+  const offset = (page - 1) * limit
+  const { data: listings, isLoading, error } = trpc.admin.listListings.useQuery({ limit, offset } as any)
+  const updateStatus = trpc.admin.updateListingStatus.useMutation({ onSuccess: () => trpc.admin.listListings.invalidate() })
+  const [editingId, setEditingId] = useState<number | null>(null)
+  return (
+    <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs text-[#8A6E2F]">Page {page} — {listings?.length ?? 0} listings</div>
+        <div className="flex gap-2">
+          <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="px-3 py-1.5 bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#C9A84C] text-[10px] tracking-[1px] uppercase disabled:opacity-30">Prev</button>
+          <button disabled={listings !== undefined && listings.length < limit} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#C9A84C] text-[10px] tracking-[1px] uppercase disabled:opacity-30">Next</button>
+        </div>
+      </div>
+      {isLoading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#C9A84C] animate-spin" /></div> : error ? <div className="text-center py-8 text-xs text-red-400">{(error as any).message}</div> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-[#C9A84C]/15 text-left"><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">ID</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Title</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Price</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Status</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Seller</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Actions</th></tr></thead>
+            <tbody>
+              {(listings as any[] | undefined)?.length ? (listings as any[]).map((l: any) => (
+                <tr key={l.id} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
+                  <td className="py-3 text-xs text-[#8A6E2F] font-mono">{l.id}</td>
+                  <td className="py-3 text-xs text-[#F5EED8] max-w-[220px] truncate"><Link to={`/listing/${l.id}`} className="hover:text-[#C9A84C]">{l.title}</Link></td>
+                  <td className="py-3 text-xs text-[#C9A84C]">${Number(l.price).toLocaleString()}</td>
+                  <td className="py-3"><span className="px-2 py-1 text-[8px] tracking-[1px] bg-[#C9A84C]/10 text-[#C9A84C] border border-[#C9A84C]/20">{l.status}</span></td>
+                  <td className="py-3 text-xs text-[#8A6E2F] font-mono">{l.sellerId ?? '—'}</td>
+                  <td className="py-3">
+                    {editingId === l.id ? (
+                      <select value={l.status} onChange={(e) => { updateStatus.mutate({ id: l.id, status: e.target.value as any }); setEditingId(null) }} className="bg-[#1E1E1E] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-2 py-1">
+                        <option value="active">active</option><option value="sold">sold</option><option value="pending">pending</option><option value="pending_fee">pending_fee</option><option value="reserved">reserved</option><option value="withdrawn">withdrawn</option>
+                      </select>
+                    ) : <button onClick={() => setEditingId(l.id)} className="px-2 py-1 border border-[#C9A84C]/20 text-[9px] text-[#C9A84C]">EDIT</button>}
+                  </td>
+                </tr>
+              )) : <tr><td colSpan={6} className="py-8 text-center text-xs text-[#8A6E2F]">No listings</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="mt-3 text-[10px] tracking-[1px] text-[#8A6E2F] text-center">admin.listListings + admin.updateListingStatus</div>
+    </div>
+  )
+}
+
+function TransactionsAdminPanel() {
+  const [page, setPage] = useState(1)
+  const limit = 25
+  const offset = (page - 1) * limit
+  const { data: txs, isLoading, error } = trpc.admin.listTransactions.useQuery({ limit, offset } as any)
+  return (
+    <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-xs text-[#8A6E2F]">Page {page} — {txs?.length ?? 0} transactions</div>
+        <div className="flex gap-2">
+          <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="px-3 py-1.5 bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#C9A84C] text-[10px] tracking-[1px] uppercase disabled:opacity-30">Prev</button>
+          <button disabled={txs !== undefined && txs.length < limit} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#C9A84C] text-[10px] tracking-[1px] uppercase disabled:opacity-30">Next</button>
+        </div>
+      </div>
+      {isLoading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#C9A84C] animate-spin" /></div> : error ? <div className="text-center py-8 text-xs text-red-400">{(error as any).message}</div> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-[#C9A84C]/15 text-left"><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Session</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Listing</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Amount</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Status</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Created</th></tr></thead>
+            <tbody>
+              {(txs as any[] | undefined)?.length ? (txs as any[]).map((t: any) => (
+                <tr key={t.id} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
+                  <td className="py-3 text-xs text-[#C8BC98] font-mono max-w-[140px] truncate">{t.sessionId}</td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{t.listingId}</td>
+                  <td className="py-3 text-xs text-[#C9A84C]">${t.amount}</td>
+                  <td className="py-3"><span className={`px-2 py-1 text-[8px] tracking-[1px] ${t.status==='completed'?'bg-emerald-500/10 text-emerald-400':'bg-[#8A6E2F]/10 text-[#8A6E2F]'}`}>{t.status}</span></td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{t.createdAt?new Date(t.createdAt).toLocaleDateString():'—'}</td>
+                </tr>
+              )) : <tr><td colSpan={5} className="py-8 text-center text-xs text-[#8A6E2F]">No transactions</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="mt-3 text-[10px] tracking-[1px] text-[#8A6E2F] text-center">admin.listTransactions — Stripe sessions</div>
+    </div>
+  )
+}
+
+function PayoutsAdminPanel() {
+  const { data: payouts, isLoading, error } = trpc.admin.listPayouts.useQuery({} as any)
+  const markPaid = trpc.admin.markPayoutPaid.useMutation({ onSuccess: () => trpc.admin.listPayouts.invalidate() })
+  return (
+    <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+      {isLoading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#C9A84C] animate-spin" /></div> : error ? <div className="text-center py-8 text-xs text-red-400">{(error as any).message}</div> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-[#C9A84C]/15 text-left"><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">ID</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Sale Tx</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Amount</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Status</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Created</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Action</th></tr></thead>
+            <tbody>
+              {(payouts as any[] | undefined)?.length ? (payouts as any[]).map((p: any) => (
+                <tr key={p.id} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
+                  <td className="py-3 text-xs text-[#8A6E2F] font-mono">{p.id}</td>
+                  <td className="py-3 text-xs text-[#C8BC98]">{p.saleTransactionId ?? '—'}</td>
+                  <td className="py-3 text-xs text-[#C9A84C]">${p.amount}</td>
+                  <td className="py-3"><span className={`px-2 py-1 text-[8px] tracking-[1px] ${p.status==='paid'?'bg-emerald-500/10 text-emerald-400':'bg-amber-500/10 text-amber-400'}`}>{p.status}</span></td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{p.createdAt?new Date(p.createdAt).toLocaleDateString():'—'}</td>
+                  <td className="py-3">{p.status!=='paid' ? <button disabled={markPaid.isPending} onClick={() => markPaid.mutate({ payoutId: p.id })} className="px-2 py-1 border border-emerald-500/20 text-emerald-400 text-[9px] disabled:opacity-50">MARK PAID</button> : <span className="text-[9px] text-[#8A6E2F]">{p.paidAt?new Date(p.paidAt).toLocaleDateString():''}</span>}</td>
+                </tr>
+              )) : <tr><td colSpan={6} className="py-8 text-center text-xs text-[#8A6E2F]">No payouts</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="mt-3 text-[10px] tracking-[1px] text-[#8A6E2F] text-center">admin.listPayouts + admin.markPayoutPaid</div>
+    </div>
+  )
+}
+
+function AssetsAdminPanel() {
+  const { data, isLoading, error, refetch } = trpc.assets.list.useQuery({ prefix: 'uploads/', limit: 50 } as any)
+  const del = trpc.assets.delete.useMutation({ onSuccess: () => refetch() })
+  return (
+    <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
+      <div className="flex items-center justify-between mb-4"><span className="text-xs text-[#8A6E2F]">{data ? `${data.objects.length} objects${data.truncated ? ' (truncated)' : ''}` : ''}</span><button onClick={() => refetch()} className="px-3 py-1.5 bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#C9A84C] text-[10px] tracking-[1px] uppercase">Refresh</button></div>
+      {isLoading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#C9A84C] animate-spin" /></div> : error ? <div className="text-center py-6 text-xs text-red-400">{(error as any).message} — {String(error).includes('R2') ? 'Configure R2 bucket in Cloudflare Dashboard' : ''}</div> : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-[#C9A84C]/15 text-left"><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Key</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Size</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Type</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Uploaded</th><th className="pb-3 font-cinzel text-xs tracking-[2px] text-[#C9A84C]">Actions</th></tr></thead>
+            <tbody>
+              {(data as any)?.objects?.length ? (data as any).objects.map((o: any) => (
+                <tr key={o.key} className="border-b border-[#C9A84C]/10 hover:bg-[#1E1E1E]">
+                  <td className="py-3 text-xs text-[#C8BC98] font-mono max-w-[280px] truncate" title={o.key}>{o.key}</td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{o.size ? `${Math.round(o.size/1024)} KB` : '—'}</td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{o.contentType || '—'}</td>
+                  <td className="py-3 text-xs text-[#8A6E2F]">{o.uploaded ? new Date(o.uploaded).toLocaleString() : '—'}</td>
+                  <td className="py-3 flex gap-2"><a href={`https://thevaultdfw.win/assets/${o.key}`} target="_blank" rel="noopener noreferrer" className="px-2 py-1 border border-[#C9A84C]/20 text-[9px] text-[#C9A84C]">VIEW</a><button disabled={del.isPending} onClick={() => { if (confirm(`Delete ${o.key}?`)) del.mutate({ key: o.key } as any) }} className="px-2 py-1 border border-red-500/20 text-red-400 text-[9px] disabled:opacity-50">DELETE</button></td>
+                </tr>
+              )) : <tr><td colSpan={5} className="py-8 text-center text-xs text-[#8A6E2F]">No assets — uploads appear here after sellers use Sell → R2</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="mt-3 text-[10px] tracking-[1px] text-[#8A6E2F] text-center">assets.list (admin) · assets.delete (admin) — R2 bucket uploads/</div>
     </div>
   )
 }

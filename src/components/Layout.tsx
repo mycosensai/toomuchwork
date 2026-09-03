@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { trpc } from '@/providers/trpc'
 import { LiabilityBanner, FooterDisclaimer } from '@/components/LiabilityDisclaimer'
 import {
   Diamond, Search, Menu, X, LogOut, User, Shield, Mail,
@@ -83,6 +84,10 @@ export default function Layout() {
   const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
   const { user, isAuthenticated, isAdmin, logout } = useAuth()
+  const [newsletterEmail, setNewsletterEmail] = useState('')
+  const newsletter = trpc.newsletter.subscribe.useMutation({
+    onSuccess: () => setNewsletterEmail(''),
+  })
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50)
@@ -253,6 +258,29 @@ export default function Layout() {
               <p className="font-cormorant italic text-sm text-[#C8BC98] leading-relaxed mb-4 max-w-xs">
                 The elite collector exchange. Peer-to-peer marketplace for rare and exclusive items. AI-powered. Blockchain-certified. Collector-first.
               </p>
+              {/* Newsletter — wired to newsletter.subscribe */}
+              <form
+                onSubmit={(e) => { e.preventDefault(); if (newsletterEmail.trim()) newsletter.mutate({ email: newsletterEmail.trim() }); }}
+                className="flex gap-2 mb-4 max-w-xs"
+              >
+                <input
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                  placeholder="Enter email for drops"
+                  type="email"
+                  required
+                  className="flex-1 bg-[#161616] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-3 py-2 placeholder:text-[#8A6E2F] focus:border-[#C9A84C] outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={newsletter.isPending}
+                  className="px-4 py-2 bg-[#C9A84C] text-[#080808] text-[9px] tracking-[2px] uppercase font-cinzel font-bold disabled:opacity-50 hover:bg-[#E8CB7A] transition-colors"
+                >
+                  {newsletter.isPending ? '...' : 'Join'}
+                </button>
+              </form>
+              {newsletter.isSuccess && <p className="text-[10px] text-emerald-400 mb-3 max-w-xs">{(newsletter.data as any)?.message || 'Subscribed!'}</p>}
+              {newsletter.error && <p className="text-[10px] text-red-400 mb-3 max-w-xs">{(newsletter.error as any).message}</p>}
               {/* Social Media */}
               <div className="flex gap-2">
                 <SocialIcon href="https://x.com/thevault">

@@ -1,6 +1,11 @@
-import { Diamond, Truck, Package, Clock, Globe, ShieldCheck } from 'lucide-react'
+import { useState } from 'react'
+import { Diamond, Truck, Package, Clock, Globe, ShieldCheck, Loader2, ExternalLink } from 'lucide-react'
+import { trpc } from '@/providers/trpc'
 
 export default function Shipping() {
+  const [form, setForm] = useState({ listingId: '', originZip: '', destinationZip: '90210', packageWeight: '2', declaredValue: '' })
+  const rates = trpc.shipping.getRates.useMutation()
+  const { data: links } = trpc.shipping.carrierLinks.useQuery()
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -11,6 +16,33 @@ export default function Shipping() {
           <h1 className="font-cinzel text-3xl sm:text-4xl font-bold text-[#F5EED8] tracking-[6px] mb-4">SHIPPING INFORMATION</h1>
           <div className="w-16 h-px bg-[#C9A84C] mx-auto mb-6" />
           <p className="font-cormorant italic text-lg text-[#C8BC98]">Safe, insured delivery for your treasures.</p>
+        </div>
+
+        {/* Calculator — wired to shipping.getRates */}
+        <div className="bg-[#161616] border border-[#C9A84C]/20 p-6 mb-10">
+          <h2 className="font-cinzel text-xs tracking-[3px] uppercase text-[#C9A84C] font-semibold mb-4 flex items-center gap-2"><Truck className="w-4 h-4" /> Calculate Shipping</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+            <input value={form.listingId} onChange={e => setForm(f => ({ ...f, listingId: e.target.value }))} placeholder="Listing ID" type="number" className="bg-[#080808] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-3 py-2 placeholder:text-[#8A6E2F] outline-none" />
+            <input value={form.originZip} onChange={e => setForm(f => ({ ...f, originZip: e.target.value }))} placeholder="Origin ZIP" className="bg-[#080808] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-3 py-2 placeholder:text-[#8A6E2F] outline-none" />
+            <input value={form.destinationZip} onChange={e => setForm(f => ({ ...f, destinationZip: e.target.value }))} placeholder="Dest ZIP" className="bg-[#080808] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-3 py-2 placeholder:text-[#8A6E2F] outline-none" />
+            <input value={form.packageWeight} onChange={e => setForm(f => ({ ...f, packageWeight: e.target.value }))} placeholder="Weight (lbs)" type="number" className="bg-[#080808] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-3 py-2 placeholder:text-[#8A6E2F] outline-none" />
+            <input value={form.declaredValue} onChange={e => setForm(f => ({ ...f, declaredValue: e.target.value }))} placeholder="Value $ (optional)" type="number" className="bg-[#080808] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-3 py-2 placeholder:text-[#8A6E2F] outline-none" />
+            <button disabled={rates.isPending || !form.listingId || !form.originZip || !form.destinationZip} onClick={() => rates.mutate({ listingId: parseInt(form.listingId), originZip: form.originZip, destinationZip: form.destinationZip, packageWeight: parseFloat(form.packageWeight) || 2, declaredValue: form.declaredValue ? parseFloat(form.declaredValue) : undefined } as any)} className="px-4 py-2 bg-[#C9A84C] text-[#080808] text-[10px] tracking-[2px] uppercase font-cinzel font-bold disabled:opacity-50 col-span-2 sm:col-span-1">{rates.isPending ? <Loader2 className="w-3 h-3 animate-spin inline" /> : 'Get Rates'}</button>
+          </div>
+          {rates.data && (
+            <div className="space-y-2">
+              <p className="text-[9px] text-[#8A6E2F] tracking-[1px]">{(rates.data as any).note} · Item value ${(rates.data as any).itemValue?.toLocaleString()}</p>
+              {(rates.data as any).rates.map((r: any, i: number) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-[#080808] border border-[#C9A84C]/10 text-xs">
+                  <div><span className="text-[#C9A84C] font-semibold">{r.carrier.toUpperCase()} · {r.service}</span> <span className="text-[#8A6E2F]">· {r.days}d</span></div>
+                  <div className="flex items-center gap-3"><span className="text-[#F5EED8] font-cinzel">${r.cost}</span><a href={r.carrierUrl} target="_blank" rel="noopener noreferrer" className="text-[#C9A84C] hover:underline flex items-center gap-1 text-[9px]">Book <ExternalLink className="w-3 h-3" /></a></div>
+                </div>
+              ))}
+            </div>
+          )}
+          {rates.error && <p className="text-xs text-red-400 mt-3">{(rates.error as any).message}</p>}
+          {links && <div className="flex gap-3 mt-4 text-[9px] tracking-[1px] text-[#8A6E2F]">Direct: {links.map((l: any) => <a key={l.name} href={l.url} target="_blank" rel="noopener noreferrer" className="text-[#C9A84C] hover:underline">{l.name}</a>)}</div>}
+          <p className="text-[9px] tracking-[1px] text-[#8A6E2F] text-center mt-3">shipping.getRates · shipping.carrierLinks · shipping.getHistory</p>
         </div>
 
         {/* Features */}

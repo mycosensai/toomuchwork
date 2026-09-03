@@ -1,10 +1,11 @@
 import { useParams, useNavigate, Link } from 'react-router'
+import { useState } from 'react'
 import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
 import {
   Diamond, ArrowLeft, ShieldCheck, Loader2, Gem, Coins,
   Landmark, Palette, Watch, Trophy, BookOpen, ChevronRight,
-  Bitcoin, ExternalLink, CheckCircle2
+  Bitcoin, ExternalLink, CheckCircle2, Star, MessageSquare, ThumbsUp
 } from 'lucide-react'
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -28,7 +29,7 @@ const badgeStyles: Record<string, string> = {
 export default function ListingDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
   const listingId = parseInt(id || '0')
   const { data: listing, isLoading } = trpc.listings.getById.useQuery({ id: listingId })
@@ -36,6 +37,11 @@ export default function ListingDetail() {
     { listingId },
     { enabled: !!listing?.isCertified }
   )
+  const { data: reviewStats } = trpc.reviews.statsByListing.useQuery({ listingId }, { enabled: !!listing })
+  const { data: reviews } = trpc.reviews.listByListing.useQuery({ listingId }, { enabled: !!listing })
+  const createReview = trpc.reviews.create.useMutation({ onSuccess: () => { trpc.reviews.listByListing.invalidate({ listingId }); trpc.reviews.statsByListing.invalidate({ listingId }); setReviewForm({ rating: 5, title: '', comment: '' }) } })
+  const helpful = trpc.reviews.helpful.useMutation({ onSuccess: () => trpc.reviews.listByListing.invalidate({ listingId }) })
+  const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '' })
 
   const handleBuyNow = () => {
     if (!isAuthenticated) {
@@ -230,6 +236,69 @@ export default function ListingDetail() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* REVIEWS — wired to reviews.listByListing / statsByListing / create / helpful */}
+        <div className="mt-12 border-t border-[#C9A84C]/15 pt-10">
+          <div className="flex items-center gap-3 mb-6">
+            <MessageSquare className="w-5 h-5 text-[#C9A84C]" />
+            <h2 className="font-cinzel text-sm tracking-[3px] uppercase text-[#C9A84C] font-semibold">Collector Reviews</h2>
+            {reviewStats && <span className="text-xs text-[#8A6E2F]">({reviewStats.totalReviews} · {reviewStats.avgRating}★)</span>}
+          </div>
+
+          {reviewStats && reviewStats.totalReviews > 0 && (
+            <div className="grid grid-cols-5 gap-2 mb-8">
+              {[1,2,3,4,5].map(star => (
+                <div key={star} className="bg-[#161616] border border-[#C9A84C]/10 p-3 text-center">
+                  <div className="text-[#C9A84C] font-cinzel text-lg">{reviewStats.distribution[star-1]}</div>
+                  <div className="text-[9px] text-[#8A6E2F]">{star}★</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Write a review */}
+          <div className="bg-[#161616] border border-[#C9A84C]/15 p-6 mb-6">
+            <h3 className="text-[10px] tracking-[2px] uppercase text-[#C9A84C] font-cinzel mb-4">Write a Review</h3>
+            <div className="flex gap-2 mb-3">
+              {[1,2,3,4,5].map(n => (
+                <button key={n} onClick={() => setReviewForm(f => ({ ...f, rating: n }))} className={`p-1 ${n <= reviewForm.rating ? 'text-[#C9A84C]' : 'text-[#8A6E2F]'}`}><Star className={`w-5 h-5 ${n <= reviewForm.rating ? 'fill-[#C9A84C]' : ''}`} /></button>
+              ))}
+            </div>
+            <input value={reviewForm.title} onChange={e => setReviewForm(f => ({ ...f, title: e.target.value }))} placeholder="Title (optional)" className="w-full bg-[#080808] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-3 py-2 mb-2 placeholder:text-[#8A6E2F] outline-none" />
+            <textarea value={reviewForm.comment} onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))} placeholder="Your review..." rows={3} className="w-full bg-[#080808] border border-[#C9A84C]/20 text-xs text-[#F5EED8] px-3 py-2 mb-3 placeholder:text-[#8A6E2F] outline-none" />
+            <button
+              disabled={createReview.isPending}
+              onClick={() => {
+                if (!user && !isAuthenticated) { navigate('/login'); return }
+                createReview.mutate({ listingId, userName: (user as any)?.name || 'Collector', rating: reviewForm.rating, title: reviewForm.title || undefined, comment: reviewForm.comment || undefined })
+              }}
+              className="px-4 py-2 bg-[#C9A84C] text-[#080808] text-[10px] tracking-[2px] uppercase font-cinzel font-bold disabled:opacity-50"
+            >
+              {createReview.isPending ? 'Posting...' : 'Post Review'}
+            </button>
+            {createReview.isSuccess && <span className="ml-3 text-xs text-emerald-400">Posted!</span>}
+            {createReview.error && <span className="ml-3 text-xs text-red-400">{(createReview.error as any).message}</span>}
+          </div>
+
+          {/* Review list */}
+          <div className="space-y-3">
+            {(reviews as any[] | undefined)?.length ? (reviews as any[]).map((r: any) => (
+              <div key={r.id} className="bg-[#161616] border border-[#C9A84C]/10 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-[#F5EED8] font-semibold">{r.userName}</span>
+                  <span className="flex gap-0.5">{[1,2,3,4,5].map(n => <Star key={n} className={`w-3 h-3 ${n <= r.rating ? 'fill-[#C9A84C] text-[#C9A84C]' : 'text-[#8A6E2F]'}`} />)}</span>
+                </div>
+                {r.title && <div className="text-xs text-[#C9A84C] mb-1">{r.title}</div>}
+                {r.comment && <p className="text-xs text-[#C8BC98] leading-relaxed mb-2">{r.comment}</p>}
+                <div className="flex items-center justify-between text-[10px] text-[#8A6E2F]">
+                  <span>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''} {r.isVerifiedPurchase ? '· Verified Purchase' : ''}</span>
+                  <button onClick={() => helpful.mutate({ reviewId: r.id })} className="flex items-center gap-1 hover:text-[#C9A84C]"><ThumbsUp className="w-3 h-3" /> Helpful ({r.helpfulCount || 0})</button>
+                </div>
+              </div>
+            )) : <p className="text-xs text-[#8A6E2F] text-center py-6">No reviews yet — be the first.</p>}
+          </div>
+          <p className="text-[9px] tracking-[1px] text-[#8A6E2F] text-center mt-4">Powered by reviews.listByListing · reviews.statsByListing · reviews.create · reviews.helpful</p>
         </div>
       </div>
     </div>
