@@ -13,28 +13,15 @@
  */
 
 import { z } from "zod";
-import { eq, desc, gte, sql } from "drizzle-orm";
+import {
+  eq, desc, gte
+} from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  dailyReports,
-  accountingEntries,
-  agentLogs,
-  agentCycles,
-  outreachCampaigns,
-  outreachLogs,
-  auditLogs,
-  securityHardening,
-  listings,
-  appraisals,
-  orders,
-  saleTransactions,
-  agentFeedback,
-  interAgentChecks,
-  partnershipOutreach,
-  internetResearch,
+  dailyReports, accountingEntries, agentLogs, agentCycles, outreachCampaigns, outreachLogs, auditLogs, securityHardening, listings, appraisals, saleTransactions, agentFeedback, interAgentChecks, partnershipOutreach, internetResearch
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
 import { genId } from "./lib/id";
 
 
@@ -162,7 +149,7 @@ Tone: Professional, direct, data-driven. Use bullet points. Keep under 500 words
   let fullReport = "";
   try {
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: "You are a concise business analyst writing daily executive reports." },
         { role: "user", content: prompt },

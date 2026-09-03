@@ -166,8 +166,13 @@ export async function buildAuthUrl(
     };
   }
 
-  let base = hostOverride
-    ? `${env.isProduction ? "https" : "http"}://${hostOverride}`
+  const isRealDomain =
+    !!hostOverride &&
+    hostOverride !== "localhost" &&
+    !hostOverride.includes("localhost");
+  const protocol = isRealDomain ? "https" : "http";
+  const base = hostOverride
+    ? `${protocol}://${hostOverride}`
     : `${env.isProduction ? "https" : "http"}://localhost:3000`;
 
   const redirectUri = `${base}/api/oauth/callback/${provider}`;
@@ -274,5 +279,26 @@ export async function fetchProfile(
   }
 
   const data = await resp.json();
-  return config.profileParser(data);
+  const profile = config.profileParser(data);
+
+  // GitHub returns `email: null` for users with private email visibility.
+  // Fall back to the secondary /user/emails endpoint to fetch the primary
+  // verified email so GitHub sign-ins are never left with a null email
+  // (which would break admin-email matching and contact linking).
+  if (provider === "github" && !profile.email) {
+    try {
+      const emailsResp = await fetch("https://api.github.com/user/emails", {
+        headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+      });
+      if (emailsResp.ok) {
+        const emails = (await emailsResp.json()) as Array<{ email: string; primary?: boolean; verified?: boolean }>;
+        const primary = emails.find((e) => e.primary) || emails.find((e) => e.verified) || emails[0];
+        if (primary?.email) profile.email = primary.email;
+      }
+    } catch {
+      // Best-effort: keep null email if the secondary call fails.
+    }
+  }
+
+  return profile;
 }

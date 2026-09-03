@@ -26,13 +26,9 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  coldEmailTemplates,
-  coldEmailProspects,
-  coldEmailSends,
-  agentLogs,
-  agentCycles,
+  coldEmailTemplates, coldEmailProspects, coldEmailSends, agentLogs
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
 import { checkHallucinations, censorOutreach } from "./lib/hallucination-guard";
 import { genId } from "./lib/id";
 
@@ -100,7 +96,7 @@ Respond ONLY with JSON:
 {"niche": "${nicheId}", "subject": "...", "body": "..."}`;
 
   const response = await openaiChat({
-    model: "gpt-4o",
+    model: AGENT_MODEL,
     messages: [
       { role: "system", content: `${VAULT_OUTREACH_PREAMBLE} You are an expert cold-email copywriter for luxury collectibles.` },
       { role: "user", content: prompt },

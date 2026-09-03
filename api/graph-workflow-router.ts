@@ -11,27 +11,23 @@
  */
 
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import {
+  
+} from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  agentWorkflows,
-  agentLogs,
-  agentCycles,
-  coldEmailProspects,
-  coldEmailTemplates,
-  listings,
-  appraisals,
+  agentLogs
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
-import { checkHallucinations, censorOutreach } from "./lib/hallucination-guard";
+import {
+  AGENT_MODEL
+} from "./lib/openai";
+import {
+  
+} from "./lib/hallucination-guard";
 import { genId } from "./lib/id";
 import {
-  GraphEngine,
-  CommandProcessor,
-  VariablePool,
-  WorkerPool,
-  IterationNode,
+  GraphEngine, CommandProcessor, VariablePool, WorkerPool
 } from "./lib/graph-engine";
 
 // ─── SINGLETON ENGINE INSTANCES ───
@@ -47,10 +43,10 @@ function buildOutreachWorkflow(listingId: number, itemName: string, category: st
     name: `Outreach for ${itemName}`,
     nodes: new Map([
       ["start", { id: "start", type: "start", config: {}, inputs: [], outputs: ["research", "appraise"], parallel: true }],
-      ["research", { id: "research", type: "agent", config: { agentType: "research", prompt: `Research buyer interest for ${itemName}`, model: "gpt-4o-mini" }, inputs: ["start"], outputs: ["outreach"], parallel: false }],
-      ["appraise", { id: "appraise", type: "agent", config: { agentType: "appraiser", prompt: `Appraise ${itemName}`, model: "gpt-4o-mini" }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
+      ["research", { id: "research", type: "agent", config: { agentType: "research", prompt: `Research buyer interest for ${itemName}`, model: AGENT_MODEL }, inputs: ["start"], outputs: ["outreach"], parallel: false }],
+      ["appraise", { id: "appraise", type: "agent", config: { agentType: "appraiser", prompt: `Appraise ${itemName}`, model: AGENT_MODEL }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
       ["aggregator", { id: "aggregator", type: "aggregator", config: {}, inputs: ["research", "appraise"], outputs: ["outreach"], parallel: false }],
-      ["outreach", { id: "outreach", type: "agent", config: { agentType: "outreach", prompt: `Generate personalized outreach for ${itemName}`, model: "gpt-4o" }, inputs: ["aggregator"], outputs: ["iteration"], parallel: false }],
+      ["outreach", { id: "outreach", type: "agent", config: { agentType: "outreach", prompt: `Generate personalized outreach for ${itemName}`, model: AGENT_MODEL }, inputs: ["aggregator"], outputs: ["iteration"], parallel: false }],
       ["iteration", { id: "iteration", type: "iteration", config: { batchSize: 5 }, inputs: ["outreach"], outputs: ["response"], parallel: true, maxWorkers: 5 }],
       ["response", { id: "response", type: "response", config: { template: "Outreach complete for {{itemName}}" }, inputs: ["iteration"], outputs: [], parallel: false }],
     ]),
@@ -65,11 +61,11 @@ function buildDailyAuditWorkflow(): any {
     name: "Daily 24/7 Self-Audit",
     nodes: new Map([
       ["start", { id: "start", type: "start", config: {}, inputs: [], outputs: ["integrity", "hallucination", "security"], parallel: true }],
-      ["integrity", { id: "integrity", type: "agent", config: { agentType: "auditor", prompt: "Check data integrity", model: "gpt-4o-mini" }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
-      ["hallucination", { id: "hallucination", type: "agent", config: { agentType: "auditor", prompt: "Check hallucinations", model: "gpt-4o-mini" }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
-      ["security", { id: "security", type: "agent", config: { agentType: "security", prompt: "Check security", model: "gpt-4o-mini" }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
+      ["integrity", { id: "integrity", type: "agent", config: { agentType: "auditor", prompt: "Check data integrity", model: AGENT_MODEL }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
+      ["hallucination", { id: "hallucination", type: "agent", config: { agentType: "auditor", prompt: "Check hallucinations", model: AGENT_MODEL }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
+      ["security", { id: "security", type: "agent", config: { agentType: "security", prompt: "Check security", model: AGENT_MODEL }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
       ["aggregator", { id: "aggregator", type: "aggregator", config: {}, inputs: ["integrity", "hallucination", "security"], outputs: ["report"], parallel: false }],
-      ["report", { id: "report", type: "agent", config: { agentType: "auditor", prompt: "Generate audit report", model: "gpt-4o-mini" }, inputs: ["aggregator"], outputs: ["response"], parallel: false }],
+      ["report", { id: "report", type: "agent", config: { agentType: "auditor", prompt: "Generate audit report", model: AGENT_MODEL }, inputs: ["aggregator"], outputs: ["response"], parallel: false }],
       ["response", { id: "response", type: "response", config: { template: "Audit complete" }, inputs: ["report"], outputs: [], parallel: false }],
     ]),
     startNode: "start",
@@ -130,10 +126,10 @@ export const graphWorkflowRouter = createRouter({
             nodes: new Map([
               ["start", { id: "start", type: "start", config: {}, inputs: [], outputs: ["reddit", "x", "forums"], parallel: true }],
               ["reddit", { id: "reddit", type: "http", config: { url: `https://www.reddit.com/search.json?q=${encodeURIComponent(input.itemName || "")}&sort=new&limit=10&t=year`, method: "GET" }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
-              ["x", { id: "x", type: "agent", config: { agentType: "research", prompt: `Search X for ${input.itemName}`, model: "gpt-4o-mini" }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
-              ["forums", { id: "forums", type: "agent", config: { agentType: "research", prompt: `Search collector forums for ${input.itemName}`, model: "gpt-4o-mini" }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
+              ["x", { id: "x", type: "agent", config: { agentType: "research", prompt: `Search X for ${input.itemName}`, model: AGENT_MODEL }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
+              ["forums", { id: "forums", type: "agent", config: { agentType: "research", prompt: `Search collector forums for ${input.itemName}`, model: AGENT_MODEL }, inputs: ["start"], outputs: ["aggregator"], parallel: false }],
               ["aggregator", { id: "aggregator", type: "aggregator", config: {}, inputs: ["reddit", "x", "forums"], outputs: ["analyze"], parallel: false }],
-              ["analyze", { id: "analyze", type: "agent", config: { agentType: "research", prompt: `Analyze findings for ${input.itemName}`, model: "gpt-4o" }, inputs: ["aggregator"], outputs: ["delay"], parallel: false }],
+              ["analyze", { id: "analyze", type: "agent", config: { agentType: "research", prompt: `Analyze findings for ${input.itemName}`, model: AGENT_MODEL }, inputs: ["aggregator"], outputs: ["delay"], parallel: false }],
               ["delay", { id: "delay", type: "delay", config: { seconds: 5 }, inputs: ["analyze"], outputs: ["response"], parallel: false }],
               ["response", { id: "response", type: "response", config: { template: "Research complete" }, inputs: ["delay"], outputs: [], parallel: false }],
             ]),

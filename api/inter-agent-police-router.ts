@@ -14,16 +14,12 @@ import { eq, desc } from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  interAgentChecks,
-  agentLogs,
-  agentCycles,
-  outreachLogs,
-  agentConversations,
-  agentFeedback,
-  agentProjects,
+  interAgentChecks, outreachLogs
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
-import { checkHallucinations, censorOutreach } from "./lib/hallucination-guard";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
+import {
+  
+} from "./lib/hallucination-guard";
 import { genId } from "./lib/id";
 
 
@@ -79,7 +75,7 @@ Be strict. If you find ANY issue, verdict must be "fail" or "warning".`;
 
   try {
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: "You are a strict quality reviewer. Only respond with valid JSON." },
         { role: "user", content: prompt },

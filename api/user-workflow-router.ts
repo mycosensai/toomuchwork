@@ -13,14 +13,12 @@ import { eq, desc } from "drizzle-orm";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  userWorkflows,
-  listings,
-  appraisals,
-  orders,
-  agentLogs,
+  userWorkflows, agentLogs
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
-import { logFinancialEntry } from "./accounting-router";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
+import {
+  
+} from "./accounting-router";
 import { genId } from "./lib/id";
 
 
@@ -155,7 +153,7 @@ Respond ONLY with JSON:
 
   try {
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: "You write professional, warm emails for a luxury marketplace. Only respond with valid JSON." },
         { role: "user", content: prompt },

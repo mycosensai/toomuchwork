@@ -3,7 +3,9 @@
  * Runs as a middleware layer over agent cycle output
  */
 
-import { openaiChat, openaiStructured } from "./openai";
+import {
+  openaiStructured, AGENT_MODEL
+} from "./openai";
 
 export interface FactCheckResult {
   claim: string;
@@ -74,7 +76,7 @@ Category context: ${itemCategory ?? "luxury collectible"}`;
       summary: string;
       requires_human_review: boolean;
     }>({
-      model: "gpt-4o",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: "You are a rigorous fact-checking engine. Be conservative. If unsure, flag it." },
         { role: "user", content: prompt },
@@ -201,7 +203,7 @@ ${text}
 
   try {
     const response = await openaiStructured<CensorshipResult>({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: "You enforce strict communication policies. Be conservative." },
         { role: "user", content: prompt },

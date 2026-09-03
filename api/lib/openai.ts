@@ -1,49 +1,49 @@
 /**
- * LLM Provider — OpenRouter-backed with free model rotation
- * Uses env.openaiApiKey + env.openaiBaseUrl (set to https://openrouter.ai/api/v1)
- * 
- * Model Rotation: picks a different free model every 6 hours
- * from the FREE_MODELS list. Image appraisal uses VISION_MODELS separately.
+ * LLM Provider — Nous Research inference (Hermes API key), OpenAI-compatible.
+ *
+ * Every Vault agent routes through here. Default model for ALL agents is
+ * deepseek/deepseek-v4-flash-0731 (the user's Hermes default via Nous).
+ * ProVerify uses a distinct, stronger model (google/gemini-3.7-flash).
+ * Vision/appraisal uses a multimodal model (stepfun/step-3.7-flash:free)
+ * because DeepSeek v4 flash is text-only.
+ *
+ * Falls back across the pool so a single retired/rate-limited model never
+ * breaks a feature.
  */
+
 import { env } from "./env";
 
-// ─── Free models on OpenRouter ───
-// NOTE: Free models are rotated by the upstream provider frequently. If a
-// model in this list is retired it returns a 404 at request time. The chat
-// helpers below fall back across the WHOLE pool so one dead model never
-// breaks the feature — they try every remaining model before failing.
-// Verified against the live OpenRouter catalog. Ordered by observed
-// availability: the first two responded 200 during setup; the rest are real
-// slugs kept as fallback depth (they float between 200/429 as capacity
-// rotates). Re-verify with `GET /api/v1/models` if chats start 404-ing.
+export const NOUS_BASE_URL = "https://inference-api.nousresearch.com/v1";
+
+// General agents — default via Nous Research portal (Hermes `model.default`)
+export const AGENT_MODEL = "deepseek/deepseek-v4-flash-0731";
+
+// DeepSeek v4 family (Nous-proxied) — exception agents per operator request.
+// Pricing intelligence uses the latest pro version.
+export const DEEPSEEK_FLASH_MODEL = "deepseek/deepseek-v4-flash-0731";
+export const DEEPSEEK_PRO_MODEL = "deepseek/deepseek-v4-pro-0813";
+
+// ProVerify Engine — vision-capable (reverted per operator: keep Gemini for image verification)
+export const PROVERIFY_MODEL = "google/gemini-3.7-flash";
+
+// Appraisal text model — DeepSeek v4
+export const APPRAISAL_MODEL = DEEPSEEK_FLASH_MODEL;
+
+// Logistics agent — DeepSeek v4
+export const LOGISTICS_MODEL = DEEPSEEK_FLASH_MODEL;
+
+// Pricing Intelligence — DeepSeek v4 latest pro
+export const PRICING_MODEL = DEEPSEEK_PRO_MODEL;
+
+// Multimodal model for image appraisals (DeepSeek v4 flash is text-only).
+export const VISION_MODEL = "stepfun/step-3.7-flash:free";
+
+// Resilient fallback pool (DeepSeek v4 first; the rest are verified Nous slugs).
 const FREE_MODELS = [
-  "openai/gpt-oss-20b:free",
-  "google/gemma-4-26b-a4b-it:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "qwen/qwen3-next-80b-a3b-instruct:free",
-  "google/gemma-4-31b-it:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
+  "deepseek/deepseek-v4-flash-0731",
+  "stepfun/step-3.7-flash:free",
+  "meituan/longcat-2.0:free",
 ];
-
-const VISION_MODELS = [
-  "nvidia/nemotron-nano-12b-v2-vl:free",
-  "openai/gpt-oss-20b:free",
-  "google/gemma-4-31b-it:free",
-];
-
-// ─── Model selection ───
-function getCurrentModel(): string {
-  const hours = Math.floor(Date.now() / 1000 / 3600);
-  const index = hours % FREE_MODELS.length; // rotates every 6h split across 5 models = every 6h change
-  const sixHourBlock = Math.floor(hours / 6);
-  return FREE_MODELS[sixHourBlock % FREE_MODELS.length];
-}
-
-function getVisionModel(): string {
-  const hours = Math.floor(Date.now() / 1000 / 3600);
-  const index = Math.floor(hours / 6) % VISION_MODELS.length;
-  return VISION_MODELS[index];
-}
 
 // ─── Types ───
 export interface LLMMessage {
@@ -88,18 +88,25 @@ export interface LLMResponse {
 }
 
 function getApiConfig() {
-  const key = env.openaiApiKey;
-  const baseUrl = env.openaiBaseUrl || "https://openrouter.ai/api/v1";
-  
+  const key = env.nousApiKey || env.openaiApiKey;
+  const baseUrl = env.nousBaseUrl || env.openaiBaseUrl || NOUS_BASE_URL;
+
   if (!key || key.length < 10) {
-    throw new Error("OPENAI_API_KEY not configured. Set it in Cloudflare Pages secrets.");
+    throw new Error("NOUS_API_KEY not configured. Set it in Cloudflare Pages secrets.");
   }
   return { key, baseUrl };
 }
 
-// Build the ordered list of models to try. Start with the rotated pick, then
-// every other model in the pool. This guarantees fallback across ALL models
-// when one is retired upstream (common with free tiers).
+// hy3 returns chain-of-thought in a `reasoning` field and supports
+// `reasoning_effort`. Disable reasoning for agent calls to keep latency/tokens
+// down (it is still a strong model without it).
+function withReasoningEffort(body: Record<string, unknown>, model: string): Record<string, unknown> {
+  if (model.includes("hy3")) {
+    return { ...body, reasoning_effort: "none" };
+  }
+  return body;
+}
+
 function getModelTryOrder(preferred: string): string[] {
   const pool = FREE_MODELS;
   const idx = pool.indexOf(preferred);
@@ -107,9 +114,6 @@ function getModelTryOrder(preferred: string): string[] {
   return [preferred, ...pool.slice(0, idx), ...pool.slice(idx + 1)];
 }
 
-// Shared fetch with cross-model fallback. Returns the raw Response on the
-// first model that returns a non-error (2xx). Throws a consolidated error
-// only if every model in the pool failed.
 async function chatCompletionWithFallback(
   baseUrl: string,
   key: string,
@@ -126,50 +130,51 @@ async function chatCompletionWithFallback(
         "HTTP-Referer": "https://thevaultdfw.win",
         "X-Title": "The Vault DFW",
       },
-      body: JSON.stringify({ ...body, model }),
+      body: JSON.stringify(withReasoningEffort({ ...body, model }, model)),
     });
     if (res.ok) return res;
-    // Auth failure (401) is fatal — it would repeat for every model.
-    // Model-availability (404) and rate-limit (429) errors fall through to
-    // the next model: OpenRouter free models route through different upstream
-    // providers with independent limits, so another model may have capacity.
     const status = res.status;
     const text = await res.text();
     lastError = `model ${model} -> ${status}: ${text.slice(0, 200)}`;
     if (status === 401) {
       throw new Error(`LLM API error ${status}: ${text}`);
     }
-    // otherwise (404 retired / 429 rate-limited) fall through to next model
+    // 404 retired / 429 rate-limited -> try next model
   }
   throw new Error(`All LLM models failed. Last error: ${lastError}`);
 }
 
-// ─── Chat (text generation with model rotation + fallback) ───
+// ─── Chat (text generation with model fallback) ───
 export async function openaiChat(request: LLMRequest): Promise<LLMResponse> {
   const { key, baseUrl } = getApiConfig();
-  const preferred = request.model || getCurrentModel();
+  const preferred = request.model || AGENT_MODEL;
   const models = getModelTryOrder(preferred);
 
-  const res = await chatCompletionWithFallback(baseUrl, key, {
-    messages: request.messages,
-    temperature: request.temperature ?? 0.7,
-    max_tokens: request.max_tokens ?? 4096,
-    top_p: request.top_p ?? 1,
-    ...(request.response_format ? { response_format: request.response_format } : {}),
-    ...(request.tools ? { tools: request.tools } : {}),
-    ...(request.tool_choice ? { tool_choice: request.tool_choice } : {}),
-  }, models);
+  const res = await chatCompletionWithFallback(
+    baseUrl,
+    key,
+    {
+      messages: request.messages,
+      temperature: request.temperature ?? 0.7,
+      max_tokens: request.max_tokens ?? 4096,
+      top_p: request.top_p ?? 1,
+      ...(request.response_format ? { response_format: request.response_format } : {}),
+      ...(request.tools ? { tools: request.tools } : {}),
+      ...(request.tool_choice ? { tool_choice: request.tool_choice } : {}),
+    },
+    models,
+  );
 
-  return res.json() as Promise<LLMResponse>;
+  return (await res.json()) as LLMResponse;
 }
 
-// ─── Streaming chat (with cross-model fallback) ───
+// ─── Streaming chat (with model fallback) ───
 export async function openaiChatStream(
   request: LLMRequest,
   onChunk: (text: string, done: boolean) => void,
 ): Promise<void> {
   const { key, baseUrl } = getApiConfig();
-  const preferred = request.model || getCurrentModel();
+  const preferred = request.model || AGENT_MODEL;
   const models = getModelTryOrder(preferred);
 
   const body = {
@@ -190,12 +195,9 @@ export async function openaiChatStream(
         "HTTP-Referer": "https://thevaultdfw.win",
         "X-Title": "The Vault DFW",
       },
-      body: JSON.stringify({ ...body, model }),
+      body: JSON.stringify(withReasoningEffort({ ...body, model }, model)),
     });
 
-    // A non-OK that looks like a retired/unavailable model: try the next one.
-    // Auth failure (401) is fatal. Model-availability (404) and rate-limit
-    // (429) errors fall through so another model can be tried.
     if (!res.ok) {
       const status = res.status;
       const text = await res.text();
@@ -203,7 +205,7 @@ export async function openaiChatStream(
       if (status === 401) {
         throw new Error(`LLM API error ${status}: ${text}`);
       }
-      continue; // model retired/429 -> fall through to next model
+      continue;
     }
 
     const reader = res.body?.getReader();
@@ -218,11 +220,9 @@ export async function openaiChatStream(
         onChunk("", true);
         return;
       }
-
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
       buffer = lines.pop() ?? "";
-
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed || trimmed === "data: [DONE]") continue;
@@ -260,14 +260,13 @@ export async function openaiStructured<T>(
   }
 }
 
-// ─── Vision API (uses separate vision model, for appraisals) ───
+// ─── Vision API ───
 export async function openaiVision(
   imageUrl: string,
   prompt: string,
   model?: string,
 ): Promise<string> {
-  const { key, baseUrl } = getApiConfig();
-  const visionModel = model || getVisionModel();
+  const visionModel = model || VISION_MODEL;
 
   const response = await openaiChat({
     model: visionModel,
@@ -286,10 +285,11 @@ export async function openaiVision(
   return response.choices[0]?.message?.content ?? "";
 }
 
-// ─── Helper: get current model names ───
+// ─── Helpers: model names ───
 export function getActiveModels() {
   return {
-    text: getCurrentModel(),
-    vision: getVisionModel(),
+    text: AGENT_MODEL,
+    vision: VISION_MODEL,
+    provverify: PROVERIFY_MODEL,
   };
 }

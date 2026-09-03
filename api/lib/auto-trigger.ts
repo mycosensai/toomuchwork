@@ -9,19 +9,16 @@
 
 import { getDb } from "../queries/connection";
 import {
-  listings,
-  appraisals,
-  categories,
-  outreachCampaigns,
-  outreachLogs,
-  agentLogs,
-  agentCycles,
-  partnershipOutreach,
+  outreachCampaigns, outreachLogs, agentLogs, agentCycles, partnershipOutreach
 } from "@db/schema";
-import { eq } from "drizzle-orm";
-import { openaiChat } from "./openai";
+import {
+  
+} from "drizzle-orm";
+import { openaiChat, AGENT_MODEL } from "./openai";
 import { checkHallucinations, censorOutreach } from "./hallucination-guard";
-import { genId } from "./id";
+import {
+  
+} from "./id";
 
 const OUTREACH_PREAMBLE = `ZERO-HALLUCINATION OUTREACH CONTRACT:
 1. NEVER invent company names, people, emails, or websites.
@@ -52,7 +49,7 @@ Respond ONLY with JSON array:
 
   try {
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: `${OUTREACH_PREAMBLE} You are a business development researcher.` },
         { role: "user", content: prompt },
@@ -101,7 +98,7 @@ Respond ONLY with JSON: {"subject": "...", "body": "..."}`;
 
   try {
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: `${OUTREACH_PREAMBLE} Partnerships director.` },
         { role: "user", content: prompt },

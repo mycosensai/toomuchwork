@@ -58,6 +58,7 @@
     "autoprefixer": "^10.4.23",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.1",
+    "eslint-formatter-checkstyle": "^9.0.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",

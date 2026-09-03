@@ -1,8 +1,12 @@
 import { z } from "zod";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { siteConfig, coldEmailTemplates, coldEmailProspects, coldEmailSends, users, forumPosts, messages } from "@db/schema";
-import { desc, eq, sql } from "drizzle-orm";
+import {
+  siteConfig, coldEmailSends, users, forumPosts, messages
+} from "@db/schema";
+import {
+  eq, sql
+} from "drizzle-orm";
 import { env } from "./lib/env";
 
 export const siteConfigRouter = createRouter({

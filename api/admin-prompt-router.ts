@@ -11,8 +11,10 @@ import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { adminPromptQueue, agentLogs, agentSessions } from "@db/schema";
-import { openaiChat } from "./lib/openai";
+import {
+  adminPromptQueue, agentLogs
+} from "@db/schema";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
 import { genId } from "./lib/id";
 
 
@@ -47,7 +49,7 @@ Respond ONLY with JSON:
 
   try {
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: "Parse admin commands into structured routing decisions. Respond with valid JSON only." },
         { role: "user", content: routingPrompt },

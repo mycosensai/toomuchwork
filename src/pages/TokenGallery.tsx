@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { trpc } from '@/providers/trpc'
 import {
-  Diamond, ShieldCheck, Loader2, ExternalLink, Gem, Coins,
+  Diamond, ShieldCheck, Loader2, Gem, Coins,
   Landmark, Palette, Watch, Trophy, BookOpen
 } from 'lucide-react'
 
@@ -17,8 +18,39 @@ const categoryIcons: Record<string, React.ReactNode> = {
 }
 
 export default function TokenGallery() {
-  const { data: certs, isLoading } = trpc.blockchain.list.useQuery()
+  const { data: certs, isLoading, refetch } = trpc.blockchain.list.useQuery()
   const { data: listingsData } = trpc.listings.certified.useQuery()
+  const { data: tokenStatus } = trpc.blockchain.tokenizationStatus.useQuery()
+  const tokenize = trpc.blockchain.tokenize.useMutation({
+    onSuccess: () => { refetch(); },
+  })
+
+  const [tokenizeTarget, setTokenizeTarget] = useState<{ listingId: number; title: string } | null>(null)
+  const [form, setForm] = useState({ tokenName: "", tokenSymbol: "" })
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const openTokenize = (listingId: number, title: string) => {
+    setTokenizeTarget({ listingId, title })
+    setForm({ tokenName: title.slice(0, 60), tokenSymbol: "VAULT" + String(listingId).slice(-4) })
+    setMsg(null)
+  }
+
+  const submitTokenize = () => {
+    if (!tokenizeTarget) return
+    setMsg(null)
+    tokenize.mutate(
+      {
+        listingId: tokenizeTarget.listingId,
+        tokenName: form.tokenName,
+        tokenSymbol: form.tokenSymbol.toUpperCase(),
+        totalSupply: 1,
+      },
+      {
+        onSuccess: (r) => setMsg({ ok: !!r.success, text: r.message + (r.explorerUrl ? `  ${r.explorerUrl}` : "") }),
+        onError: (e: any) => setMsg({ ok: false, text: e?.message || "Tokenization failed" }),
+      },
+    )
+  }
 
   // Merge cert data with listing data
   const mergedItems = (certs || []).map(cert => {
@@ -122,17 +154,17 @@ export default function TokenGallery() {
                     </div>
                   </div>
 
-                  {/* Price */}
+                  {/* Price + Tokenize */}
                   <div className="flex items-end justify-between pt-3 border-t border-[#C9A84C]/10">
                     <span className="font-cinzel text-base font-bold text-[#C9A84C]">
                       ${Number(listing?.price || 0).toLocaleString('en-US')}
                     </span>
-                    <Link
-                      to={`/certificate/${cert.id}`}
+                    <button
+                      onClick={() => openTokenize(cert.listingId, listing?.title || 'Vault Item')}
                       className="flex items-center gap-1 text-[9px] tracking-[2px] uppercase text-[#C9A84C] font-cinzel font-semibold hover:text-[#E8CB7A] transition-colors"
                     >
-                      <ExternalLink className="w-3 h-3" /> Certificate
-                    </Link>
+                      <Coins className="w-3 h-3" /> Tokenize
+                    </button>
                   </div>
                 </div>
               </div>
@@ -140,6 +172,58 @@ export default function TokenGallery() {
           </div>
         )}
       </div>
+
+      {/* Tokenize Modal */}
+      {tokenizeTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" onClick={() => setTokenizeTarget(null)}>
+          <div className="w-full max-w-md bg-[#161616] border border-[#C9A84C]/30 p-8" onClick={(e) => e.stopPropagation()}>
+            <div className="text-[9px] tracking-[4px] uppercase text-[#8A6E2F] mb-1">Tokenize On Solana</div>
+            <h3 className="font-cinzel text-lg text-[#F5EED8] tracking-[2px] mb-4">{tokenizeTarget.title}</h3>
+
+            <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Token Name</label>
+            <input
+              value={form.tokenName}
+              onChange={(e) => setForm({ ...form, tokenName: e.target.value })}
+              className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] mb-4"
+            />
+
+            <label className="block text-[9px] tracking-[4px] uppercase text-[#C9A84C] mb-2">Token Symbol</label>
+            <input
+              value={form.tokenSymbol}
+              onChange={(e) => setForm({ ...form, tokenSymbol: e.target.value.toUpperCase() })}
+              className="w-full bg-[#1E1E1E] border border-[#C9A84C]/20 text-[#F5EED8] text-sm py-3 px-4 outline-none focus:border-[#C9A84C] mb-4 uppercase"
+            />
+
+            {msg && (
+              <div className={`p-3 mb-4 text-xs ${msg.ok ? 'bg-emerald-500/5 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/5 border border-red-500/20 text-red-400'}`}>
+                {msg.text}
+              </div>
+            )}
+
+            {!tokenStatus?.configured && (
+              <div className="p-3 mb-4 text-xs bg-[#C9A84C]/5 border border-[#C9A84C]/20 text-[#C8BC98]">
+                Treasury not configured — this will run in simulated mode. Set SOLANA_TREASURY + SOLANA_TREASURY_SECRET secrets to mint real on-chain SPL tokens.
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={submitTokenize}
+                disabled={tokenize.isLoading}
+                className="flex-1 py-3 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[10px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] transition-all disabled:opacity-50"
+              >
+                {tokenize.isLoading ? 'Minting…' : 'Mint Token'}
+              </button>
+              <button
+                onClick={() => setTokenizeTarget(null)}
+                className="px-5 py-3 border border-[#C9A84C]/30 text-[#C8BC98] font-cinzel text-[10px] tracking-[3px] uppercase hover:bg-[#C9A84C]/10 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

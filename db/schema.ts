@@ -141,6 +141,26 @@ export const blockchainCerts = sqliteTable("blockchain_certs", {
 });
 export type BlockchainCert = typeof blockchainCerts.$inferSelect;
 
+// ─── SOLANA SPL TOKEN MINTS (on-chain tokenization) ───
+// Each certified listing can be tokenized as a real SPL token on Solana.
+// The treasury keypair (SOLANA_TREASURY secret) is the mint authority.
+export const tokenMints = sqliteTable("token_mints", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  listingId: integer("listing_id").notNull(),
+  certId: integer("cert_id"),
+  mintAddress: text("mint_address").notNull().unique(),
+  treasuryAddress: text("treasury_address").notNull(),
+  tokenName: text("token_name").notNull(),
+  tokenSymbol: text("token_symbol").notNull(),
+  decimals: integer("decimals").default(0).notNull(),
+  totalSupply: text("total_supply").default("1").notNull(),
+  metadataUri: text("metadata_uri"),
+  txSignature: text("tx_signature"),
+  status: text("status").default("minted").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type TokenMint = typeof tokenMints.$inferSelect;
 // ─── CRYPTO PAYMENTS ───
 export const cryptoPayments = sqliteTable("crypto_payments", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
@@ -370,6 +390,7 @@ export type WishlistItem = typeof wishlistItems.$inferSelect;
 export const orders = sqliteTable("orders", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
   userId: integer("user_id"),
+  sellerId: integer("seller_id"),
   listingId: integer("listing_id").notNull(),
   listingTitle: text("listing_title").notNull(),
   listingImage: text("listing_image"),
@@ -380,6 +401,9 @@ export const orders = sqliteTable("orders", {
   orderStatus: text("order_status").default("pending"),
   shippingAddress: text("shipping_address"),
   trackingNumber: text("tracking_number"),
+  payoutStatus: text("payout_status").default("pending"),
+  payoutAmount: text("payout_amount"),
+  paidAt: integer("paid_at", { mode: "timestamp" }),
   notes: text("notes"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),

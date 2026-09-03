@@ -1,7 +1,5 @@
 import { env } from "./lib/env";
 import { getRawDb } from "./queries/connection";
-import { auditLogs } from "@db/schema";
-import { desc, sql } from "drizzle-orm";
 
 interface RateLimitEntry {
   count: number;
@@ -105,7 +103,10 @@ const XSS_PATTERNS = [
 ];
 
 export function sanitizeInput(input: string): string {
-  const truncated = input.slice(0, 5000);
+  // Strip all control characters (incl. null byte \x00, which can break
+  // parsers and DB layers) before any escaping.
+  // eslint-disable-next-line no-control-regex
+  const truncated = input.slice(0, 5000).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "");
 
   let sanitized = truncated;
 
@@ -113,11 +114,12 @@ export function sanitizeInput(input: string): string {
     sanitized = sanitized.replace(pattern, "[removed]");
   }
 
+  // Single-pass HTML escaping (no re-escaping of already-safe content).
   return sanitized
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
+    .replace(/"/g, "&quot;")
     .replace(/'/g, "&#x27;");
 }
 
@@ -142,6 +144,7 @@ export function sanitizeObject(obj: Record<string, unknown>): Record<string, unk
 export function sanitizeForPrompt(input: string): string {
   return input
     .replace(/\{\}/g, "")
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, "")
     .substring(0, 2000);
 }

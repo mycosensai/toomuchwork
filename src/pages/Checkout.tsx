@@ -11,6 +11,7 @@ export default function Checkout() {
   const { id } = useParams<{ id: string }>()
   const { isAuthenticated } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   const listingId = parseInt(id || '0')
   const { data: listing, isLoading } = trpc.listings.getById.useQuery({ id: listingId })
@@ -23,13 +24,15 @@ export default function Checkout() {
         window.location.href = data.url
       }
     },
-    onError: () => {
+    onError: (error) => {
       setIsProcessing(false)
+      setCheckoutError(error.message || 'Unable to start checkout. Please try again.')
     },
   })
 
   const handleCheckout = () => {
     setIsProcessing(true)
+    setCheckoutError(null)
     const origin = window.location.origin
     createSession.mutate({
       listingId,
@@ -198,6 +201,12 @@ export default function Checkout() {
 
           {/* Checkout Button */}
           <div className="p-6 sm:p-8">
+            {checkoutError && (
+              <div className="flex items-start gap-2 mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-300 text-[11px]">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{checkoutError}</span>
+              </div>
+            )}
             {!isAuthenticated ? (
               <div className="text-center">
                 <p className="text-sm text-[#C8BC98] mb-4">Please sign in to complete your purchase</p>

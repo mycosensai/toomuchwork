@@ -1,3 +1,4 @@
+import { AGENT_MODEL } from "../lib/openai";
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
  * ║  DIFY-INSPIRED GRAPH WORKFLOW ENGINE FOR THE VAULT              ║
@@ -353,7 +354,7 @@ class GraphEngine {
 
       case "agent": {
         // Execute an AI agent with the given config
-        const { agentType, prompt, model = "gpt-4o-mini" } = node.config;
+        const { agentType, prompt, model = AGENT_MODEL } = node.config;
         return { agentType, prompt, model, status: "dispatched" };
       }
 

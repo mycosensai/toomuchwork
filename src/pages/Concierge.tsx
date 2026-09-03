@@ -2,9 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router'
 import { trpc } from '@/providers/trpc'
 import {
-  Diamond, Send, Loader2, Sparkles, MessageSquare,
-  ArrowRight, Search, Wallet, Shield, FileCheck,
-  Store, Users, HelpCircle, Bot
+  Diamond, Send, Loader2, Sparkles, MessageSquare, ArrowRight, Search, Wallet, Shield, Store, HelpCircle, Bot
 } from 'lucide-react'
 
 interface ChatMessage {

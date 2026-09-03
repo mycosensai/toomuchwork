@@ -11,30 +11,20 @@
  */
 
 import { z } from "zod";
-import { eq, desc, and, sql, gte } from "drizzle-orm";
+import {
+  eq, desc, gte
+} from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  auditLogs,
-  interAgentChecks,
-  securityHardening,
-  accountingEntries,
-  agentLogs,
-  agentCycles,
-  agentFeedback,
-  listings,
-  appraisals,
-  orders,
-  outreachCampaigns,
-  outreachLogs,
-  internetResearch,
-  agentConversations,
-  partnershipOutreach,
-  saleTransactions,
-  sellerPayouts,
+  auditLogs, securityHardening, accountingEntries, agentLogs, listings, appraisals, outreachCampaigns, outreachLogs, agentConversations, saleTransactions, sellerPayouts
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
-import { checkHallucinations, censorOutreach } from "./lib/hallucination-guard";
+import {
+  
+} from "./lib/openai";
+import {
+  checkHallucinations
+} from "./lib/hallucination-guard";
 import { genId } from "./lib/id";
 
 

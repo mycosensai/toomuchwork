@@ -3,8 +3,12 @@ import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { expertProfiles, expertApplications, expertReviews, expertConsensus, outreachCampaigns } from "@db/schema";
-import { eq, desc, and, inArray, sql } from "drizzle-orm";
-import { openaiChat, openaiStructured } from "./lib/openai";
+import {
+  eq, desc, inArray, sql
+} from "drizzle-orm";
+import {
+  openaiChat, AGENT_MODEL
+} from "./lib/openai";
 import { runOutreachRound } from "./outreach-router";
 import { sanitizeForPrompt } from "./security";
 import { validateImageDataUris, imageDataUriArraySchema } from "./lib/file-upload";
@@ -218,7 +222,7 @@ Provide a JSON response with:
 Be thorough and professional. Base your assessment on realistic market data.`;
 
       const response = await openaiChat({
-        model: "gpt-4o",
+        model: AGENT_MODEL,
         messages: [
           { role: "system", content: "You are an expert appraiser. Respond with valid JSON only." },
           { role: "user", content: prompt },
@@ -322,7 +326,7 @@ Consensus verdict: ${consensusVerdict}
 
 Write a 3-paragraph professional consensus summary: (1) overall assessment, (2) detailed analysis of authenticity, value, and condition, (3) recommendation for the collector.`;
 
-    const { text } = await openaiChat({ model: "gpt-4o", prompt });
+    const { text } = await openaiChat({ model: AGENT_MODEL, prompt });
 
     // Delete existing consensus
     await db.delete(expertConsensus).where(eq(expertConsensus.applicationId, app.id));

@@ -11,6 +11,8 @@ export interface CloudflareEnv {
   VITE_STRIPE_PUBLISHABLE_KEY?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
+  NOUS_API_KEY?: string;
+  NOUS_BASE_URL?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
@@ -88,6 +90,13 @@ export const env = {
   },
   get openaiBaseUrl(): string {
     return cfEnv.OPENAI_BASE_URL || "https://api.openai.com/v1";
+  },
+  // Nous Research (Hermes) inference — primary LLM backend for all agents.
+  get nousApiKey(): string {
+    return cfEnv.NOUS_API_KEY || "";
+  },
+  get nousBaseUrl(): string {
+    return cfEnv.NOUS_BASE_URL || "https://inference-api.nousresearch.com/v1";
   },
   get googleClientId(): string {
     return cfEnv.GOOGLE_CLIENT_ID || "";

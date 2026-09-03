@@ -31,6 +31,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!data?.profile) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate form fields once profile loads
     setHandle(data.profile.handle || "");
     setDisplayName(data.profile.displayName || "");
     setBio(data.profile.bio || "");

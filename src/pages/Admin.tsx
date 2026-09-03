@@ -3,11 +3,7 @@ import { useNavigate, Link } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import {
-  Diamond, Users, ShoppingBag, BarChart3, Activity,
-  Loader2, ArrowLeft, TrendingUp, DollarSign, Package,
-  Bot, Settings, Cloud, PlayCircle, Plus, Edit,
-  Eye, Database, Zap, Shield, Terminal, ChevronDown, X,
-  MessageSquare, Mail, Globe, Sliders
+  Diamond, Users, BarChart3, Activity, Loader2, ArrowLeft, TrendingUp, DollarSign, Package, Bot, Settings, Cloud, PlayCircle, Plus, Database, Zap, Shield, Terminal, ChevronDown, X, MessageSquare, Mail, Globe, Sliders
 } from 'lucide-react'
 
 interface AgentProject {
@@ -26,47 +22,6 @@ interface AgentProject {
   updatedAt: Date;
 }
 
-interface AgentTask {
-  taskId: string;
-  projectId: string;
-  title: string;
-  status: string;
-  priority: number;
-  interactiveOnly: boolean;
-  expectedTouches: string;
-  description: string;
-  assignedAgent: string | null;
-  createdAt: Date;
-  completedAt: Date | null;
-}
-
-interface AgentCycle {
-  cycleId: string;
-  projectId: string;
-  taskId: string;
-  status: string;
-  outcome: string;
-  engineerOutput: string;
-  verificationOutput: string;
-  reviewOutput: string;
-  reviewVerdict: string;
-  durationSeconds: number;
-  scopeDriftFiles: string;
-  handsOffViolations: string;
-  silentFailures: string;
-  createdAt: Date;
-  completedAt: Date | null;
-}
-
-interface FleetState {
-  projectId: string;
-  totalCycles: number;
-  totalVerified: number;
-  totalFailed: number;
-  accumulatedMinutes: number;
-  lastCycleAt: Date | null;
-  lastCycleOutcome: string | null;
-}
 
 export default function Admin() {
   const navigate = useNavigate()

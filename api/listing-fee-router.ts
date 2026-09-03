@@ -8,7 +8,7 @@ import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { listings, listingFees } from "@db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { env } from "./lib/env";
 import { logAudit, getClientIP } from "./security";
 
@@ -158,12 +158,12 @@ export const listingFeeRouter = createRouter({
         .set({ status: "paid", paidAt: new Date() })
         .where(eq(listingFees.id, fee.id));
 
-      // Activate listing
+      // Activate listing (only if still awaiting fee — never re-activate sold/reserved)
       if (fee.listingId) {
         await db
           .update(listings)
           .set({ status: "active" })
-          .where(eq(listings.id, fee.listingId));
+          .where(sql`${listings.id} = ${fee.listingId} AND ${listings.status} = 'pending_fee'`);
       }
 
       logAudit({

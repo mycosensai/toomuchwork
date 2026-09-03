@@ -2,7 +2,7 @@ import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { listings, stripeSessions } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { env } from "./lib/env";
 import { logAudit, getClientIP } from "./security";
 
@@ -45,7 +45,22 @@ export const stripeRouter = createRouter({
       const db = getDb();
       const [listing] = await db.select().from(listings).where(eq(listings.id, input.listingId)).limit(1);
       if (!listing) throw new Error("Listing not found");
+      if (listing.sellerId === ctx.user?.id) throw new Error("You cannot purchase your own listing");
+      if (listing.isBuyNow === false && listing.isConsignment === false) throw new Error("Listing is not available for direct purchase");
       if (listing.status === "sold") throw new Error("Item already sold");
+      if (listing.status === "reserved") throw new Error("Item is on hold for another buyer");
+      if (listing.status !== "active") throw new Error(`Item is not available for purchase (status: ${listing.status})`);
+
+      // ATOMIC RESERVATION: only proceed if still active at this instant.
+      // Prevents double-purchase of a single-unit item (compare-and-set).
+      const reserve = await db
+        .update(listings)
+        .set({ status: "reserved", updatedAt: new Date() })
+        .where(sql`${listings.id} = ${listing.id} AND ${listings.status} = 'active'`);
+      if (!reserve?.meta?.changes || Number(reserve.meta.changes) === 0) {
+        // Lost the race — another checkout reserved it first.
+        throw new Error("Item was just purchased by another buyer or is no longer available");
+      }
 
       const price = input.offerPrice || Number(listing.price);
       const commission = price * (Number(listing.commissionRate) / 100);

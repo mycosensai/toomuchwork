@@ -188,12 +188,35 @@ export const saleRouter = createRouter({
     }),
 
   /**
-   * Mark sale as payment received
+   * Mark sale as payment received — AUTHD + server-side Stripe verification.
+   * Formerly public (any caller could forge payment_received); now only the
+   * seller/admin may confirm, and ONLY after Stripe actually confirms payment.
    */
-  recordPayment: publicQuery
+  recordPayment: authedQuery
     .input(z.object({ saleId: z.number(), stripePaymentIntentId: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = getDb();
+
+      const [sale] = await db
+        .select()
+        .from(saleTransactions)
+        .where(eq(saleTransactions.id, input.saleId))
+        .limit(1);
+      if (!sale) throw new Error("Sale not found");
+      if (sale.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+        throw new Error("Unauthorized");
+      }
+
+      // Verify the payment intent against Stripe BEFORE marking paid.
+      const intent = await stripeFetch(`/payment_intents/${input.stripePaymentIntentId}`);
+      if (!intent || intent.status !== "succeeded") {
+        throw new Error(`Payment not confirmed by Stripe (status: ${intent?.status || "unknown"})`);
+      }
+      // Cross-check the intent amount against the sale price (prevent underpay/overpay).
+      const expectedCents = Math.round(Number(sale.salePrice) * 100);
+      if (intent.amount_received !== expectedCents) {
+        throw new Error(`Payment amount mismatch: expected ${expectedCents}, received ${intent.amount_received}`);
+      }
 
       await db
         .update(saleTransactions)
@@ -202,6 +225,15 @@ export const saleRouter = createRouter({
           stripePaymentIntentId: input.stripePaymentIntentId,
         })
         .where(eq(saleTransactions.id, input.saleId));
+
+      logAudit({
+        ip: getClientIP(ctx.req),
+        method: "POST",
+        path: "sale.recordPayment",
+        userId: ctx.user!.id,
+        action: "sale_payment_recorded",
+        details: `sale:${input.saleId} intent:${input.stripePaymentIntentId}`,
+      });
 
       return { success: true, status: "payment_received" };
     }),

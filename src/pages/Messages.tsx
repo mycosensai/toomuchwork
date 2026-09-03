@@ -2,19 +2,18 @@ import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import {
-  Mail, Send, Inbox, Loader2, MessageSquare, Reply,
-  Trash2, ArrowLeft, Diamond, ChevronDown
+  Mail, Send, Inbox, Loader2, MessageSquare, Reply, Trash2, ArrowLeft
 } from 'lucide-react'
 import { Link } from 'react-router'
 
 export default function Messages() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [activeView, setActiveView] = useState<'inbox' | 'outbox' | 'compose'>('inbox')
   const [selectedMsg, setSelectedMsg] = useState<any>(null)
   const [replyText, setReplyText] = useState('')
   const [composeForm, setComposeForm] = useState({ recipientEmail: '', subject: '', body: '' })
 
-  const { data: inbox, isLoading: inboxLoading } = trpc.messages.inbox.useQuery(
+  const { data: inbox } = trpc.messages.inbox.useQuery(
     { page: 1, limit: 50 },
     { enabled: isAuthenticated && activeView === 'inbox' }
   )

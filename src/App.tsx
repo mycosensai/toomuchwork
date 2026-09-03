@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router'
 import { Suspense, lazy } from 'react'
+import { Diamond } from 'lucide-react'
 import Layout from './components/Layout'
 import MobileAppPrompt from './components/MobileAppPrompt'
 
@@ -47,8 +48,16 @@ function LoadingFallback() {
   return (
     <div className="min-h-screen bg-[#080808] flex items-center justify-center">
       <div className="text-center">
-        <div className="w-8 h-8 border border-[#C9A84C] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-xs tracking-[4px] uppercase text-[#C9A84C] font-cinzel">Loading</p>
+        <div className="relative w-10 h-10 mx-auto mb-5">
+          <div className="absolute inset-0 border border-[#C9A84C] rotate-45 animate-[spin_2.2s_linear_infinite]" />
+          <Diamond className="absolute inset-0 m-auto w-3 h-3 text-[#C9A84C] -rotate-45 animate-pulse" />
+        </div>
+        <div className="flex items-center gap-2 justify-center mb-3">
+          <span className="w-1 h-1 bg-[#C9A84C]/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-1 h-1 bg-[#C9A84C]/60 rounded-full animate-bounce" style={{ animationDelay: '120ms' }} />
+          <span className="w-1 h-1 bg-[#C9A84C] rounded-full animate-bounce" style={{ animationDelay: '240ms' }} />
+        </div>
+        <p className="text-[10px] tracking-[5px] uppercase text-[#C9A84C]/70 font-cinzel">The Vault</p>
       </div>
     </div>
   )

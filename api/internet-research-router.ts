@@ -13,16 +13,17 @@
  */
 
 import { z } from "zod";
-import { eq, desc, and } from "drizzle-orm";
-import { createRouter, publicQuery, adminQuery } from "./middleware";
+import {
+  eq, desc
+} from "drizzle-orm";
+import {
+  createRouter, adminQuery
+} from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  internetResearch,
-  researchSessions,
-  agentConversations,
-  listings,
+  internetResearch, researchSessions, agentConversations
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
 import { checkHallucinations, censorOutreach } from "./lib/hallucination-guard";
 import { env } from "./lib/env";
 import { genId } from "./lib/id";
@@ -217,7 +218,7 @@ DO NOT invent posts. Only score what was provided.`;
 
   try {
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: `${BOXED_IN_PREAMBLE} You are a buyer-intent analyst. Respond with valid JSON only.` },
         { role: "user", content: prompt },

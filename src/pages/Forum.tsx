@@ -3,8 +3,7 @@ import { Link, useSearchParams } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import {
-  MessageSquare, Plus, Pin, Lock, ArrowUp,
-  Loader2, Search, Diamond, ChevronDown, Eye
+  MessageSquare, Plus, Pin, Lock, Loader2, Eye
 } from 'lucide-react'
 
 const CATEGORIES = [
@@ -16,7 +15,7 @@ const CATEGORIES = [
 ]
 
 export default function Forum() {
-  const { user, isAuthenticated, isAdmin } = useAuth()
+  const { isAuthenticated, isAdmin } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeCategory = searchParams.get('category') || ''
   const [page, setPage] = useState(1)
@@ -29,7 +28,7 @@ export default function Forum() {
     limit: 20,
   })
 
-  const { data: categories } = trpc.forum.listCategories.useQuery()
+  trpc.forum.listCategories.useQuery()
   const createPost = trpc.forum.createPost.useMutation({
     onSuccess: () => {
       trpc.forum.listPosts.invalidate()

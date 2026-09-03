@@ -6,26 +6,23 @@
  */
 
 import { z } from "zod";
-import { eq, desc, and, sql } from "drizzle-orm";
-import { createRouter, publicQuery, adminQuery } from "./middleware";
+import {
+  eq, desc
+} from "drizzle-orm";
+import {
+  createRouter, adminQuery
+} from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  listings,
-  appraisals,
-  categories,
-  professionalLeads,
-  outreachCampaigns,
-  outreachLogs,
-  agentLogs,
-  agentCycles,
-  agentConversations,
-  partnershipOutreach,
-  systemSettings,
-  internetResearch,
+  listings, appraisals, categories, outreachCampaigns, outreachLogs, agentLogs, agentCycles, partnershipOutreach
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
-import { checkHallucinations, censorOutreach, buildFeedbackEnrichedPrompt } from "./lib/hallucination-guard";
-import { getPrompt } from "./agent-prompts";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
+import {
+  checkHallucinations, censorOutreach
+} from "./lib/hallucination-guard";
+import {
+  
+} from "./agent-prompts";
 import { genId } from "./lib/id";
 
 // ─── TYPES ───
@@ -84,7 +81,7 @@ The personalizationScore measures how specifically tailored this is to their bus
 
   try {
     const response = await openaiChat({
-      model: "gpt-4o",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: `${OUTREACH_PREAMBLE} You are a senior partnerships director. Write one-to-one personalized outreach.` },
         { role: "user", content: prompt },
@@ -214,7 +211,7 @@ DO NOT use real company names. Use realistic placeholders like "[Luxury Watch Br
 
   try {
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: `${OUTREACH_PREAMBLE} You are a business development researcher.` },
         { role: "user", content: prompt },

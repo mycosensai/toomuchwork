@@ -83,10 +83,18 @@ export default function ListingDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Image Area */}
-          <div className="bg-[#161616] border border-[#C9A84C]/15 aspect-square flex items-center justify-center relative">
-            <div className="text-[#C9A84C]/20">
-              {categoryIcons[listing.category?.name || ''] || <Diamond className="w-24 h-24" />}
-            </div>
+          <div className="bg-[#161616] border border-[#C9A84C]/15 aspect-square flex items-center justify-center relative overflow-hidden group">
+            {listing.image ? (
+              <img
+                src={listing.image}
+                alt={listing.title}
+                className="w-full h-full object-cover animate-fadeIn card-img-zoom"
+              />
+            ) : (
+              <div className="text-[#C9A84C]/20 animate-fadeIn">
+                {categoryIcons[listing.category?.name || ''] || <Diamond className="w-24 h-24" />}
+              </div>
+            )}
             {listing.badge && listing.badge !== 'none' && (
               <span className={`absolute top-4 right-4 px-4 py-1.5 text-[8px] tracking-[2px] uppercase border ${badgeStyles[listing.badge] || badgeStyles.verified}`}>
                 {listing.badge}
@@ -200,13 +208,13 @@ export default function ListingDetail() {
             <div className="flex flex-col gap-3 mt-auto">
               <button
                 onClick={handleBuyNow}
-                disabled={listing.status === 'sold'}
-                className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={listing.status !== 'active'}
+                className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] hover:-translate-y-0.2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {listing.status === 'sold' ? 'Sold' : <><ChevronRight className="w-3.5 h-3.5" /> Buy Now with Card</>}
+                {listing.status === 'sold' ? 'Sold' : listing.status === 'reserved' ? 'On Hold' : listing.status === 'pending_fee' ? 'Listing Pending Activation' : <><ChevronRight className="w-3.5 h-3.5" /> Buy Now with Card</>}
               </button>
 
-              {listing.status !== 'sold' && (
+              {listing.status === 'active' && (
                 <button
                   onClick={handleCryptoBuy}
                   className="w-full flex items-center justify-center gap-2 px-8 py-4 border border-[#C9A84C] text-[#C9A84C] font-cinzel text-[11px] tracking-[3px] uppercase font-semibold hover:bg-[#C9A84C]/8 transition-all"

@@ -1,12 +1,16 @@
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { blockchainCerts, listings } from "@db/schema";
+import { blockchainCerts, listings, tokenMints } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 import { logAudit, getClientIP } from "./security";
 import { TRPCError } from "@trpc/server";
 import { autoTriggerFromAction } from "./lib/auto-trigger";
-import { Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { tokenizeListing, isTokenizationConfigured } from "./lib/solana-token";
+import { getRawEnv } from "./lib/env";
+import {
+  Keypair
+} from "@solana/web3.js";
 
 const SOL_CHARS = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
@@ -214,5 +218,123 @@ export const blockchainRouter = createRouter({
       .where(eq(blockchainCerts.status, "minted"))
       .orderBy(desc(blockchainCerts.createdAt))
       .limit(50);
+  }),
+
+  // ─── On-chain SPL tokenization of a certified listing ───
+  tokenize: authedQuery
+    .input(
+      z.object({
+        listingId: z.number(),
+        tokenName: z.string().min(1).max(64),
+        tokenSymbol: z.string().min(1).max(10).regex(/^[A-Za-z0-9]+$/),
+        totalSupply: z.number().int().min(1).max(1_000_000).default(1),
+        metadataUri: z.string().url().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = getDb();
+
+      // Must already be certified.
+      const [cert] = await db
+        .select()
+        .from(blockchainCerts)
+        .where(eq(blockchainCerts.listingId, input.listingId))
+        .limit(1);
+      if (!cert) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Listing must be certified before tokenization." });
+      }
+
+      const [listing] = await db
+        .select()
+        .from(listings)
+        .where(eq(listings.id, input.listingId))
+        .limit(1);
+      if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "Listing not found" });
+
+      // Already tokenized?
+      const [existing] = await db
+        .select()
+        .from(tokenMints)
+        .where(eq(tokenMints.listingId, input.listingId))
+        .limit(1);
+      if (existing) {
+        return { success: false, alreadyTokenized: true, mint: existing };
+      }
+
+      const result = await tokenizeListing({
+        listingId: input.listingId,
+        tokenName: input.tokenName,
+        tokenSymbol: input.tokenSymbol,
+        totalSupply: input.totalSupply,
+        metadataUri: input.metadataUri,
+      });
+
+      if (!result.success && !result.simulated) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.message });
+      }
+
+      const inserted = await db.insert(tokenMints).values({
+        listingId: input.listingId,
+        certId: cert.id,
+        mintAddress: result.mintAddress,
+        treasuryAddress: result.treasuryAddress,
+        tokenName: result.tokenName,
+        tokenSymbol: result.tokenSymbol,
+        decimals: result.decimals,
+        totalSupply: result.totalSupply,
+        metadataUri: input.metadataUri || null,
+        txSignature: result.txSignature,
+        status: result.simulated ? "simulated" : "minted",
+      });
+
+      const mintId = Number(inserted.meta.last_row_id);
+
+      await db.update(listings).set({ tokenContractAddress: result.mintAddress }).where(eq(listings.id, input.listingId));
+
+      logAudit({
+        ip: getClientIP(ctx.req),
+        method: "POST",
+        path: "blockchain.tokenize",
+        userId: ctx.user?.id,
+        action: result.simulated ? "item_tokenized_simulated" : "item_tokenized",
+        details: `listing:${input.listingId} mint:${result.mintAddress.slice(0, 8)}... onchain:${!result.simulated}`,
+      });
+
+      return {
+        success: result.success,
+        simulated: result.simulated,
+        mint: {
+          id: mintId,
+          mintAddress: result.mintAddress,
+          tokenName: result.tokenName,
+          tokenSymbol: result.tokenSymbol,
+          totalSupply: result.totalSupply,
+          txSignature: result.txSignature,
+          status: result.simulated ? "simulated" : "minted",
+          explorerUrl: `https://solscan.io/token/${result.mintAddress}`,
+        },
+        message: result.message,
+        explorerUrl: `https://solscan.io/token/${result.mintAddress}`,
+      };
+    }),
+
+  listTokens: publicQuery.query(async () => {
+    const db = getDb();
+    return db
+      .select()
+      .from(tokenMints)
+      .orderBy(desc(tokenMints.createdAt))
+      .limit(50);
+  }),
+
+  tokenizationStatus: publicQuery.query(() => {
+    const treasury = (getRawEnv().SOLANA_TREASURY as string) || (getRawEnv().TREASURY_WALLET as string) || "";
+    const configured = isTokenizationConfigured();
+    return {
+      configured,
+      treasuryConfigured: configured,
+      treasuryAddress: treasury || null,
+      explorerUrl: treasury ? `https://solscan.io/account/${treasury}` : null,
+    };
   }),
 });

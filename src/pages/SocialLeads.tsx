@@ -7,9 +7,7 @@
 import { Link, useParams } from 'react-router'
 import { trpc } from '@/providers/trpc'
 import {
-  ArrowLeft, Loader2, ExternalLink, Mail, Globe, MapPin, Users,
-  CheckCircle2, Send, XCircle, Star,
-  AlertTriangle
+  ArrowLeft, Loader2, ExternalLink, Mail, Globe, MapPin, Users, CheckCircle2, Send, XCircle, AlertTriangle
 } from 'lucide-react'
 
 export default function SocialLeads() {

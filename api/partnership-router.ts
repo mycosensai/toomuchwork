@@ -6,10 +6,12 @@
 
 import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
-import { createRouter, publicQuery, adminQuery } from "./middleware";
+import {
+  createRouter, adminQuery
+} from "./middleware";
 import { getDb } from "./queries/connection";
 import { partnershipOutreach, agentLogs } from "@db/schema";
-import { openaiChat } from "./lib/openai";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
 import { logAudit, getClientIP } from "./security";
 
 export const partnershipRouter = createRouter({
@@ -95,7 +97,7 @@ TONE RULES:
 Write the complete email body only. No subject line.`;
 
         const response = await openaiChat({
-          model: "gpt-4o",
+          model: AGENT_MODEL,
           messages: [
             { role: "system", content: "You are a senior partnerships director at The Vault." },
             { role: "user", content: prompt },
@@ -158,7 +160,7 @@ Generate ${input.count} candidates.${input.targetRegion ? ` Focus on ${input.tar
 IMPORTANT: Use respectful, realistic placeholder information. Never use real personal email addresses. Use "partnerships@example.com" style placeholders.`;
 
       const response = await openaiChat({
-        model: "gpt-4o",
+        model: AGENT_MODEL,
         messages: [
           { role: "system", content: "You are a business development researcher. Respond with valid JSON array only." },
           { role: "user", content: prompt },

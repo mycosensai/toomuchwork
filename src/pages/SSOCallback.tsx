@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { Loader2 } from 'lucide-react'
 
 export default function SSOCallback() {
   const navigate = useNavigate()
@@ -12,12 +11,6 @@ export default function SSOCallback() {
 
     const delay = setTimeout(() => {
       if (!cancelled) {
-        // Check for custom OAuth or local auth session indicators
-        const hasOAuth = !!document.cookie.includes('vault_session')
-        const hasLocalAuth = !!sessionStorage.getItem('local_auth_token') ||
-                             !!localStorage.getItem('local_auth_token')
-        const authenticated = hasOAuth || hasLocalAuth
-
         navigate('/auth-success')
       }
     }, 1500)

@@ -1,8 +1,12 @@
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { forumPosts, forumReplies, users } from "@db/schema";
-import { desc, eq, sql, and } from "drizzle-orm";
+import {
+  forumPosts, forumReplies
+} from "@db/schema";
+import {
+  desc, eq, sql
+} from "drizzle-orm";
 import { logAudit, getClientIP } from "./security";
 
 // ─── Link decimation ───

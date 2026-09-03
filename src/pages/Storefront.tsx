@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from 'react-router'
 import { useState } from 'react'
 import { trpc } from '@/providers/trpc'
+import Reveal from '@/components/Reveal'
 import {
   Diamond, Search, LayoutGrid, List,
   Gem, Coins, Landmark, Palette, Watch, Trophy, BookOpen, Loader2
@@ -229,48 +230,58 @@ export default function Storefront() {
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredListings.map((listing) => (
-              <Link
-                key={listing.id}
-                to={`/listing/${listing.id}`}
-                className="group bg-[#161616] border border-[#C9A84C]/15 overflow-hidden hover:border-[#C9A84C] hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(201,168,76,0.1)] transition-all duration-300"
-              >
-                <div className="h-40 bg-[#1E1E1E] flex items-center justify-center relative border-b border-[#C9A84C]/15">
-                  <div className="text-[#C9A84C]/30 group-hover:text-[#C9A84C]/50 transition-colors">
-                    {categoryIcons[listing.category?.name || ''] || <Diamond className="w-14 h-14" />}
+            {filteredListings.map((listing, i) => (
+              <Reveal key={listing.id} delay={((i % 3) + 1) as 1 | 2 | 3}>
+                <Link
+                  to={`/listing/${listing.id}`}
+                  className="group block bg-[#161616] border border-[#C9A84C]/15 overflow-hidden hover:border-[#C9A84C] hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_30px_rgba(201,168,76,0.1)] transition-all duration-300 h-full"
+                >
+                  <div className="h-40 bg-[#1E1E1E] flex items-center justify-center relative border-b border-[#C9A84C]/15 overflow-hidden">
+                    {listing.image ? (
+                      <img
+                        src={listing.image}
+                        alt={listing.title}
+                        loading="lazy"
+                        className="card-img-zoom w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-[#C9A84C]/30 group-hover:text-[#C9A84C]/50 transition-colors card-img-zoom">
+                        {categoryIcons[listing.category?.name || ''] || <Diamond className="w-14 h-14" />}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#080808]/60" />
+                    {listing.badge && listing.badge !== 'none' && (
+                      <span className={`absolute top-3 right-3 px-2.5 py-0.5 text-[7px] tracking-[2px] uppercase border ${badgeStyles[listing.badge] || badgeStyles.verified}`}>
+                        {listing.badge}
+                      </span>
+                    )}
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#080808]/60" />
-                  {listing.badge && listing.badge !== 'none' && (
-                    <span className={`absolute top-3 right-3 px-2.5 py-0.5 text-[7px] tracking-[2px] uppercase border ${badgeStyles[listing.badge] || badgeStyles.verified}`}>
-                      {listing.badge}
-                    </span>
-                  )}
-                </div>
-                <div className="p-5">
-                  <p className="text-[8px] tracking-[3px] text-[#8A6E2F] uppercase mb-1.5">
-                    {listing.category?.name}
-                  </p>
-                  <h3 className="font-cinzel text-[11px] font-semibold tracking-[1px] text-[#F5EED8] mb-2 leading-relaxed line-clamp-2">
-                    {listing.title}
-                  </h3>
-                  <p className="text-[10px] text-[#C8BC98] leading-relaxed mb-4 line-clamp-2 font-light">
-                    {listing.description}
-                  </p>
-                  <div className="flex items-end justify-between pt-3 border-t border-[#C9A84C]/10">
-                    <div>
-                      <div className="font-cinzel text-base font-bold text-[#C9A84C]">
-                        ${Number(listing.price).toLocaleString('en-US')}
+                  <div className="p-5">
+                    <p className="text-[8px] tracking-[3px] text-[#8A6E2F] uppercase mb-1.5">
+                      {listing.category?.name}
+                    </p>
+                    <h3 className="font-cinzel text-[11px] font-semibold tracking-[1px] text-[#F5EED8] mb-2 leading-relaxed line-clamp-2">
+                      {listing.title}
+                    </h3>
+                    <p className="text-[10px] text-[#C8BC98] leading-relaxed mb-4 line-clamp-2 font-light">
+                      {listing.description}
+                    </p>
+                    <div className="flex items-end justify-between pt-3 border-t border-[#C9A84C]/10">
+                      <div>
+                        <div className="font-cinzel text-base font-bold text-[#C9A84C]">
+                          ${Number(listing.price).toLocaleString('en-US')}
+                        </div>
+                        <div className="text-[7px] tracking-[1px] text-[#8A6E2F] mt-0.5">
+                          Fee: {listing.commissionRate}%
+                        </div>
                       </div>
-                      <div className="text-[7px] tracking-[1px] text-[#8A6E2F] mt-0.5">
-                        Fee: {listing.commissionRate}%
-                      </div>
+                      <span className="text-[9px] tracking-[2px] uppercase text-[#C9A84C] font-cinzel font-semibold opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                        Buy Now
+                      </span>
                     </div>
-                    <span className="text-[9px] tracking-[2px] uppercase text-[#C9A84C] font-cinzel font-semibold">
-                      Buy Now
-                    </span>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </Reveal>
             ))}
           </div>
         ) : (

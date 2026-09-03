@@ -62,8 +62,6 @@ export default function Login() {
   const [pending, setPending] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  const clearError = () => { setError('') }
-
   // ─── OAuth provider redirect ───
   const handleOAuth = (provider: string) => {
     setError('')

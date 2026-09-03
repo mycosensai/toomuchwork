@@ -3,7 +3,9 @@ import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { outreachCampaigns, outreachLogs, professionalLeads } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
-import { openaiChat, openaiStructured } from "./lib/openai";
+import {
+  openaiChat, AGENT_MODEL
+} from "./lib/openai";
 
 // Pool of realistic expert archetypes for lead generation
 const expertArchetypes = [
@@ -37,7 +39,7 @@ Respond with ONLY this JSON (no other text):
 }`;
 
   const response = await openaiChat({
-    model: "gpt-4o",
+    model: AGENT_MODEL,
     messages: [
       { role: "system", content: "You generate realistic professional buyer profiles for luxury collectibles. Respond with valid JSON only." },
       { role: "user", content: prompt },

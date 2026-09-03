@@ -4,11 +4,17 @@
  */
 
 import { z } from "zod";
-import { eq, desc, and } from "drizzle-orm";
-import { createRouter, publicQuery, adminQuery } from "./middleware";
+import {
+  eq, desc
+} from "drizzle-orm";
+import {
+  createRouter, adminQuery
+} from "./middleware";
 import { getDb } from "./queries/connection";
-import { agentWorkflows, agentProjects, agentTasks, agentLogs, systemSettings } from "@db/schema";
-import { openaiChat } from "./lib/openai";
+import {
+  agentWorkflows, agentTasks, agentLogs, systemSettings
+} from "@db/schema";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
 
 function genWorkflowId(): string {
   return "wf-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6);
@@ -152,7 +158,7 @@ Rules:
 - Must benefit both the company AND the clientele`;
 
       const response = await openaiChat({
-        model: "gpt-4o",
+        model: AGENT_MODEL,
         messages: [
           { role: "system", content: "You design efficient business workflows for a luxury marketplace." },
           { role: "user", content: prompt },

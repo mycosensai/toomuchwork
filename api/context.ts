@@ -13,19 +13,6 @@ export type TrpcContext = {
 };
 
 /**
- * Parse cookies from header
- */
-function parseCookies(cookieHeader: string | null): Record<string, string> {
-  const cookies: Record<string, string> = {};
-  if (!cookieHeader) return cookies;
-  for (const pair of cookieHeader.split(";")) {
-    const [key, ...rest] = pair.trim().split("=");
-    if (key && rest.length > 0) cookies[key] = rest.join("=");
-  }
-  return cookies;
-}
-
-/**
  * Set cookie on response headers
  */
 function setCookieHeader(resHeaders: Headers, name: string, value: string, options: {

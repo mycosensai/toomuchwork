@@ -14,7 +14,9 @@ import {
 } from "./oauth-providers";
 import { getDb } from "./queries/connection";
 import { users } from "@db/schema";
-import { eq, and } from "drizzle-orm";
+import {
+  eq
+} from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import * as jose from "jose";
 import { env } from "./lib/env";

@@ -4,20 +4,17 @@
 
 import { z } from "zod";
 import { eq, desc, and } from "drizzle-orm";
-import { createRouter, publicQuery, adminQuery } from "./middleware";
+import {
+  createRouter, adminQuery
+} from "./middleware";
 import { getDb } from "./queries/connection";
 import {
-  agentProjects,
-  agentCycles,
-  agentSessions,
-  agentLogs,
-  agentFleetState,
-  agentBoundaryLog,
-  agentFeedback,
-  systemSettings,
+  agentProjects, agentCycles, agentSessions, agentLogs, agentBoundaryLog, agentFeedback, systemSettings
 } from "@db/schema";
-import { openaiChat } from "./lib/openai";
-import { checkHallucinations, sanitizeHallucinations, censorOutreach, verifyContact, buildFeedbackEnrichedPrompt } from "./lib/hallucination-guard";
+import { openaiChat, AGENT_MODEL } from "./lib/openai";
+import {
+  checkHallucinations, sanitizeHallucinations, censorOutreach, verifyContact
+} from "./lib/hallucination-guard";
 import type { AgentFeedback } from "./lib/hallucination-guard";
 
 function genCycleId(): string {
@@ -234,7 +231,7 @@ export const samsonRouter = createRouter({
       if (!project) throw new Error("Project not found");
 
       const response = await openaiChat({
-        model: input.model ?? project.model ?? "gpt-4o",
+        model: input.model ?? project.model ?? AGENT_MODEL,
         messages: [
           {
             role: "system",

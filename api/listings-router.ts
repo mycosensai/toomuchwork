@@ -4,9 +4,10 @@ import { getDb } from "./queries/connection";
 import { listings, categories } from "@db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { sanitizeInput, logAudit, getClientIP } from "./security";
-import { autoTriggerFromAction } from "./lib/auto-trigger";
 import { getCommissionRateFromTiers } from "./lib/commission";
-import { validateImageDataUri, validateImageDataUris } from "./lib/file-upload";
+import {
+  validateImageDataUris
+} from "./lib/file-upload";
 
 export const listingsRouter = createRouter({
   list: publicQuery
@@ -155,7 +156,9 @@ export const listingsRouter = createRouter({
         badge: input.badge,
         commissionRate: rate,
         sellerId: ctx.user?.id || null,
-        status: "active",
+        // Gate: listing is NOT public until the $20 listing fee is paid.
+        // listingFee.verifyPayment / the Stripe webhook flips it to "active".
+        status: "pending_fee",
       });
 
       logAudit({
@@ -167,13 +170,12 @@ export const listingsRouter = createRouter({
         details: `id:${result.meta.last_row_id}`,
       });
 
-      // ─── AUTONOMOUS TRIGGER: Dispatch outreach agents ───
-      // Fire-and-forget: agents work in background while user continues
-      const listingId = Number(result.meta.last_row_id);
-      const cat = await db.select().from(categories).where(eq(categories.id, input.categoryId)).limit(1);
-      autoTriggerFromAction("sell", sanitizedInput.title, cat[0]?.name || undefined, input.price, listingId);
+      // NOTE: autonomous outreach is deliberately NOT dispatched here.
+      // Listings start as pending_fee (not public). The hourly lead-finder /
+      // dealer-scout cron jobs scan status='active' listings only, so outreach
+      // begins once the listing fee is paid and the item is actually live.
 
-      return { id: listingId, success: true };
+      return { id: Number(result.meta.last_row_id), success: true };
     }),
 
   featured: publicQuery.query(async () => {

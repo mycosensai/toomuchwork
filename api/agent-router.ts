@@ -4,7 +4,9 @@
  */
 
 import { z } from "zod";
-import { eq, desc, and, sql, count } from "drizzle-orm";
+import {
+  eq, desc, and, count
+} from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
@@ -17,7 +19,7 @@ import {
   agentMessages,
   agentFeedback,
 } from "@db/schema";
-import { openaiChat, openaiStructured } from "./lib/openai";
+import { openaiChat, openaiStructured, AGENT_MODEL } from "./lib/openai";
 import {
   checkHallucinations,
   sanitizeHallucinations,
@@ -80,7 +82,7 @@ async function engineerStep(
     },
   ];
 
-  const res = await openaiChat({ model: project.model ?? "gpt-4o", messages, temperature: 0.3 });
+  const res = await openaiChat({ model: project.model ?? AGENT_MODEL, messages, temperature: 0.3 });
   const output = res.choices[0]?.message?.content ?? "";
   return { output, usage: res.usage };
 }
@@ -107,7 +109,7 @@ async function verificationStep(
   ];
 
   const res = await openaiStructured<{ passed: boolean; reason: string }>({
-    model: project.model ?? "gpt-4o",
+    model: project.model ?? AGENT_MODEL,
     messages,
     temperature: 0.1,
   });
@@ -147,7 +149,7 @@ async function reviewStep(
     hands_off_violations: string[];
     silent_failures: string[];
   }>({
-    model: project.model ?? "gpt-4o",
+    model: project.model ?? AGENT_MODEL,
     messages,
     temperature: 0.1,
   });
@@ -938,16 +940,16 @@ export const agentRouter = createRouter({
     const db = getDb();
 
     const agentDefs = [
-      { projectId: "appraiser", name: "AI Appraiser", desc: "Photo-based luxury item appraisal. Value ranges, authenticity, market analysis.", mode: "A", priority: 1, budget: 5, vcmd: "Output must contain valid estimatedValue and valueRangeLow/High. Confidence must be one of high/medium/low.", model: "gpt-4o", handsOff: ["users", "payments", "auth"] },
-      { projectId: "outreach", name: "Buyer Outreach", desc: "Professional lead generation. Finds verified buyers, collectors, dealers.", mode: "A", priority: 1, budget: 10, vcmd: "Each segment must be a professional type, not a fake individual. No invented names or emails.", model: "gpt-4o", handsOff: ["users", "payments", "stripe"] },
-      { projectId: "proverify", name: "ProVerify Engine", desc: "Multi-expert verification with consensus scoring for authenticity and value.", mode: "A", priority: 1, budget: 8, vcmd: "Must have 3+ expert reviews with scores 0-100. All scores marked as simulated estimates.", model: "gpt-4o", handsOff: ["users", "payments"] },
-      { projectId: "content", name: "Content & SEO", desc: "Product descriptions, SEO copy, marketing content for listings.", mode: "B", priority: 2, budget: 5, vcmd: "Must have exactly 3 variants with correct word counts. No fabricated provenance.", model: "gpt-4o-mini", handsOff: ["users", "payments", "auth"] },
-      { projectId: "security", name: "Security Auditor", desc: "Security monitoring, vulnerability audits, penetration testing.", mode: "A", priority: 1, budget: 10, vcmd: "Each finding must have severity and remediation. No invented CVEs.", model: "gpt-4o", handsOff: ["users", "payments", "production_db"] },
-      { projectId: "pricing", name: "Pricing Intelligence", desc: "Market analysis and price recommendations based on real data only.", mode: "B", priority: 2, budget: 7, vcmd: "Comparables must be general market knowledge only. No specific unverified sales.", model: "gpt-4o", handsOff: ["users", "payments", "stripe"] },
-      { projectId: "support", name: "Support Assistant", desc: "Customer support. Answers FAQs, routes complex issues to humans.", mode: "B", priority: 3, budget: 3, vcmd: "Response must be based only on provided policies. Must not fabricate policy details.", model: "gpt-4o-mini", handsOff: ["users", "payments", "auth", "personal_data"] },
-      { projectId: "listing", name: "Listing Optimizer", desc: "Quality checks for photos, descriptions, pricing, compliance.", mode: "A", priority: 2, budget: 5, vcmd: "Compliance flags must be specific. Scores 0-100 integers. No invented violations.", model: "gpt-4o", handsOff: ["users", "payments", "production_db"] },
-      { projectId: "compliance", name: "Compliance Monitor", desc: "Legal/regulatory compliance review. Terms, privacy, shipping, tax.", mode: "B", priority: 2, budget: 10, vcmd: "Findings must reference general regulations only. No invented section numbers.", model: "gpt-4o", handsOff: ["users", "payments", "legal_contracts"] },
-      { projectId: "social", name: "Social Lead Gen", desc: "Social media intelligence. Community identification, engagement strategy.", mode: "A", priority: 3, budget: 8, vcmd: "No fabricated usernames, follower counts, or metrics. Use placeholders only.", model: "gpt-4o", handsOff: ["users", "payments", "personal_data"] },
+      { projectId: "appraiser", name: "AI Appraiser", desc: "Photo-based luxury item appraisal. Value ranges, authenticity, market analysis.", mode: "A", priority: 1, budget: 5, vcmd: "Output must contain valid estimatedValue and valueRangeLow/High. Confidence must be one of high/medium/low.", model: AGENT_MODEL, handsOff: ["users", "payments", "auth"] },
+      { projectId: "outreach", name: "Buyer Outreach", desc: "Professional lead generation. Finds verified buyers, collectors, dealers.", mode: "A", priority: 1, budget: 10, vcmd: "Each segment must be a professional type, not a fake individual. No invented names or emails.", model: AGENT_MODEL, handsOff: ["users", "payments", "stripe"] },
+      { projectId: "proverify", name: "ProVerify Engine", desc: "Multi-expert verification with consensus scoring for authenticity and value.", mode: "A", priority: 1, budget: 8, vcmd: "Must have 3+ expert reviews with scores 0-100. All scores marked as simulated estimates.", model: AGENT_MODEL, handsOff: ["users", "payments"] },
+      { projectId: "content", name: "Content & SEO", desc: "Product descriptions, SEO copy, marketing content for listings.", mode: "B", priority: 2, budget: 5, vcmd: "Must have exactly 3 variants with correct word counts. No fabricated provenance.", model: AGENT_MODEL, handsOff: ["users", "payments", "auth"] },
+      { projectId: "security", name: "Security Auditor", desc: "Security monitoring, vulnerability audits, penetration testing.", mode: "A", priority: 1, budget: 10, vcmd: "Each finding must have severity and remediation. No invented CVEs.", model: AGENT_MODEL, handsOff: ["users", "payments", "production_db"] },
+      { projectId: "pricing", name: "Pricing Intelligence", desc: "Market analysis and price recommendations based on real data only.", mode: "B", priority: 2, budget: 7, vcmd: "Comparables must be general market knowledge only. No specific unverified sales.", model: AGENT_MODEL, handsOff: ["users", "payments", "stripe"] },
+      { projectId: "support", name: "Support Assistant", desc: "Customer support. Answers FAQs, routes complex issues to humans.", mode: "B", priority: 3, budget: 3, vcmd: "Response must be based only on provided policies. Must not fabricate policy details.", model: AGENT_MODEL, handsOff: ["users", "payments", "auth", "personal_data"] },
+      { projectId: "listing", name: "Listing Optimizer", desc: "Quality checks for photos, descriptions, pricing, compliance.", mode: "A", priority: 2, budget: 5, vcmd: "Compliance flags must be specific. Scores 0-100 integers. No invented violations.", model: AGENT_MODEL, handsOff: ["users", "payments", "production_db"] },
+      { projectId: "compliance", name: "Compliance Monitor", desc: "Legal/regulatory compliance review. Terms, privacy, shipping, tax.", mode: "B", priority: 2, budget: 10, vcmd: "Findings must reference general regulations only. No invented section numbers.", model: AGENT_MODEL, handsOff: ["users", "payments", "legal_contracts"] },
+      { projectId: "social", name: "Social Lead Gen", desc: "Social media intelligence. Community identification, engagement strategy.", mode: "A", priority: 3, budget: 8, vcmd: "No fabricated usernames, follower counts, or metrics. Use placeholders only.", model: AGENT_MODEL, handsOff: ["users", "payments", "personal_data"] },
     ];
 
     const defaults = agentDefs.map((a) => ({

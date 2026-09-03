@@ -5,6 +5,7 @@
  */
 
 import { z } from "zod";
+import { AGENT_MODEL } from "./lib/openai";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import {
@@ -158,7 +159,7 @@ Do NOT invent any posts. Do NOT make up usernames. Only score the posts provided
   try {
     const { openaiChat } = await import("./lib/openai");
     const response = await openaiChat({
-      model: "gpt-4o-mini",
+      model: AGENT_MODEL,
       messages: [
         { role: "system", content: "You score social media leads for luxury collectibles. Respond with valid JSON array only." },
         { role: "user", content: prompt },

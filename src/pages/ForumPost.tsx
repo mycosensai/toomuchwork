@@ -3,14 +3,13 @@ import { useParams, Link, useNavigate } from 'react-router'
 import { useAuth } from '@/hooks/useAuth'
 import { trpc } from '@/providers/trpc'
 import {
-  MessageSquare, ArrowLeft, Loader2, Pin, Lock,
-  Send, Trash2, Diamond
+  MessageSquare, ArrowLeft, Loader2, Pin, Lock, Send, Trash2
 } from 'lucide-react'
 
 export default function ForumPost() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user, isAuthenticated, isAdmin } = useAuth()
+  const { isAuthenticated, isAdmin } = useAuth()
   const [replyContent, setReplyContent] = useState('')
 
   const { data, isLoading, error } = trpc.forum.getPost.useQuery({ id: Number(id) })
@@ -22,9 +21,6 @@ export default function ForumPost() {
   })
   const deletePost = trpc.forum.deletePost.useMutation({
     onSuccess: () => navigate('/forum')
-  })
-  const deleteReply = trpc.forum.deletePost.useMutation({
-    onSuccess: () => trpc.forum.getPost.invalidate({ id: Number(id) })
   })
 
   if (isLoading) {

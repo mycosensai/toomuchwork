@@ -35,6 +35,7 @@ type StripeEvent = {
 const STRIPE_WEBHOOK_TOLERANCE_SECONDS = 300;
 const STRIPE_ALLOWED_EVENTS = new Set([
   "checkout.session.completed",
+  "checkout.session.expired",
   "payment_intent.succeeded",
   "payment_intent.payment_failed",
   "charge.refunded",
@@ -253,16 +254,84 @@ app.post("/api/stripe/webhook", async (c) => {
   const sessionId = typeof object.id === "string" ? object.id : "";
 
   if (event.type === "checkout.session.completed" && sessionId) {
+    // 0a. LISTING FEE session? → mark fee paid + activate listing (gate unlock).
+    //     Fee sessions live in listing_fees (not stripe_sessions), so check here first.
+    const feeRow = await db.prepare("SELECT id, listing_id FROM listing_fees WHERE stripe_session_id = ? AND status != 'paid' LIMIT 1").bind(sessionId).first<{ id: number; listing_id: number | null }>();
+    if (feeRow?.id) {
+      await db.prepare("UPDATE listing_fees SET status = 'paid', paid_at = unixepoch() WHERE id = ?").bind(feeRow.id).run();
+      if (feeRow.listing_id) {
+        await db.prepare("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'pending_fee'").bind(feeRow.listing_id).run();
+      }
+    }
+
+    // 0b. Purchase session → mark stripe session completed + create order.
     await db.prepare("UPDATE stripe_sessions SET status = ? WHERE session_id = ?").bind("completed", sessionId).run();
-    const session = await db.prepare("SELECT listing_id FROM stripe_sessions WHERE session_id = ? LIMIT 1").bind(sessionId).first<{ listing_id: number }>();
-    if (session?.listing_id) {
-      await db.prepare("UPDATE listings SET status = ? WHERE id = ?").bind("sold", session.listing_id).run();
+    const sessionRow = await db.prepare("SELECT listing_id, user_id, amount, commission FROM stripe_sessions WHERE session_id = ? LIMIT 1").bind(sessionId).first<{ listing_id: number; user_id: number | null; amount: string; commission: string }>();
+    if (sessionRow?.listing_id) {
+      // 1. Mark listing sold
+      await db.prepare("UPDATE listings SET status = ? WHERE id = ?").bind("sold", sessionRow.listing_id).run();
+      // 2. Create the canonical ORDER row (buyer purchase record)
+      const listingRow = await db.prepare("SELECT title, images, seller_id FROM listings WHERE id = ? LIMIT 1").bind(sessionRow.listing_id).first<{ title: string; images: string | null; seller_id: number | null }>();
+      const buyerEmail = typeof object.customer_email === "string" ? object.customer_email : null;
+      const shippedAddress = typeof object.shipping === "object" && object.shipping ? JSON.stringify(object.shipping) : null;
+      const commissionNum = Number(sessionRow.commission) || 0;
+      const payoutAmount = (Number(sessionRow.amount) - commissionNum).toFixed(2);
+      await db
+        .prepare(
+          "INSERT INTO orders (user_id, seller_id, listing_id, listing_title, listing_image, amount, commission, payment_method, payment_status, order_status, shipping_address, payout_status, payout_amount, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'stripe', 'completed', 'confirmed', ?, 'pending', ?, ?, unixepoch(), unixepoch())"
+        )
+        .bind(
+          sessionRow.user_id,
+          listingRow?.seller_id || null,
+          sessionRow.listing_id,
+          listingRow?.title || "Vault Purchase",
+          listingRow?.images || null,
+          sessionRow.amount,
+          sessionRow.commission,
+          shippedAddress,
+          payoutAmount,
+          JSON.stringify({ stripe_session_id: sessionId, buyer_email: buyerEmail })
+        )
+        .run();
+      // 3. Queue seller notification (email row, sent by notification worker)
+      if (listingRow?.seller_id) {
+        const seller = await db.prepare("SELECT id, email, name FROM users WHERE id = ? LIMIT 1").bind(listingRow.seller_id).first<{ id: number; email: string | null; name: string | null }>();
+        if (seller?.email) {
+          await db
+            .prepare("INSERT INTO email_notifications (user_id, recipient_email, type, subject, body_text, status, created_at) VALUES (?, ?, 'order_placed', ?, ?, 'pending', unixepoch())")
+            .bind(
+              seller.id,
+              seller.email,
+              `Your item sold: ${listingRow.title}`,
+              `Great news! Your item "${listingRow.title}" was purchased for $${sessionRow.amount}. We'll notify you when payment settles.`
+            )
+            .run();
+        }
+      }
     }
   }
 
-  if (event.type === "payment_intent.payment_failed" && sessionId) {
-    await db.prepare("UPDATE stripe_sessions SET status = ? WHERE session_id = ?").bind("failed", sessionId).run();
+  // Released hold: buyer abandoned checkout or payment failed → listing back to active
+  if (event.type === "checkout.session.expired" && sessionId) {
+    await db.prepare("UPDATE stripe_sessions SET status = ? WHERE session_id = ?").bind("expired", sessionId).run();
+    const sessionRow = await db.prepare("SELECT listing_id FROM stripe_sessions WHERE session_id = ? LIMIT 1").bind(sessionId).first<{ listing_id: number }>();
+    if (sessionRow?.listing_id) {
+      await db.prepare("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'reserved'").bind(sessionRow.listing_id).run();
+    }
   }
+
+  if (event.type === "payment_intent.payment_failed") {
+      // NOTE: payment_intent events carry a PaymentIntent ID (pi_...) as object.id,
+      // NOT a Checkout Session ID (cs_...). stripe_sessions stores cs_... IDs, so a
+      // session_id lookup never matches. Release the hold via the listing from
+      // event metadata instead.
+      const obj = (event.data?.object || {}) as Record<string, any>;
+      const listingFromMeta = Number(obj?.metadata?.listingId) || 0;
+      await db.prepare("UPDATE stripe_sessions SET status = ? WHERE session_id = ?").bind("failed", sessionId).run();
+      if (listingFromMeta) {
+        await db.prepare("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'reserved'").bind(listingFromMeta).run();
+      }
+    }
 
   await db
     .prepare("INSERT INTO webhook_events (id, provider, event_type, processed_at, metadata) VALUES (?, ?, ?, ?, ?)")
@@ -325,10 +394,10 @@ app.get("/api/oauth/:provider/initiate", async (c) => {
   try {
     const provider = c.req.param("provider") as "google" | "github" | "x";
     const host = c.req.header("host") || undefined;
-    
+
     const { buildAuthUrl } = await import("../api/oauth-providers");
     const result = await buildAuthUrl(provider, host);
-    
+
     if (result.error || !result.url) {
       return c.json({ ok: false, error: result.error || "Failed to build auth URL" }, 400);
     }

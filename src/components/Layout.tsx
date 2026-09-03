@@ -91,6 +91,7 @@ export default function Layout() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- close mobile menu on navigation
     setMenuOpen(false)
     window.scrollTo(0, 0)
   }, [location.pathname])
@@ -106,8 +107,8 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-8 h-8 lg:w-9 lg:h-9 border border-[#C9A84C] rotate-45 flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(201,168,76,0.3)] transition-shadow">
-                <Diamond className="w-4 h-4 text-[#C9A84C] -rotate-45" />
+              <div className="w-8 h-8 lg:w-9 lg:h-9 border border-[#C9A84C] rotate-45 flex items-center justify-center transition-all duration-500 group-hover:rotate-[135deg] group-hover:shadow-[0_0_18px_rgba(201,168,76,0.4)]">
+                <Diamond className="w-4 h-4 text-[#C9A84C] -rotate-45 group-hover:-rotate-[135deg] transition-transform duration-500" />
               </div>
               <span className="font-cinzel text-lg lg:text-xl font-bold tracking-[4px] text-[#C9A84C] hidden sm:block">THE VAULT</span>
             </Link>
@@ -115,8 +116,8 @@ export default function Layout() {
             <div className="hidden md:flex items-center gap-8">
               {navLinks.map((link) => (
                 <Link key={link.path} to={link.path}
-                  className={`text-[10px] tracking-[3px] uppercase transition-colors ${
-                    location.pathname === link.path ? 'text-[#E8CB7A]' : 'text-[#C8BC98] hover:text-[#E8CB7A]'
+                  className={`nav-link text-[10px] tracking-[3px] uppercase transition-colors duration-300 ${
+                    location.pathname === link.path ? 'nav-active text-[#E8CB7A]' : 'text-[#C8BC98] hover:text-[#E8CB7A]'
                   }`}>
                   {link.label}
                 </Link>
@@ -161,7 +162,7 @@ export default function Layout() {
                   </button>
                 </div>
               ) : (
-                <Link to="/login" className="px-5 py-2 border border-[#C9A84C] text-[#C9A84C] text-[10px] tracking-[3px] uppercase font-cinzel font-semibold hover:bg-[#C9A84C] hover:text-[#080808] transition-all duration-300 hover:shadow-[0_0_20px_rgba(201,168,76,0.3)]">
+                <Link to="/login" className="btn-sheen px-5 py-2 border border-[#C9A84C] text-[#C9A84C] text-[10px] tracking-[3px] uppercase font-cinzel font-semibold hover:bg-[#C9A84C] hover:text-[#080808] transition-all duration-300 hover:shadow-[0_0_20px_rgba(201,168,76,0.3)]">
                   Sign In
                 </Link>
               )}
@@ -174,10 +175,12 @@ export default function Layout() {
         </div>
 
         {menuOpen && (
-          <div className="md:hidden bg-[#080808]/98 backdrop-blur-xl border-t border-[#C9A84C]/20">
+          <div className="md:hidden bg-[#080808]/98 backdrop-blur-xl border-t border-[#C9A84C]/20 animate-slide-down overflow-hidden">
             <div className="px-4 py-6 space-y-1">
-              {navLinks.map((link) => (
-                <Link key={link.path} to={link.path} className="block text-sm tracking-[3px] uppercase text-[#C8BC98] hover:text-[#E8CB7A] py-2.5 transition-colors">
+              {navLinks.map((link, i) => (
+                <Link key={link.path} to={link.path}
+                  className="block text-sm tracking-[3px] uppercase text-[#C8BC98] hover:text-[#E8CB7A] py-2.5 transition-all duration-300 hover:pl-2 hover:text-[#E8CB7A]"
+                  style={{ animation: `revealUp 0.4s cubic-bezier(0.22,1,0.36,1) ${0.03 * i}s both` }}>
                   {link.label}
                 </Link>
               ))}
@@ -228,9 +231,11 @@ export default function Layout() {
       {/* Liability Banner on payment pages */}
       {isPaymentPage && <div className="pt-16 lg:pt-20"><LiabilityBanner /></div>}
 
-      {/* Main Content */}
+      {/* Main Content — keyed on pathname so each navigation plays a soft entrance */}
       <main>
-        <Outlet />
+        <div key={location.pathname} className="page-enter">
+          <Outlet />
+        </div>
       </main>
 
       {/* Footer */}

@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
 import { trpc } from '@/providers/trpc'
+import Reveal from '@/components/Reveal'
 import {
   Diamond, ArrowRight, Sparkles, ShieldCheck, Clock,
   TrendingUp, Gem, Coins, Landmark, Palette, Watch, Trophy, BookOpen,
@@ -32,7 +33,7 @@ function HeroSection() {
       {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-3 px-5 py-2 border border-[#C9A84C]/25 mb-8 animate-fadeIn">
-          <span className="w-1.5 h-1.5 bg-[#C9A84C] rounded-full animate-pulse" />
+          <span className="w-1.5 h-1.5 bg-[#C9A84C] rounded-full animate-glow-dot" />
           <span className="text-[9px] tracking-[4px] uppercase text-[#C9A84C] font-medium">
             Est. 2024 &middot; Elite Collector Exchange &middot; AI-Powered
           </span>
@@ -68,7 +69,7 @@ function HeroSection() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fadeInUp" style={{ animationDelay: '0.8s' }}>
           <Link
             to="/sell"
-            className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] hover:-translate-y-0.5 transition-all duration-300"
+            className="btn-sheen inline-flex items-center justify-center gap-2 px-10 py-4 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] hover:-translate-y-0.5 transition-all duration-300"
           >
             Start Selling
             <ArrowRight className="w-3.5 h-3.5" />
@@ -201,7 +202,7 @@ function CalculatorSection() {
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(201,168,76,0.04),transparent)]" />
-      <div className="max-w-3xl mx-auto relative">
+      <Reveal className="max-w-3xl mx-auto relative">
         <div className="text-center mb-12">
           <p className="text-[9px] tracking-[5px] uppercase text-[#C9A84C] font-medium mb-3">
             Transparent Pricing
@@ -329,7 +330,7 @@ function CalculatorSection() {
             </div>
           )}
         </div>
-      </div>
+        </Reveal>
     </section>
   )
 }
@@ -349,7 +350,7 @@ function HowItWorksSection() {
       num: '02',
       icon: <ShieldCheck className="w-6 h-6" />,
       title: 'List Your Item',
-      desc: 'Create your listing with our transparent commission structure. 5%, 7%, 10%, or 15% based on item value.',
+      desc: 'Create your listing with our transparent commission structure. 5% under $1,000, 7% for $1,000–$7,500, 10% for $7,500–$10,000, and 5% over $10,000.',
     },
     {
       num: '03',
@@ -381,22 +382,23 @@ function HowItWorksSection() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((step) => (
-            <div
-              key={step.num}
-              className="group p-8 border border-[#C9A84C]/15 bg-[#161616] hover:border-[#C9A84C] hover:bg-[#1E1E1E] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(201,168,76,0.1)] transition-all duration-400"
-            >
-              <div className="font-cinzel text-5xl font-black text-[#C9A84C]/10 mb-4 group-hover:text-[#C9A84C]/20 transition-colors">
-                {step.num}
+          {steps.map((step, i) => (
+            <Reveal key={step.num} delay={(i % 4 + 1) as 1 | 2 | 3 | 4}>
+              <div
+                className="group p-8 border border-[#C9A84C]/15 bg-[#161616] hover:border-[#C9A84C] hover:bg-[#1E1E1E] hover:-translate-y-2 hover:shadow-[0_0_30px_rgba(201,168,76,0.1)] transition-all duration-400 h-full"
+              >
+                <div className="font-cinzel text-5xl font-black text-[#C9A84C]/10 mb-4 group-hover:text-[#C9A84C]/20 transition-colors">
+                  {step.num}
+                </div>
+                <div className="text-[#C9A84C] mb-4">{step.icon}</div>
+                <h3 className="font-cinzel text-xs font-semibold tracking-[2px] uppercase text-[#C9A84C] mb-3">
+                  {step.title}
+                </h3>
+                <p className="text-xs leading-relaxed text-[#C8BC98] font-light">
+                  {step.desc}
+                </p>
               </div>
-              <div className="text-[#C9A84C] mb-4">{step.icon}</div>
-              <h3 className="font-cinzel text-xs font-semibold tracking-[2px] uppercase text-[#C9A84C] mb-3">
-                {step.title}
-              </h3>
-              <p className="text-xs leading-relaxed text-[#C8BC98] font-light">
-                {step.desc}
-              </p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -437,23 +439,24 @@ function CategoriesSection() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
-          {(categories || []).map((cat) => (
-            <Link
-              key={cat.id}
-              to={`/browse?category=${cat.slug}`}
-              className="group relative h-48 sm:h-56 bg-[#161616] border border-[#C9A84C]/15 flex flex-col items-center justify-center p-6 hover:border-[#C9A84C] transition-all duration-300"
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#C9A84C]/8 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="text-[#C9A84C] mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-transform relative z-10">
-                {iconMap[cat.icon || ''] || <Gem className="w-10 h-10" />}
-              </div>
-              <h3 className="font-cinzel text-[10px] sm:text-xs font-semibold tracking-[3px] text-[#C9A84C] uppercase text-center mb-2 relative z-10">
-                {cat.name}
-              </h3>
-              <p className="text-[10px] text-[#C8BC98] tracking-[1px] relative z-10">
-                {cat.listingCount?.toLocaleString()} listings
-              </p>
-            </Link>
+          {(categories || []).map((cat, i) => (
+            <Reveal key={cat.id} delay={((i % 8) + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}>
+              <Link
+                to={`/browse?category=${cat.slug}`}
+                className="group relative h-48 sm:h-56 bg-[#161616] border border-[#C9A84C]/15 flex flex-col items-center justify-center p-6 hover:border-[#C9A84C] transition-all duration-300"
+              >
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#C9A84C]/8 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="text-[#C9A84C] mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-transform relative z-10">
+                  {iconMap[cat.icon || ''] || <Gem className="w-10 h-10" />}
+                </div>
+                <h3 className="font-cinzel text-[10px] sm:text-xs font-semibold tracking-[3px] text-[#C9A84C] uppercase text-center mb-2 relative z-10">
+                  {cat.name}
+                </h3>
+                <p className="text-[10px] text-[#C8BC98] tracking-[1px] relative z-10">
+                  {cat.listingCount?.toLocaleString()} listings
+                </p>
+              </Link>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -504,49 +507,59 @@ function FeaturedListingsSection() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {(listings || []).slice(0, 6).map((listing) => (
-              <Link
-                key={listing.id}
-                to={`/listing/${listing.id}`}
-                className="group bg-[#161616] border border-[#C9A84C]/15 overflow-hidden hover:border-[#C9A84C] hover:-translate-y-1.5 hover:shadow-[0_24px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(201,168,76,0.1)] transition-all duration-400"
-              >
-                {/* Image area */}
-                <div className="h-44 bg-[#1E1E1E] flex items-center justify-center relative border-b border-[#C9A84C]/15">
-                  <div className="text-[#C9A84C]/30 group-hover:text-[#C9A84C]/50 transition-colors">
-                    {categoryIcons[listing.category?.name || ''] || <Diamond className="w-16 h-16" />}
+            {(listings || []).slice(0, 6).map((listing, i) => (
+              <Reveal key={listing.id} delay={((i % 3) + 1) as 1 | 2 | 3}>
+                <Link
+                  to={`/listing/${listing.id}`}
+                  className="group block bg-[#161616] border border-[#C9A84C]/15 overflow-hidden hover:border-[#C9A84C] hover:-translate-y-1.5 hover:shadow-[0_24px_60px_rgba(0,0,0,0.5),0_0_30px_rgba(201,168,76,0.1)] transition-all duration-400 h-full"
+                >
+                  {/* Image area */}
+                  <div className="h-44 bg-[#1E1E1E] flex items-center justify-center relative border-b border-[#C9A84C]/15 overflow-hidden">
+                    {listing.image ? (
+                      <img
+                        src={listing.image}
+                        alt={listing.title}
+                        loading="lazy"
+                        className="card-img-zoom w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-[#C9A84C]/30 group-hover:text-[#C9A84C]/50 transition-colors card-img-zoom">
+                        {categoryIcons[listing.category?.name || ''] || <Diamond className="w-16 h-16" />}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#080808]/60" />
+                    {listing.badge && listing.badge !== 'none' && (
+                      <span className={`absolute top-4 right-4 px-3 py-1 text-[7px] tracking-[2px] uppercase border ${badgeStyles[listing.badge] || badgeStyles.verified}`}>
+                        {listing.badge}
+                      </span>
+                    )}
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#080808]/60" />
-                  {listing.badge && listing.badge !== 'none' && (
-                    <span className={`absolute top-4 right-4 px-3 py-1 text-[7px] tracking-[2px] uppercase border ${badgeStyles[listing.badge] || badgeStyles.verified}`}>
-                      {listing.badge}
-                    </span>
-                  )}
-                </div>
 
-                {/* Body */}
-                <div className="p-6">
-                  <p className="text-[8px] tracking-[3px] text-[#8A6E2F] uppercase mb-2">
-                    {listing.category?.name || 'Collection'}
-                  </p>
-                  <h3 className="font-cinzel text-xs font-semibold tracking-[1px] text-[#F5EED8] mb-3 leading-relaxed line-clamp-2">
-                    {listing.title}
-                  </h3>
-                  <p className="text-[11px] text-[#C8BC98] leading-relaxed mb-5 line-clamp-2 font-light">
-                    {listing.description}
-                  </p>
-                  <div className="flex items-end justify-between pt-4 border-t border-[#C9A84C]/15">
-                    <div>
-                      <div className="font-cinzel text-lg font-bold text-[#C9A84C]">
-                        ${Number(listing.price).toLocaleString('en-US')}
+                  {/* Body */}
+                  <div className="p-6">
+                    <p className="text-[8px] tracking-[3px] text-[#8A6E2F] uppercase mb-2">
+                      {listing.category?.name || 'Collection'}
+                    </p>
+                    <h3 className="font-cinzel text-xs font-semibold tracking-[1px] text-[#F5EED8] mb-3 leading-relaxed line-clamp-2">
+                      {listing.title}
+                    </h3>
+                    <p className="text-[11px] text-[#C8BC98] leading-relaxed mb-5 line-clamp-2 font-light">
+                      {listing.description}
+                    </p>
+                    <div className="flex items-end justify-between pt-4 border-t border-[#C9A84C]/15">
+                      <div>
+                        <div className="font-cinzel text-lg font-bold text-[#C9A84C]">
+                          ${Number(listing.price).toLocaleString('en-US')}
+                        </div>
+                        <div className="text-[8px] tracking-[1px] text-[#8A6E2F] mt-1">
+                          Commission: {listing.commissionRate}%
+                        </div>
                       </div>
-                      <div className="text-[8px] tracking-[1px] text-[#8A6E2F] mt-1">
-                        Commission: {listing.commissionRate}%
-                      </div>
+                      <ChevronRight className="w-4 h-4 text-[#C9A84C] group-hover:translate-x-1 transition-transform" />
                     </div>
-                    <ChevronRight className="w-4 h-4 text-[#C9A84C] group-hover:translate-x-1 transition-transform" />
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </Reveal>
             ))}
           </div>
         )}
@@ -571,8 +584,8 @@ function FeaturedListingsSection() {
 function CTASection() {
   return (
     <section className="py-28 px-4 sm:px-6 lg:px-8 bg-[#0F0F0F] border-t border-[#C9A84C]/15 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(201,168,76,0.06),transparent)]" />
-      <div className="max-w-2xl mx-auto text-center relative">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,rgba(201,168,76,0.06),transparent)] animate-drift" />
+      <Reveal className="max-w-2xl mx-auto text-center relative">
         <p className="text-[9px] tracking-[5px] uppercase text-[#C9A84C] font-medium mb-4">Join The Vault</p>
         <h2 className="font-cinzel text-3xl sm:text-4xl md:text-5xl font-black tracking-[6px] mb-4">
           <span className="bg-gradient-to-b from-[#FFD97A] to-[#C9A84C] bg-clip-text text-transparent">
@@ -603,7 +616,7 @@ function CTASection() {
             List an Item
           </Link>
         </div>
-      </div>
+      </Reveal>
     </section>
   )
 }

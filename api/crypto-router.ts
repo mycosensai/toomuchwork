@@ -6,7 +6,9 @@ import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
 import { getRawEnv } from "./lib/env";
-import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import {
+  LAMPORTS_PER_SOL
+} from "@solana/web3.js";
 
 // ─── Constants ───
 const LAMPORTS_PER_SOL_BN = BigInt(LAMPORTS_PER_SOL);

@@ -1,0 +1,8 @@
+runner:
+  eslint:
+    cmd: npx eslint -f checkstyle src/
+    errorformat:
+      - "%E%f: line %l\\, col %c\\, Error - %m"
+      - "%E%f: line %l\\, col %c\\, Warning - %m"
+    name: eslint
+    level: warning

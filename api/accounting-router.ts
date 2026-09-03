@@ -8,20 +8,14 @@
  */
 
 import { z } from "zod";
-import { eq, desc, and, gte, sql } from "drizzle-orm";
+import {
+  eq, desc, sql
+} from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { genId } from "./lib/id";
 import {
-  accountingEntries,
-  saleTransactions,
-  sellerPayouts,
-  orders,
-  listings,
-  listingFees,
-  appraisals,
-  agentLogs,
-  agentCycles,
+  accountingEntries, saleTransactions, agentLogs
 } from "@db/schema";
 
 // ─── LOG A FINANCIAL ENTRY ───

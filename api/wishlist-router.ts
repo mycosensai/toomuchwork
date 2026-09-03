@@ -4,8 +4,6 @@ import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { wishlistItems, listings } from "@db/schema";
 import { eq, desc, sql } from "drizzle-orm";
-// @ts-ignore unused import preserved for future use
-const _and = null;
 
 export const wishlistRouter = createRouter({
   list: publicQuery.query(async ({ ctx }) => {

@@ -8,15 +8,8 @@ import { useNavigate, Link } from "react-router";
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  AlertTriangle, Power, Send, Shield,
-  Activity, MessageSquare, Globe, Workflow, BarChart3,
-  CheckCircle, XCircle, ChevronDown, ChevronUp, Terminal,
-  Lock, Unlock, Bot, Save, Plus,
-  ArrowLeft, Loader2, Zap, Eye, EyeOff, RefreshCw,
-  DollarSign, Receipt, ClipboardList, TrendingUp,
-  FileText, Clock, BookOpen, UserCheck, ShieldCheck,
-  Sparkles, Play, Square
-} from "lucide-react";
+  AlertTriangle, Power, Send, Shield, Activity, MessageSquare, Globe, Workflow, BarChart3, CheckCircle, XCircle, ChevronDown, ChevronUp, Terminal, Lock, Unlock, Bot, Save, Plus, ArrowLeft, Loader2, Zap, Eye, RefreshCw, DollarSign, FileText, Clock, UserCheck, ShieldCheck, Sparkles, Play, Square
+} from 'lucide-react';
 
 // ─── ADMIN ACCESS CONTROL ───
 // ONLY ratchetkrewelabs@gmail.com can access this page
@@ -24,7 +17,7 @@ const ADMIN_EMAIL = "ratchetkrewelabs@gmail.com";
 
 export default function AgentCommand() {
   const navigate = useNavigate();
-  const { isAuthenticated, isAdmin, isLoading: authLoading, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const utils = trpc.useUtils();
 
   // Strict email-based access — only the designated admin email
@@ -82,16 +75,16 @@ export default function AgentCommand() {
 
   // ─── NEW SYSTEM QUERIES ───
   const { data: auditStats } = trpc.selfAudit.stats.useQuery(undefined, { enabled: isOwner });
-  const { data: auditDashboard } = trpc.selfAudit.dashboard.useQuery(undefined, { enabled: isOwner });
+  trpc.selfAudit.dashboard.useQuery(undefined, { enabled: isOwner });
   const { data: auditLogs } = trpc.selfAudit.getLogs.useQuery({ limit: 20 }, { enabled: isOwner });
   const { data: hardening } = trpc.selfAudit.getHardening.useQuery({ limit: 10 }, { enabled: isOwner });
   const { data: policeStats } = trpc.police.stats.useQuery(undefined, { enabled: isOwner });
-  const { data: policeChecks } = trpc.police.recentChecks.useQuery({ limit: 20 }, { enabled: isOwner });
+  trpc.police.recentChecks.useQuery({ limit: 20 }, { enabled: isOwner });
   const { data: trustScores } = trpc.police.trustScores.useQuery(undefined, { enabled: isOwner });
   const { data: accountingSummary } = trpc.accounting.summary.useQuery(undefined, { enabled: isOwner });
   const { data: latestReport } = trpc.dailyReport.latest.useQuery(undefined, { enabled: isOwner });
   const { data: reportStats } = trpc.dailyReport.stats.useQuery(undefined, { enabled: isOwner });
-  const { data: promptStats } = trpc.adminPrompt.stats.useQuery(undefined, { enabled: isOwner });
+  trpc.adminPrompt.stats.useQuery(undefined, { enabled: isOwner });
   const { data: pendingPrompts } = trpc.adminPrompt.pending.useQuery(undefined, { enabled: isOwner });
   // ─── DIFY ENGINE QUERIES ───
   const { data: difyTypes } = trpc.graphWorkflow.workflowTypes.useQuery(undefined, { enabled: isOwner });
@@ -107,7 +100,7 @@ export default function AgentCommand() {
   const policeSweep = trpc.police.sweep.useMutation({
     onSuccess: () => { utils.police.stats.invalidate(); utils.police.recentChecks.invalidate(); utils.police.trustScores.invalidate(); }
   });
-  const policeCheck = trpc.police.checkOutput.useMutation({
+  trpc.police.checkOutput.useMutation({
     onSuccess: () => { utils.police.stats.invalidate(); utils.police.recentChecks.invalidate(); }
   });
   const reconcileAccounting = trpc.accounting.reconcile.useMutation({
