@@ -30,12 +30,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = trpc.cart.clear.useMutation({ onSuccess: () => trpc.cart.get.invalidate() });
 
   // Hydrate from DB when available (DB is source of truth when it returns rows)
+  // This is intentional external→React sync: tRPC cache → local optimistic cart
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- DB hydration: external source (tRPC) into local state; guarded by length check
   useEffect(() => {
     if (dbCart && dbCart.length > 0) {
-      const mapped: CartItem[] = (dbCart as any[]).map((row: any) => ({
-        id: String(row.id),
-        listing: row.listing as Listing,
-      })).filter((x: CartItem) => x.listing);
+      const mapped: CartItem[] = (dbCart as unknown[]).map((row: unknown) => {
+        const r = row as { id: number; listing: Listing };
+        return { id: String(r.id), listing: r.listing };
+      }).filter((x: CartItem) => x.listing);
       // Only overwrite if DB has data (prevents wiping local optimistic state when DB empty)
       if (mapped.length > 0) setItems(mapped);
     }
@@ -48,14 +50,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prev, { id: crypto.randomUUID(), listing }];
     });
     // Persist to DB (guest via x-session-id, authed via userId) — fire-and-forget, invalidates cart.get
-    addCart.mutate({ listingId: (listing as any).id } as any);
+    const lid = (listing as unknown as { id: number }).id;
+    addCart.mutate({ listingId: lid } as unknown as { listingId: number });
   };
 
   const remove = (id: string) => {
     setItems(prev => prev.filter(x => x.id !== id));
     const numeric = Number(id);
     if (!Number.isNaN(numeric)) {
-      removeCart.mutate({ id: numeric } as any);
+      removeCart.mutate({ id: numeric } as unknown as { id: number });
     } else {
       // Local-only item (randomUUID) not yet in DB — no-op, will sync on next fetch; clear if needed
     }
