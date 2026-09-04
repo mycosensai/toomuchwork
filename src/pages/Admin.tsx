@@ -391,8 +391,8 @@ export default function Admin() {
                       ].map(key => (
                         <div key={key} className="flex justify-between">
                           <span>{key}</span>
-                          <span className={process.env[key] ? 'text-emerald-400' : 'text-red-400'}>
-                            {process.env[key] ? '● SET' : '○ MISSING'}
+                          <span className="text-[#8A6E2F] text-[10px]">
+                            Server-side — check Cloudflare Pages dashboard
                           </span>
                         </div>
                       ))}

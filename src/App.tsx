@@ -32,6 +32,9 @@ const Shipping = lazy(() => import('./pages/Shipping'))
 const Contact = lazy(() => import('./pages/Contact'))
 const Orders = lazy(() => import('./pages/Orders'))
 const Wishlist = lazy(() => import('./pages/Wishlist'))
+const Cart = lazy(() => import('./pages/Cart'))
+const Profile = lazy(() => import('./pages/Profile'))
+const SellerProfile = lazy(() => import('./pages/SellerProfile'))
 const SocialLeads = lazy(() => import('./pages/SocialLeads'))
 const SaleManager = lazy(() => import('./pages/SaleManager'))
 const Agents = lazy(() => import('./pages/Agents'))
@@ -96,6 +99,9 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/seller/:handle" element={<SellerProfile />} />
             <Route path="/social-leads/:listingId" element={<SocialLeads />} />
             <Route path="/sale" element={<SaleManager />} />
             <Route path="/sale/:id" element={<SaleManager />} />

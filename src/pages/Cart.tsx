@@ -1,16 +1,27 @@
 import { useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import { CartContext } from '../context/CartContext';
 import CartItemRow from '../components/CartItemRow';
 import { formatCurrency } from '../lib/format';
 
 export default function Cart() {
   const ctx = useContext(CartContext);
+  const navigate = useNavigate();
   if (!ctx) return null;
 
-  const { items, remove, total } = ctx;
+  const { items, remove, clear, total } = ctx;
   const tax = total * 0.09;
   const subtotal = total + tax;
+
+  const handleCheckout = () => {
+    if (items.length === 0) return;
+    if (items.length === 1) {
+      navigate(`/checkout/${items[0].listing.id}`);
+    } else {
+      // Stripe is single-item checkout: start with first item. Others remain in cart.
+      navigate(`/checkout/${items[0].listing.id}`);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -42,9 +53,10 @@ export default function Cart() {
               <span className="font-semibold">Total</span>
               <span className="text-xl font-bold text-vault-gold">{formatCurrency(subtotal)}</span>
             </div>
-            <button className="mt-6 w-full rounded-xl bg-vault-gold py-3 font-semibold text-vault-bg hover:bg-vault-gold-hover">
-              Checkout
+            <button onClick={handleCheckout} className="mt-6 w-full rounded-xl bg-vault-gold py-3 font-semibold text-vault-bg hover:bg-vault-gold-hover">
+              Checkout{items.length > 1 ? ` — ${items.length} items (1 at a time)` : ''}
             </button>
+            <button onClick={() => clear()} className="mt-2 w-full text-xs text-[#8A6E2F] hover:text-[#C9A84C]">Clear cart</button>
             <Link to="/" className="mt-3 block text-center text-sm text-vault-muted hover:text-vault-gold">
               Continue shopping
             </Link>
