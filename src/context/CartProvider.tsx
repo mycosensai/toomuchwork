@@ -31,7 +31,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Hydrate from DB when available (DB is source of truth when it returns rows)
   // This is intentional external→React sync: tRPC cache → local optimistic cart
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- DB hydration: external source (tRPC) into local state; guarded by length check
   useEffect(() => {
     if (dbCart && dbCart.length > 0) {
       const mapped: CartItem[] = (dbCart as unknown[]).map((row: unknown) => {
@@ -39,7 +38,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return { id: String(r.id), listing: r.listing };
       }).filter((x: CartItem) => x.listing);
       // Only overwrite if DB has data (prevents wiping local optimistic state when DB empty)
-      if (mapped.length > 0) setItems(mapped);
+      if (mapped.length > 0) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- DB hydration: external source (tRPC) into local state; guarded by length check
+        setItems(mapped);
+      }
     }
   }, [dbCart]);
 
