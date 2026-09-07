@@ -1,11 +1,11 @@
 import { Routes, Route } from 'react-router'
 import { Suspense, lazy } from 'react'
-import { Diamond } from 'lucide-react'
+import { Diamond, Gavel, Sparkles, Bell, AlertTriangle, Search, LayoutGrid, Newspaper, Image, Trophy, Brain } from 'lucide-react'
 import Layout from './components/Layout'
 import MobileAppPrompt from './components/MobileAppPrompt'
+import RouteMeta from './lib/route-meta'
 
 const Home = lazy(() => import('./pages/Home'))
-const Storefront = lazy(() => import('./pages/Storefront'))
 const ListingDetail = lazy(() => import('./pages/ListingDetail'))
 const Appraisal = lazy(() => import('./pages/Appraisal'))
 const AppraisalEmail = lazy(() => import('./pages/AppraisalEmail'))
@@ -46,6 +46,22 @@ const Forum = lazy(() => import('./pages/Forum'))
 const ForumPost = lazy(() => import('./pages/ForumPost'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Concierge = lazy(() => import('./pages/Concierge'))
+const OfferManagement = lazy(() => import("./pages/OfferManagement"))
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"))
+const SettingsDevices = lazy(() => import("./pages/SettingsDevices"))
+const SettingsSecurity = lazy(() => import("./pages/SettingsSecurity"))
+const SettingsNotifications = lazy(() => import("./pages/SettingsNotifications"))
+const AdminAuditLog = lazy(() => import("./pages/AdminAuditLog"))
+const Auctions = lazy(() => import('./pages/Auctions'))
+const Membership = lazy(() => import('./pages/Membership'))
+const Notifications = lazy(() => import('./pages/Notifications'))
+const Alerts = lazy(() => import('./pages/Alerts'))
+const SavedSearches = lazy(() => import('./pages/SavedSearches'))
+const Curated = lazy(() => import('./pages/Curated'))
+const Blog = lazy(() => import('./pages/Blog'))
+const Showcases = lazy(() => import('./pages/Showcases'))
+const Badges = lazy(() => import('./pages/Badges'))
+const AIAssistant = lazy(() => import('./pages/AIAssistant'))
 
 function LoadingFallback() {
   return (
@@ -69,6 +85,7 @@ function LoadingFallback() {
 export default function App() {
   return (
     <>
+      <RouteMeta />
       <MobileAppPrompt />
 
       <Suspense fallback={<LoadingFallback />}>
@@ -113,7 +130,23 @@ export default function App() {
             <Route path="/forum/:id" element={<ForumPost />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/concierge" element={<Concierge />} />
+            <Route path="/offers" element={<OfferManagement />} />
+            <Route path="/auctions" element={<Auctions />} />
+            <Route path="/membership" element={<Membership />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/alerts" element={<Alerts />} />
+            <Route path="/searches" element={<SavedSearches />} />
+            <Route path="/curated" element={<Curated />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/showcases" element={<Showcases />} />
+            <Route path="/badges" element={<Badges />} />
+            <Route path="/ai" element={<AIAssistant />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/settings/devices" element={<SettingsDevices />} />
+            <Route path="/settings/security" element={<SettingsSecurity />} />
+            <Route path="/settings/notifications" element={<SettingsNotifications />} />
+            <Route path="/admin/audit" element={<AdminAuditLog />} />
             <Route path="/sso-callback" element={<SSOCallback />} />
             <Route path="/auth-success" element={<AuthSuccess />} />
             <Route path="*" element={<NotFound />} />

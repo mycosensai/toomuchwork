@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { Link } from 'react-router'
 import { trpc } from '@/providers/trpc'
 import { useAuth } from '@/hooks/useAuth'
+import SellerPayoutPanel from '@/components/SellerPayoutPanel'
 import { validateFile, validateMagicBytes } from '@/lib/fileValidation'
 import {
   Diamond, Plus, X, Loader2, Sparkles, CheckCircle2, ShieldCheck, Bitcoin, ImageIcon, AlertCircle, CloudUpload
@@ -331,6 +332,8 @@ export default function Sell() {
             </Link>
           </div>
         )}
+
+        {isAuthenticated && <SellerPayoutPanel />}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form */}

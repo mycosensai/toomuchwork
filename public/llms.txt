@@ -1,0 +1,36 @@
+# The Vault DFW
+
+> The Vault DFW is a premium marketplace for rare and luxury collectibles — luxury watches, fine jewelry, rare coins, fine art, antiques, sports memorabilia, and precious stones. Every item is AI-verified (ProVerify multi-expert consensus) and can carry a blockchain certificate. Sellers get expert appraisals and AI buyer discovery.
+
+## Public Pages
+
+- [Browse Collectibles](https://thevaultdfw.win/browse): Shop verified luxury watches, jewelry, coins, art, antiques, and memorabilia.
+- [AI Appraisal — $29](https://thevaultdfw.win/appraisal): Get an AI value estimate, condition and authenticity readout, and market analysis for your item. One-time payment, instant unlock.
+- [ProVerify Engine — from $49.99](https://thevaultdfw.win/proverify): Multi-expert AI authentication scoring authenticity, value, and condition 0-100 with a consensus verdict.
+- [Sell Your Item — $20](https://thevaultdfw.win/sell): List collectibles with a one-time fee; AI buyer search finds interested collectors worldwide.
+- [Token Gallery](https://thevaultdfw.win/token-gallery): Blockchain-certified collectibles with verifiable SPL token certificates.
+- [AI Concierge](https://thevaultdfw.win/concierge): Tell the concierge what you collect and get matched with relevant listings.
+- [Collector Forum](https://thevaultdfw.win/forum): Community discussion on watches, coins, art, and collectibles.
+
+## Company
+
+- About: https://thevaultdfw.win/about
+- FAQ: https://thevaultdfw.win/faq
+- Support: https://thevaultdfw.win/support (support@thevaultdfw.win)
+- Contact: https://thevaultdfw.win/contact
+
+## Policies
+
+- Terms: https://thevaultdfw.win/terms
+- Privacy: https://thevaultdfw.win/privacy
+- Shipping: https://thevaultdfw.win/shipping
+- Returns: https://thevaultdfw.win/returns
+
+## Services Summary
+
+- **AI Appraisal**: $29 one-time. Includes estimated value with low-high range, condition and authenticity readout, market analysis with comparable bands, and factors affecting value. AI-generated estimate — not a certified appraisal.
+- **ProVerify Engine**: $49.99 standard (7-10 days), $99.99 express (3-5 days), $199.99 rush (24-48 hours). Three domain-matched AI expert reviews grade authenticity, value, and condition, then a consensus verdict is generated. Preliminary assessment only — not a substitute for in-person authentication.
+- **Listing Fee**: $20 one-time per listing. No monthly charges.
+- **Payments**: Credit/debit cards via Stripe, cryptocurrency (Solana, BTC, ETH) via Coinbase Commerce. The Vault does not hold funds — payments go directly between buyer and seller.
+- **Shipping**: All items ship insured with signature confirmation. International shipping to select countries; customs duties are the buyer's responsibility.
+- **Returns**: 14 days from delivery if the item is not as described; item must be in same condition.

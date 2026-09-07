@@ -3,7 +3,7 @@ import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { appraisals } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
-import { openaiChat, openaiVision, APPRAISAL_MODEL, VISION_MODEL } from "./lib/openai";
+import { openaiChat, openaiVision, APPRAISAL_MODEL } from "./lib/openai";
 import { autoTriggerFromAction } from "./lib/auto-trigger";
 import { getCommissionRateFromTiers } from "./lib/commission";
 import {
@@ -51,7 +51,7 @@ export const appraisalRouter = createRouter({
         );
 
         const text = input.imageUrl
-          ? await openaiVision(input.imageUrl, prompt, VISION_MODEL)
+          ? await openaiVision(input.imageUrl, prompt, APPRAISAL_MODEL)
           : (await openaiChat({
               model: APPRAISAL_MODEL,
               messages: [
@@ -139,9 +139,44 @@ export const appraisalRouter = createRouter({
         comparableSales = [];
       }
 
+      // ─── PREMIUM PAYWALL (transparent): full report unlocks after payment ───
+      // Owner or admin always sees full results; everyone else gets a locked
+      // summary with the estimated-value hint removed until paid.
+      const canViewFull = appraisal.paid === true;
+      if (!canViewFull) {
+        return {
+          id: appraisal.id,
+          itemName: appraisal.itemName,
+          category: appraisal.category,
+          condition: appraisal.condition,
+          status: appraisal.status,
+          locked: true,
+          paid: false,
+          message: "This appraisal report unlocks after a one-time payment.",
+          // Non-revenue metadata stays visible so the page can render the paywall.
+          estimatedValue: null,
+          valueRangeLow: null,
+          valueRangeHigh: null,
+          confidence: appraisal.confidence || "medium",
+          conditionAssessment: null,
+          marketAnalysis: null,
+          comparableSales: [],
+          factorsIncreasingValue: [],
+          factorsDecreasingValue: [],
+          authenticityVerdict: null,
+          authenticityNotes: null,
+          disclaimer: null,
+          commissionRate: appraisal.commissionRate,
+          commissionEstimate: null,
+          createdAt: appraisal.createdAt,
+        };
+      }
+
       return {
         ...appraisal,
         comparableSales,
+        locked: false,
+        paid: true,
       };
     }),
 

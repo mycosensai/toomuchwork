@@ -164,3 +164,20 @@ The Vault — thevaultdfw.win`;
 
   return { html, text };
 }
+
+/**
+ * Build the offer notification email HTML.
+ */
+export function buildOfferNotification(opts: {
+  itemName: string;
+  buyerName: string;
+  buyerEmail: string;
+  offerAmount: number;
+  message?: string;
+  orderId: number;
+}): { html: string; text: string } {
+  const { itemName, buyerName, buyerEmail, offerAmount, message, orderId } = opts;
+  const html = `<h2>New Offer on "${itemName}"</h2><p><strong>${buyerName}</strong> (${buyerEmail}) has made an offer of $${offerAmount.toFixed(2)} on your listing.</p>${message ? `<blockquote>${message}</blockquote>` : ''}<p><strong>Offer ID:</strong> ${orderId}</p><p>Log in to accept, decline, or counter this offer.</p>`;
+  const text = `New offer on "${itemName}"\n\n${buyerName} (${buyerEmail}) offered $${offerAmount.toFixed(2)}\n\n${message ? `Message: ${message}\n` : ''}Offer ID: ${orderId}\n\nLog in to accept, decline, or counter this offer.`;
+  return { html, text };
+}

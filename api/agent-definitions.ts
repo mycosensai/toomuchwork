@@ -275,7 +275,7 @@ export function toAgentProject(def: AgentDefinition) {
     verificationCommand: def.verificationCommand,
     cycleBudgetMinutes: def.cycleBudgetMinutes,
     handsOff: JSON.stringify(def.handsOff),
-    providerId: "openai",
+    providerId: "nous",
     model: def.model,
     active: true,
   };

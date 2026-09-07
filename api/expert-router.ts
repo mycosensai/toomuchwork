@@ -145,7 +145,36 @@ export const expertRouter = createRouter({
     const reviews = await db.select().from(expertReviews).where(eq(expertReviews.applicationId, app.id));
     // Get consensus
     const [consensus] = await db.select().from(expertConsensus).where(eq(expertConsensus.applicationId, app.id)).limit(1);
-    return { ...app, experts, reviews, consensus: consensus || null };
+
+    // ─── PREMIUM PAYWALL (transparent): full ProVerify report unlocks after payment ───
+    // The report is generated once status=completed. Until the owner pays the
+    // review fee unlock, only a locked stub is returned so the paywall can render.
+    const completedButLocked = app.status === "completed" && app.paid !== true;
+    if (completedButLocked || app.paid !== true) {
+      return {
+        id: app.id,
+        userId: app.userId,
+        itemName: app.itemName,
+        category: app.category,
+        condition: app.condition,
+        status: app.status,
+        locked: true,
+        paid: app.paid === true,
+        message: app.status === "completed"
+          ? "Your ProVerify report is ready. Unlock the full report for a one-time payment."
+          : "The full ProVerify Engine report unlocks after your review is completed and paid.",
+        estimatedValue: null,
+        reviewFee: app.reviewFee || "49.99",
+        priority: app.priority || "standard",
+        experts: [],
+        reviews: [],
+        consensus: null,
+        assignedExpertIds: [],
+        createdAt: app.createdAt,
+      };
+    }
+
+    return { ...app, experts, reviews, consensus: consensus || null, locked: false, paid: true };
   }),
 
   // List user's applications
@@ -345,6 +374,8 @@ Write a 3-paragraph professional consensus summary: (1) overall assessment, (2) 
     });
 
     // Mark application as completed
+    // NOTE: paid stays false until the owner unlocks the completed report
+    // via the transparent Stripe widget (premiumRouter.verifyPayment).
     await db.update(expertApplications).set({ status: "completed" }).where(eq(expertApplications.id, app.id));
 
     const [consensus] = await db.select().from(expertConsensus).where(eq(expertConsensus.id, Number(consResult.meta.last_row_id))).limit(1);

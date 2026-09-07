@@ -11,9 +11,20 @@ export const users = sqliteTable("users", {
   avatar: text("avatar"),
   password: text("password"),
   role: text("role").default("user").notNull(),
+  stripeAccountId: text("stripe_account_id"),
+  stripeAccountVerified: integer("stripe_account_verified", { mode: "boolean" }).default(false),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeSubscriptionPlan: text("stripe_subscription_plan"),
+  stripeSubscriptionStatus: text("stripe_subscription_status"),
+  stripeSubscriptionEnd: integer("stripe_subscription_end", { mode: "timestamp" }),
+  memberRank: text("member_rank").default("Collector"),
+  memberPoints: integer("member_points").default(0).notNull(),
   createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   lastSignInAt: integer("lastSignInAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  email_verified: integer("email_verified").default(false).notNull(),
+  totp_secret: text("totp_secret"),
+  backup_codes: text("backup_codes"),
 });
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -51,6 +62,14 @@ export const listings = sqliteTable("listings", {
   isCertified: integer("is_certified", { mode: "boolean" }).default(false),
   tokenContractAddress: text("token_contract_address"),
   certificationId: integer("certification_id"),
+  // Auction fields
+  auctionReserve: text("auction_reserve"),
+  auctionBuyNow: text("auction_buy_now"),
+  auctionStartAt: integer("auction_start_at", { mode: "timestamp" }),
+  auctionEndAt: integer("auction_end_at", { mode: "timestamp" }),
+  auctionWinner: text("auction_winner"),
+  // Offer fields (active offer amount if any)
+  activeOfferAmount: text("active_offer_amount"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
 });
@@ -75,6 +94,8 @@ export const appraisals = sqliteTable("appraisals", {
   status: text("status").default("pending").notNull(),
   commissionEstimate: text("commission_estimate"),
   commissionRate: text("commission_rate"),
+  paid: integer("paid", { mode: "boolean" }).default(false).notNull(),
+  unlockedAt: integer("unlocked_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
 });
@@ -306,6 +327,8 @@ export const expertApplications = sqliteTable("expert_applications", {
   imageUrls: text("image_urls"),
   estimatedValue: text("estimated_value"),
   status: text("status").default("submitted").notNull(),
+  paid: integer("paid", { mode: "boolean" }).default(false).notNull(),
+  unlockedAt: integer("unlocked_at", { mode: "timestamp" }),
   assignedExpertIds: text("assigned_expert_ids"),
   reviewFee: text("review_fee").default("49.99"),
   priority: text("priority").default("standard"),
@@ -386,6 +409,156 @@ export const wishlistItems = sqliteTable("wishlist_items", {
 });
 export type WishlistItem = typeof wishlistItems.$inferSelect;
 
+// ─── OFFERS ───
+export const offers = sqliteTable("offers", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  listingId: integer("listing_id").notNull(),
+  sellerId: integer("seller_id"),
+  buyerId: integer("buyer_id").notNull(),
+  amount: text("amount").notNull(),
+  message: text("message"),
+  status: text("status").default("pending").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type Offer = typeof offers.$inferSelect;
+
+// ─── PRICE ALERTS ───
+export const priceAlerts = sqliteTable("price_alerts", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  listingId: integer("listing_id").notNull(),
+  targetPrice: text("target_price").notNull(),
+  direction: text("direction").notNull().default("below"),
+  notified: integer("notified", { mode: "boolean" }).default(false).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type PriceAlert = typeof priceAlerts.$inferSelect;
+
+// ─── PRICE ALERT SNAPSHOTS (price history for listing) ───
+export const priceSnapshots = sqliteTable("price_snapshots", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  listingId: integer("listing_id").notNull(),
+  price: text("price").notNull(),
+  capturedAt: integer("captured_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type PriceSnapshot = typeof priceSnapshots.$inferSelect;
+
+// ─── SAVED SEARCHES ───
+export const savedSearches = sqliteTable("saved_searches", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  name: text("name").notNull(),
+  criteria: text("criteria").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type SavedSearch = typeof savedSearches.$inferSelect;
+
+// ─── CURATED LISTS (editorial collections) ───
+export const curatedLists = sqliteTable("curated_lists", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  category: text("category"),
+  coverImage: text("cover_image"),
+  listingCount: integer("listing_count").default(0).notNull(),
+  sortOrder: text("sort_order").default("featured"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type CuratedList = typeof curatedLists.$inferSelect;
+
+// ─── EDITORIAL ARTICLES (blog) ───
+export const editorialArticles = sqliteTable("editorial_articles", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  excerpt: text("excerpt"),
+  content: text("content"),
+  author: text("author"),
+  coverImage: text("cover_image"),
+  tags: text("tags"),
+  category: text("category"),
+  status: text("status").default("draft").notNull(),
+  publishedAt: integer("published_at", { mode: "timestamp" }),
+  readTime: integer("read_time"),
+  views: integer("views").default(0).notNull(),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type EditorialArticle = typeof editorialArticles.$inferSelect;
+
+// ─── SHOWCASE / COLLECTION SHOWCASE (Collector profile feature) ───
+export const showcases = sqliteTable("showcases", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  coverImage: text("cover_image"),
+  isPublic: integer("is_public", { mode: "boolean" }).default(true).notNull(),
+  featuredAt: integer("featured_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type Showcase = typeof showcases.$inferSelect;
+
+// ─── SHOWCASE LISTINGS (items in a showcase) ───
+export const showcaseListings = sqliteTable("showcase_listings", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  showcaseId: integer("showcase_id").notNull(),
+  listingId: integer("listing_id").notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+});
+export type ShowcaseListing = typeof showcaseListings.$inferSelect;
+
+// ─── BADGES (achievement badges for users) ───
+export const badges = sqliteTable("badges", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  earnedAt: integer("earned_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type Badge = typeof badges.$inferSelect;
+
+// ─── NOTIFICATIONS (user notification inbox) ───
+export const notifications = sqliteTable("notifications", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body"),
+  link: text("link"),
+  isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type Notification = typeof notifications.$inferSelect;
+
+// ─── MESSAGE THREADS ───
+export const messageThreads = sqliteTable("message_threads", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  listingId: integer("listing_id"),
+  buyerId: integer("buyer_id"),
+  sellerId: integer("seller_id"),
+  subject: text("subject"),
+  lastMessageAt: integer("last_message_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  status: text("status").default("active").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type MessageThread = typeof messageThreads.$inferSelect;
+
+// ─── MESSAGES (individual messages within threads) ───
+export const messageItems = sqliteTable("message_items", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  threadId: integer("thread_id").notNull(),
+  senderId: integer("sender_id").notNull(),
+  body: text("body").notNull(),
+  isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type MessageItem = typeof messageItems.$inferSelect;
+
 // ─── ORDERS ───
 export const orders = sqliteTable("orders", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
@@ -403,6 +576,7 @@ export const orders = sqliteTable("orders", {
   trackingNumber: text("tracking_number"),
   payoutStatus: text("payout_status").default("pending"),
   payoutAmount: text("payout_amount"),
+  stripeTransferId: text("stripe_transfer_id"),
   paidAt: integer("paid_at", { mode: "timestamp" }),
   notes: text("notes"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
@@ -450,7 +624,7 @@ export const agentProjects = sqliteTable("agent_projects", {
   autoMerge: integer("auto_merge", { mode: "boolean" }).default(false).notNull(),
   handsOff: text("hands_off").default("[]").notNull(),
   providerId: text("provider_id").default("openai").notNull(),
-  model: text("model").default("gpt-4o").notNull(),
+  model: text("model").default("deepseek/deepseek-v4-flash-0731").notNull(),
   active: integer("active", { mode: "boolean" }).default(true).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
@@ -691,6 +865,7 @@ export const sellerPayouts = sqliteTable("seller_payouts", {
   saleTransactionId: integer("sale_transaction_id").notNull(),
   amount: text("amount").notNull(),
   stripePayoutId: text("stripe_payout_id"),
+  stripeTransferId: text("stripe_transfer_id"),
   status: text("status").default("pending").notNull(),
   method: text("method").default("stripe_transfer"),
   paidAt: integer("paid_at", { mode: "timestamp" }),
@@ -1147,3 +1322,92 @@ export const siteConfig = sqliteTable("site_config", {
 });
 export type SiteConfig = typeof siteConfig.$inferSelect;
 export type InsertSiteConfig = typeof siteConfig.$inferInsert;
+
+// ─── PASSWORD RESET TOKENS ───
+export const passwordResetTokens = sqliteTable("password_reset_tokens", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at").notNull(),
+  used: integer("used").default(false).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
+// ─── EMAIL VERIFICATION TOKENS ───
+export const emailVerificationTokens = sqliteTable("email_verification_tokens", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: integer("expires_at").notNull(),
+  used: integer("used").default(false).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
+
+// ─── SESSIONS ───
+export const sessions = sqliteTable("sessions", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  deviceInfo: text("device_info"),
+  ipAddress: text("ip_address"),
+  isCurrent: integer("is_current").default(true).notNull(),
+  revoked: integer("revoked").default(false).notNull(),
+  expiresAt: integer("expires_at").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+export type Session = typeof sessions.$inferSelect;
+
+// ─── WEBHOOK EVENTS ───
+export const webhookEvents = sqliteTable("webhook_events", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  eventType: text("event_type").notNull(),
+  payload: text("payload").notNull(),
+  status: text("status").default("pending").notNull(),
+  retries: integer("retries").default(0).notNull(),
+  processedAt: integer("processed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+export type WebhookEvent = typeof webhookEvents.$inferSelect;
+
+// ─── REFERRAL LINKS ───
+export const referralLinks = sqliteTable("referral_links", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  code: text("code").notNull().unique(),
+  clicks: integer("clicks").default(0).notNull(),
+  conversions: integer("conversions").default(0).notNull(),
+  revenue: real("revenue").default(0).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+export type ReferralLink = typeof referralLinks.$inferSelect;
+
+// ─── PRICE COMPARISONS ───
+export const priceComparisons = sqliteTable("price_comparisons", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  listingId: integer("listing_id").notNull(),
+  avgPrice: real("avg_price").notNull(),
+  minPrice: real("min_price").notNull(),
+  maxPrice: real("max_price").notNull(),
+  medianPrice: real("median_price").notNull(),
+  comparisonAt: integer("comparison_at").notNull(),
+});
+export type PriceComparison = typeof priceComparisons.$inferSelect;
+
+// ─── DISPUTES ───
+export const disputes = sqliteTable("disputes", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  orderId: integer("order_id").notNull(),
+  raisedBy: integer("raised_by").notNull(),
+  reason: text("reason").notNull(),
+  evidence: text("evidence"),
+  status: text("status").default("open").notNull(),
+  resolution: text("resolution"),
+  notes: text("notes"),
+  resolvedAt: integer("resolved_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+export type Dispute = typeof disputes.$inferSelect;
+
+// ─── ADD COLUMNS TO USERS ───

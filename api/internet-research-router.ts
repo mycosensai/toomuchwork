@@ -27,11 +27,13 @@ import { openaiChat, AGENT_MODEL } from "./lib/openai";
 import { checkHallucinations, censorOutreach } from "./lib/hallucination-guard";
 import { env } from "./lib/env";
 import { genId } from "./lib/id";
+import { searchLiveFeedsForBuyers } from "./lib/research-feeds";
 
 // ─── APPROVED PLATFORMS (safelist) ───
 const APPROVED_PLATFORMS = [
   "reddit",
   "x",
+  "news", // Google News RSS (collectibles-market articles; live feed 2026-09-07)
   "watchuseek",
   "timezone",
   "rolexforums",
@@ -42,7 +44,7 @@ const APPROVED_PLATFORMS = [
   "gearspace",
   "tampabay",
   "pistonheads",
-  "bringatrailer",
+  "bringatrailer", // live RSS feed (auction comparables) 2026-09-07
   "hodinkee",
   "revolution",
   "sjx",
@@ -341,7 +343,10 @@ export const internetResearchRouter = createRouter({
       // Perform internet searches (BOXED IN — only buyer-related)
       const redditFindings = await searchRedditForBuyers(input.itemName);
       const xFindings = await searchXForBuyers(input.itemName, input.itemName, env.xClientSecret || undefined);
-      const allRaw = [...redditFindings, ...xFindings];
+      // Live RSS/blog feeds: Bring a Trailer auction comparables + Google News
+      // collectibles-market discussion (research-analysis integration 2026-09-07)
+      const feedFindings = await searchLiveFeedsForBuyers(input.itemName, input.category);
+      const allRaw = [...redditFindings, ...xFindings, ...feedFindings];
 
       // AI analysis layer (only scores real data)
       const { analyzed, summary, buyingSignals } = await analyzeFindings(input.itemName, allRaw);
@@ -548,6 +553,8 @@ export const internetResearchRouter = createRouter({
       byPlatform: {
         reddit: findings.filter((f) => f.platform === "reddit").length,
         x: findings.filter((f) => f.platform === "x").length,
+        news: findings.filter((f) => f.platform === "news").length,
+        bringatrailer: findings.filter((f) => f.platform === "bringatrailer").length,
       },
       avgRelevance: findings.length > 0
         ? Math.round(findings.reduce((s, f) => s + (f.relevanceScore || 0), 0) / findings.length)

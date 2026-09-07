@@ -37,6 +37,3 @@ function requireRole(role: string) {
     return next({ ctx: { ...ctx, user: ctx.user } });
   });
 }
-
-export const authedQuery = t.procedure.use(requireAuth);
-export const adminQuery = authedQuery.use(requireRole("admin"));

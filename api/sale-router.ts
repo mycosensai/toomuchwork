@@ -17,6 +17,8 @@ import { listings, saleTransactions, sellerPayouts, commissionTiers } from "@db/
 import { eq, desc } from "drizzle-orm";
 import { env } from "./lib/env";
 import { logAudit, getClientIP } from "./security";
+import { autoTransferForOrder } from "./lib/connect-payouts";
+import { users } from "@db/schema";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
@@ -361,6 +363,24 @@ export const saleRouter = createRouter({
         status: "pending",
       });
       const payoutId = Number(payoutInsert.meta.last_row_id);
+
+      // AUTO-TRANSFER: when the sale completes (item shipped/delivered), move
+      // the seller's payout from the platform balance to their Connect account
+      // automatically. Best-effort — if the seller isn't onboarded, the payout
+      // stays 'pending' and they can claim it via payout.initiateTransfer.
+      const [seller] = await db.select().from(users).where(eq(users.id, sale.sellerId)).limit(1);
+      const autoTransfer = await autoTransferForOrder({
+        sellerStripeAccountId: seller?.stripeAccountId,
+        amountCents: Math.round(Number(sale.sellerPayout) * 100),
+        description: `The Vault DFW payout — sale #${sale.id} (listing ${sale.listingId})`,
+        metadata: { saleId: String(sale.id), listingId: String(sale.listingId) },
+      });
+      if (autoTransfer.transferred && autoTransfer.transferId) {
+        await db
+          .update(sellerPayouts)
+          .set({ status: "paid", stripeTransferId: autoTransfer.transferId, paidAt: new Date() })
+          .where(eq(sellerPayouts.id, payoutId));
+      }
 
       // Update sale as completed
       await db

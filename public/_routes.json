@@ -7,7 +7,9 @@
     "/favicon.svg",
     "/robots.txt",
     "/sitemap.xml",
-    "/manifest.json",
+    "/site.webmanifest",
+    "/llms.txt",
+    "/og.png",
     "/_headers",
     "/_redirects",
     "/_routes.json"

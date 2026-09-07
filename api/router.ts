@@ -38,7 +38,33 @@ import { forumRouter } from "./forum-router";
 import { messagesRouter } from "./messages-router";
 import { siteConfigRouter } from "./site-config-router";
 import { conciergeRouter } from "./concierge-router";
+import { passwordResetRouter } from "./password-reset-router";
+import { emailVerifyRouter } from "./email-verify-router";
+import { webhookRouter } from "./webhook-router";
+import { analyticsRouter } from "./analytics-router";
+import { referralRouter } from "./referral-router";
+import { moderationRouter } from "./moderation-router";
+import { priceCompareRouter } from "./price-compare-router";
+import { sessionRouter } from "./session-router";
+import { webPushRouter } from "./web-push-router";
+import { disputeRouter } from "./dispute-router";
+import { premiumRouter } from "./premium-router";
+import { payoutRouter } from "./payout-router";
 import { assetsRouter } from "./assets-router";
+import { offerRouter } from "./offer-router";
+import { auctionRouter } from "./auction-router";
+import { subscriptionRouter } from "./subscription-router";
+import { membershipRouter } from "./membership-router";
+import { wishlistRouter } from "./wishlist-router";
+import { reviewsRouter } from "./reviews-enhancement";
+import { savedSearchRouter } from "./savedSearch-router";
+import { priceAlertRouter } from "./priceAlert-router";
+import { curatorRouter } from "./curator-router";
+import { aiAssistantRouter } from "./ai-assistant-router";
+import { notificationsRouter } from "./notifications-router";
+import { editorialRouter } from "./editorial-router";
+import { showcaseRouter } from "./showcase-router";
+import { badgesRouter } from "./badges-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -83,7 +109,32 @@ export const appRouter = createRouter({
   messages: messagesRouter,
   siteConfig: siteConfigRouter,
   concierge: conciergeRouter,
+  passwordReset: passwordResetRouter,
+  emailVerify: emailVerifyRouter,
+  webhook: webhookRouter,
+  analytics: analyticsRouter,
+  referral: referralRouter,
+  moderation: moderationRouter,
+  priceCompare: priceCompareRouter,
+  session: sessionRouter,
+  webPush: webPushRouter,
+  dispute: disputeRouter,
+  premium: premiumRouter,
+  payout: payoutRouter,
   assets: assetsRouter,
+  // 20-feature integration
+  offers: offerRouter,
+  auctions: auctionRouter,
+  subscriptions: subscriptionRouter,
+  membership: membershipRouter,
+  savedSearches: savedSearchRouter,
+  priceAlerts: priceAlertRouter,
+  curator: curatorRouter,
+  aiAssistant: aiAssistantRouter,
+  notifications: notificationsRouter,
+  editorial: editorialRouter,
+  showcase: showcaseRouter,
+  badges: badgesRouter,
 });
 
 export type AppRouter = typeof appRouter;

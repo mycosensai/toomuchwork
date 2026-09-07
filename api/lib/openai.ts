@@ -1,11 +1,11 @@
 /**
  * LLM Provider — Nous Research inference (Hermes API key), OpenAI-compatible.
  *
- * Every Vault agent routes through here. Default model for ALL agents is
- * deepseek/deepseek-v4-flash-0731 (the user's Hermes default via Nous).
- * ProVerify uses a distinct, stronger model (google/gemini-3.7-flash).
- * Vision/appraisal uses a multimodal model (stepfun/step-3.7-flash:free)
- * because DeepSeek v4 flash is text-only.
+ * Every Vault agent routes through here. Operator policy (2026-09-07):
+ *   - ALL agents use upstage/solar-pro4:free (via Nous portal).
+ *   - EXCEPTIONS: Appraisal and ProVerify use Google Gemini flash
+ *     (google/gemini-3.7-flash) — multimodal, so image verification works.
+ *   - The fallback pool keeps a resilient trail behind any preferred model.
  *
  * Falls back across the pool so a single retired/rate-limited model never
  * breaks a feature.
@@ -15,27 +15,32 @@ import { env } from "./env";
 
 export const NOUS_BASE_URL = "https://inference-api.nousresearch.com/v1";
 
-// General agents — default via Nous Research portal (Hermes `model.default`)
-export const AGENT_MODEL = "deepseek/deepseek-v4-flash-0731";
+// upstage/solar-pro4:free — every general agent (operator policy 2026-09-07)
+export const DEEPSEEK_FLASH_MODEL = "upstage/solar-pro4:free";
 
-// DeepSeek v4 family (Nous-proxied) — exception agents per operator request.
-// Pricing intelligence uses the latest pro version.
-export const DEEPSEEK_FLASH_MODEL = "deepseek/deepseek-v4-flash-0731";
+// DeepSeek v4 pro — Pricing Intelligence (operator: keep pro where pro was
+// already implemented; ALL calls still via the Nous portal API).
 export const DEEPSEEK_PRO_MODEL = "deepseek/deepseek-v4-pro-0813";
 
-// ProVerify Engine — vision-capable (reverted per operator: keep Gemini for image verification)
-export const PROVERIFY_MODEL = "google/gemini-3.7-flash";
+// Gemini flash (Nous-proxied, multimodal) — Appraisal + ProVerify exceptions
+export const GEMINI_FLASH_MODEL = "google/gemini-3.7-flash";
 
-// Appraisal text model — DeepSeek v4
-export const APPRAISAL_MODEL = DEEPSEEK_FLASH_MODEL;
+// General agents — default via Nous Research portal (Hermes `model.default`)
+export const AGENT_MODEL = DEEPSEEK_FLASH_MODEL;
 
-// Logistics agent — DeepSeek v4
+// Appraisal — Gemini flash (text AND image appraisals; multimodal)
+export const APPRAISAL_MODEL = GEMINI_FLASH_MODEL;
+
+// ProVerify Engine — Gemini flash (vision-capable image verification)
+export const PROVERIFY_MODEL = GEMINI_FLASH_MODEL;
+
+// Logistics agent — DeepSeek v4 flash
 export const LOGISTICS_MODEL = DEEPSEEK_FLASH_MODEL;
 
-// Pricing Intelligence — DeepSeek v4 latest pro
+// Pricing Intelligence — DeepSeek v4 pro (was pro before 2026-09-07; restored)
 export const PRICING_MODEL = DEEPSEEK_PRO_MODEL;
 
-// Multimodal model for image appraisals (DeepSeek v4 flash is text-only).
+// Generic multimodal fallback (no current callers since appraisal moved to Gemini).
 export const VISION_MODEL = "stepfun/step-3.7-flash:free";
 
 // Resilient fallback pool (DeepSeek v4 first; the rest are verified Nous slugs).
@@ -88,8 +93,10 @@ export interface LLMResponse {
 }
 
 function getApiConfig() {
-  const key = env.nousApiKey || env.openaiApiKey;
-  const baseUrl = env.nousBaseUrl || env.openaiBaseUrl || NOUS_BASE_URL;
+  // ALL agent LLM calls go through the Nous portal API (inference-api.nousresearch.com)
+  // with the Nous access token. No OpenRouter/OpenAI fallback — Nous is canonical.
+  const key = env.nousApiKey;
+  const baseUrl = env.nousBaseUrl; // getter defaults to inference-api.nousresearch.com/v1
 
   if (!key || key.length < 10) {
     throw new Error("NOUS_API_KEY not configured. Set it in Cloudflare Pages secrets.");
@@ -110,8 +117,12 @@ function withReasoningEffort(body: Record<string, unknown>, model: string): Reco
 function getModelTryOrder(preferred: string): string[] {
   const pool = FREE_MODELS;
   const idx = pool.indexOf(preferred);
-  if (idx <= 0) return [...pool];
-  return [preferred, ...pool.slice(0, idx), ...pool.slice(idx + 1)];
+  // Preferred model ALWAYS leads, even when it is not in the pool (e.g.
+  // Gemini for appraisal/proverify). Pool models trail as fallback so a
+  // retired/rate-limited preferred model never breaks a feature.
+  if (idx === 0) return [...pool];
+  if (idx > 0) return [preferred, ...pool.slice(0, idx), ...pool.slice(idx + 1)];
+  return [preferred, ...pool];
 }
 
 async function chatCompletionWithFallback(
@@ -291,5 +302,6 @@ export function getActiveModels() {
     text: AGENT_MODEL,
     vision: VISION_MODEL,
     provverify: PROVERIFY_MODEL,
+    appraisal: APPRAISAL_MODEL,
   };
 }

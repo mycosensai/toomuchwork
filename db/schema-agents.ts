@@ -22,7 +22,7 @@ export const agentProjects = sqliteTable("agent_projects", {
   autoMerge: integer("auto_merge", { mode: "boolean" }).default(false).notNull(),
   handsOff: text("hands_off").default("[]").notNull(), // JSON array of protected paths
   providerId: text("provider_id").default("openai").notNull(),
-  model: text("model").default("gpt-4o").notNull(),
+  model: text("model").default("deepseek/deepseek-v4-flash-0731").notNull(),
   active: integer("active", { mode: "boolean" }).default(true).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),

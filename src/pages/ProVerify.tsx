@@ -6,6 +6,7 @@ import {
   Award, Loader2, ImageIcon, X, ArrowLeft, ExternalLink,
   Star, Clock, Shield, CheckCircle2, AlertTriangle, ChevronRight, Users, Target, Package, AlertCircle
 } from 'lucide-react'
+import JsonLd, { serviceSchema, faqSchema } from '@/components/JsonLd'
 
 export default function ProVerify() {
   const [step, setStep] = useState<'form' | 'submitted'>('form')
@@ -88,6 +89,19 @@ export default function ProVerify() {
 
   return (
     <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      {/* Structured data for search + AI answer engines */}
+      <JsonLd schema={serviceSchema({
+        name: 'ProVerify Engine Report',
+        description: 'Multi-expert AI verification of luxury collectibles — authenticity, value, and condition scores from three simulated expert reviews with consensus verdict.',
+        price: '49.99',
+        priceRange: '49.99-199.99',
+      })} />
+      <JsonLd schema={faqSchema([
+        { q: 'How does ProVerify work?', a: 'Submit your item with photos and details. Three domain-matched expert reviews grade authenticity, value, and condition on a 0-100 scale, then a consensus report is generated.' },
+        { q: 'How much does ProVerify cost?', a: 'Review fees start at $49.99 (standard, 7-10 days). Express is $99.99 (3-5 days) and Rush is $199.99 (24-48 hours).' },
+        { q: 'What do the expert scores mean?', a: 'Authenticity, value, and condition are scored 0-100 by AI expert reviewers, then combined into an overall consensus and verdict.' },
+        { q: 'Is ProVerify a certified authentication?', a: 'No. ProVerify provides a preliminary multi-expert assessment based on submitted materials. It is not a substitute for in-person authentication by certified specialists.' },
+      ])} />
       <div className="max-w-5xl mx-auto">
         <Link to="/" className="inline-flex items-center gap-2 text-[10px] tracking-[3px] uppercase text-[#C8BC98] hover:text-[#C9A84C] transition-colors mb-6">
           <ArrowLeft className="w-3.5 h-3.5" /> Back

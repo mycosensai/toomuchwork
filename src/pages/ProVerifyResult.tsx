@@ -5,6 +5,7 @@ import {
   ArrowLeft, Loader2, Award, Star, ShieldCheck, AlertTriangle,
   CheckCircle2, XCircle, HelpCircle
 } from 'lucide-react'
+import StripeCheckoutWidget from '@/components/StripeCheckoutWidget'
 
 const verdictColors: Record<string, { color: string; label: string; icon: React.ReactNode }> = {
   genuine: { color: 'text-emerald-400', label: 'Genuine', icon: <CheckCircle2 className="w-6 h-6" /> },
@@ -39,7 +40,7 @@ export default function ProVerifyResult() {
   const { id } = useParams<{ id: string }>()
   const appId = parseInt(id || '0')
 
-  const { data: app, isLoading } = trpc.expert.getApplication.useQuery({ id: appId }, { refetchInterval: 5000 })
+  const { data: app, isLoading, refetch } = trpc.expert.getApplication.useQuery({ id: appId }, { refetchInterval: 5000 })
   const [runningReview, setRunningReview] = useState(false)
 
   const runReview = trpc.expert.runExpertReview.useMutation({ onSuccess: () => setRunningReview(false) })
@@ -66,6 +67,38 @@ export default function ProVerifyResult() {
       <Link to="/proverify" className="text-[#C9A84C] text-xs mt-4 inline-block hover:underline">Submit New Item</Link>
     </div>
   )
+
+  // If the app is LOCKED (completed but unpaid), the ONLY actionable view is
+  // the unlock paywall — show it (centered floating widget) over a minimal stub.
+  const locked = app.locked === true
+  if (locked) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <Link to="/proverify" className="inline-flex items-center gap-2 text-[10px] tracking-[3px] uppercase text-[#C8BC98] hover:text-[#C9A84C] mb-8">
+            <ArrowLeft className="w-3.5 h-3.5" /> ProVerify
+          </Link>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 border border-[#C9A84C]/25 mb-4">
+              <Award className="w-3.5 h-3.5 text-[#C9A84C]" />
+              <span className="text-[8px] tracking-[4px] uppercase text-[#C9A84C]">Expert Verification Report</span>
+            </div>
+            <h1 className="font-cinzel text-2xl sm:text-3xl font-bold text-[#F5EED8] tracking-[4px] mb-2">{app.itemName}</h1>
+            <p className="text-[10px] text-[#8A6E2F] tracking-[3px] uppercase">{app.category} &middot; Case #{app.id} &middot; {app.status?.replace('_', ' ')}</p>
+          </div>
+          {/* Centered floating checkout widget — transparent, mid-screen */}
+          <StripeCheckoutWidget
+            type="proverify"
+            targetId={appId}
+            itemName={app.itemName}
+            amount={app.reviewFee ? `$${Number(app.reviewFee).toFixed(2)}` : undefined}
+            onUnlocked={() => refetch()}
+            trigger="auto"
+          />
+        </div>
+      </div>
+    )
+  }
 
   const verdict = verdictColors[app.consensus?.consensusVerdict || 'uncertain'] || verdictColors.uncertain
   const authScore = Number(app.consensus?.consensusAuthenticity || 0)
