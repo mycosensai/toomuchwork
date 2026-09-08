@@ -1,0 +1,77 @@
+{
+  "name": "achilles",
+  "private": true,
+  "version": "1.0.0",
+  "description": "ACHILLES — APEX-SOL Trading Command Center (Android + Windows)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync android",
+    "cap:open:android": "npx cap open android",
+    "electron:dev": "concurrently \"npm run dev\" \"electron .\"",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@solana/web3.js": "^1.98.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.0.1",
+    "electron": "^32.3.3",
+    "electron-builder": "^25.0.5",
+    "vite": "^5.4.8"
+  },
+  "main": "electron/main.mjs",
+  "build": {
+    "appId": "com.achilles.trader",
+    "productName": "ACHILLES",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "asar": false,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "ACHILLES-${version}.${ext}",
+      "icon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "ACHILLES-${version}-Portable.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ACHILLES"
+    },
+    "npmRebuild": false,
+    "buildDependenciesFromSource": false
+  }
+}
