@@ -1,0 +1,28 @@
+{
+  "tomtomApiKey": "",
+  "home": { "lat": 32.7767, "lon": -96.7970, "label": "Dallas, TX" },
+  "discovery": {
+    "overpassEndpoint": "https://overpass-api.de/api/interpreter",
+    "bboxKm": 8,
+    "includeOsmSurveillance": true,
+    "includeTrafficSignals": true
+  },
+  "godview": {
+    "routeBufferMeters": 120,
+    "headingToleranceDeg": 45,
+    "syntheticTiles": 24,
+    "syntheticSeed": 1337
+  },
+  "auditor": {
+    "cidr": "192.168.1.0/24",
+    "ports": [80, 443, 554, 23, 8000, 8080, 8554],
+    "connectTimeoutMs": 600,
+    "defaultCreds": [
+      { "user": "admin", "pass": "admin" },
+      { "user": "root", "pass": "root" },
+      { "user": "admin", "pass": "12345" },
+      { "user": "admin", "pass": "" }
+    ],
+    "iOwnThisNetwork": false
+  }
+}

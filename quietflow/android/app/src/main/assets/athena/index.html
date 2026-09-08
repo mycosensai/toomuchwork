@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: file: https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:;">
+    <title>ATHENA — Cyberpunk Trading Oracle</title>
+    
+    <!-- Offline-safe: System fonts with web font fallbacks -->
+    <style>
+        /* EMBEDDED FONT FALLBACKS for offline operation */
+        @font-face {
+            font-family: 'Orbitron';
+            src: local('Roboto'), local('Arial'), local('sans-serif');
+            font-weight: 400;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Cinzel';
+            src: local('Georgia'), local('Times New Roman'), local('serif');
+            font-weight: 400;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Rajdhani';
+            src: local('Roboto'), local('Segoe UI'), local('Arial'), local('sans-serif');
+            font-weight: 400;
+            font-display: swap;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --neon-cyan: #00f5ff;
+            --neon-amber: #ffaa00;
+            --neon-pink: #ff0080;
+            --greek-gold: #d4af37;
+            --greek-bronze: #cd7f32;
+            --dark-bg: #0a0a0f;
+            --panel-bg: #12121a;
+            --grid-line: rgba(0, 245, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Rajdhani', 'Roboto', 'Arial', sans-serif;
+            background: var(--dark-bg);
+            color: #e8e8e8;
+            overflow-x: hidden;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Animated background grid - hardware accelerated */
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+            transform: translateZ(0);
+            will-change: transform;
+        }
+
+        .cyber-grid::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, var(--dark-bg) 70%);
+        }
+
+        /* Header with Athena branding */
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 15px 20px;
+            background: linear-gradient(180deg, rgba(18, 18, 26, 0.95) 0%, transparent 100%);
+            border-bottom: 2px solid var(--neon-cyan);
+            box-shadow: 0 4px 30px rgba(0, 245, 255, 0.3);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-container {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid var(--greek-gold);
+            box-shadow: 
+                0 0 15px var(--neon-cyan),
+                inset 0 0 15px rgba(0, 245, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .logo-container::before {
+            content: 'Α';
+            font-family: 'Cinzel', 'Georgia', serif;
+            font-size: 24px;
+            color: var(--greek-gold);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-family: 'Cinzel', 'Georgia', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--greek-gold);
+            text-shadow: 0 0 10px var(--neon-cyan);
+            letter-spacing: 0.1em;
+        }
+
+        .brand-subtitle {
+            font-family: 'Orbitron', 'Roboto', sans-serif;
+            font-size: 0.65rem;
+            color: var(--neon-amber);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .system-status {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 15px;
+            font-family: 'Orbitron', 'Roboto', sans-serif;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 8px var(--neon-cyan);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* Main layout - mobile optimized */
+        .main-container {
+            position: relative;
+            z-index: 5;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Panel styling */
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(0, 245, 255, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--greek-gold), var(--neon-cyan));
+        }
+
+        .panel-title {
+            font-family: 'Cinzel', 'Georgia', serif;
+            font-size: 0.9rem;
+            color: var(--greek-gold);
+            margin-bottom: 12px;
+        }
+
+        /* Organ list */
+        .organ-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .organ-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--neon-cyan);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .organ-icon {
+            font-size: 1.4rem;
+        }
+
+        .organ-info {
+            flex: 1;
+        }
+
+        .organ-name {
+            font-family: 'Orbitron', 'Roboto', sans-serif;
+            font-size: 0.7rem;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+        }
+
+        .organ-status {
+            font-size: 0.65rem;
+            color: var(--neon-amber);
+        }
+
+        .organ-vital {
+            font-family: 'Orbitron', 'Roboto', sans-serif;
+            font-size: 0.75rem;
+            color: var(--greek-gold);
+        }
+
+        /* Oracle panel */
+        .oracle-display {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Rajdhani', 'Roboto', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            overflow-y: auto;
+            max-height: 250px;
+            border: 1px solid rgba(0, 245, 255, 0.2);
+        }
+
+        .oracle-line {
+            margin-bottom: 8px;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .oracle-line::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--neon-cyan);
+        }
+
+        .oracle-input-area {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .oracle-input {
+            flex: 1;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Rajdhani', 'Roboto', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        .oracle-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+        }
+
+        .oracle-button {
+            padding: 10px 15px;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--greek-gold));
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-family: 'Orbitron', 'Roboto', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        /* Vitals grid */
+        .vital-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .vital-card {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .vital-label {
+            font-family: 'Orbitron', 'Roboto', sans-serif;
+            font-size: 0.6rem;
+            color: var(--neon-amber);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .vital-value {
+            font-family: 'Cinzel', 'Georgia', serif;
+            font-size: 1.4rem;
+            color: var(--greek-gold);
+        }
+
+        .vital-sub {
+            font-size: 0.65rem;
+            color: var(--neon-cyan);
+            margin-top: 3px;
+        }
+
+        /* Digest list */
+        .digest-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .digest-item {
+            padding: 10px;
+            background: rgba(255, 0, 128, 0.1);
+            border-left: 3px solid var(--neon-pink);
+            border-radius: 0 8px 8px 0;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .digest-id {
+            font-family: 'Orbitron', 'Roboto', sans-serif;
+            font-size: 0.6rem;
+            color: var(--neon-pink);
+            margin-bottom: 3px;
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 10;
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid rgba(0, 245, 255, 0.2);
+            font-family: 'Orbitron', 'Roboto', sans-serif;
+            font-size: 0.65rem;
+            color: var(--neon-cyan);
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .brand-name {
+                font-size: 1.4rem;
+            }
+            .brand-subtitle {
+                font-size: 0.55rem;
+            }
+            .logo-container {
+                width: 40px;
+                height: 40px;
+            }
+            .logo-container::before {
+                font-size: 18px;
+            }
+            .system-status {
+                display: none;
+            }
+            .oracle-display {
+                max-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+                <div class="logo-container"></div>
+                <div class="brand-text">
+                    <div class="brand-name">ΑΘΗΝΑ</div>
+                    <div class="brand-subtitle">CYBERPUNK ORACLE</div>
+                </div>
+            </div>
+            <div class="system-status">
+                <div class="status-pill">
+                    <span class="status-dot"></span>
+                    <span>SYSTEM ONLINE</span>
+                </div>
+                <div class="status-pill">
+                    <span style="color: var(--greek-gold)">🜔</span>
+                    <span>LUNGS BREATHING</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- Organs Panel -->
+        <div class="panel">
+            <h3 class="panel-title">◆ Organ Vitals</h3>
+            <div class="organ-list">
+                <div class="organ-item">
+                    <div class="organ-icon">🧠</div>
+                    <div class="organ-info">
+                        <div class="organ-name">BRAIN</div>
+                        <div class="organ-status">20 digests loaded</div>
+                    </div>
+                    <div class="organ-vital">ONLINE</div>
+                </div>
+                <div class="organ-item">
+                    <div class="organ-icon">🫀</div>
+                    <div class="organ-info">
+                        <div class="organ-name">HEART</div>
+                        <div class="organ-status">Sentiment pump active</div>
+                    </div>
+                    <div class="organ-vital">PUMPING</div>
+                </div>
+                <div class="organ-item">
+                    <div class="organ-icon">🫘</div>
+                    <div class="organ-info">
+                        <div class="organ-name">KIDNEYS</div>
+                        <div class="organ-status">Risk filters armed</div>
+                    </div>
+                    <div class="organ-vital">FILTERING</div>
+                </div>
+                <div class="organ-item">
+                    <div class="organ-icon">🧪</div>
+                    <div class="organ-info">
+                        <div class="organ-name">LIVER</div>
+                        <div class="organ-status">Detox patterns: 3</div>
+                    </div>
+                    <div class="organ-vital">METABOLIZING</div>
+                </div>
+                <div class="organ-item">
+                    <div class="organ-icon">🫁</div>
+                    <div class="organ-info">
+                        <div class="organ-name">LUNGS</div>
+                        <div class="organ-status">PID 10760 connected</div>
+                    </div>
+                    <div class="organ-vital" style="color: var(--neon-cyan)">BREATHING</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Oracle Interface -->
+        <div class="panel">
+            <h3 class="panel-title">◆ Oracle Interface</h3>
+            <div class="oracle-display" id="oracleOutput">
+                <div class="oracle-line">ATHENA v1.0 initialized...</div>
+                <div class="oracle-line">All organs operational.</div>
+                <div class="oracle-line">Lungs breathing: PID 10760</div>
+                <div class="oracle-line">Knowledge base: 20 digests loaded</div>
+                <div class="oracle-line">Hard SL cap: -3% embedded</div>
+                <div class="oracle-line">Type query or 'status' for vitals</div>
+            </div>
+            <div class="oracle-input-area">
+                <input type="text" class="oracle-input" id="oracleInput" placeholder="Consult oracle...">
+                <button class="oracle-button" onclick="consultOracle()">ASK</button>
+            </div>
+        </div>
+
+        <!-- Trading Vitals -->
+        <div class="panel">
+            <h3 class="panel-title">◆ Trading Vitals</h3>
+            <div class="vital-grid">
+                <div class="vital-card">
+                    <div class="vital-label">Bankroll</div>
+                    <div class="vital-value">0.007</div>
+                    <div class="vital-sub">SOL</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-label">Positions</div>
+                    <div class="vital-value">0</div>
+                    <div class="vital-sub">OPEN</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-label">Trades</div>
+                    <div class="vital-value">1</div>
+                    <div class="vital-sub">LIVE</div>
+                </div>
+                <div class="vital-card">
+                    <div class="vital-label">Win Rate</div>
+                    <div class="vital-value">0%</div>
+                    <div class="vital-sub">JACKIE: -1.08%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Digests -->
+        <div class="panel">
+            <h3 class="panel-title">◆ Knowledge Digests</h3>
+            <div class="digest-list">
+                <div class="digest-item">
+                    <div class="digest-id">LLM-001</div>
+                    <div>"3% hurts but saves. 50% kills. Cap > hope."</div>
+                </div>
+                <div class="digest-item">
+                    <div class="digest-id">RISK-001</div>
+                    <div>"<$300 liq = toxic. $300-1K = risky. >$1K = safe."</div>
+                </div>
+                <div class="digest-item">
+                    <div class="digest-id">BOT-001</div>
+                    <div>"Jackie: -1.08% MAX_HOLD 17s. Symbol blocked."</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div>ΜΟΛΩΝ ΛΑΒΕ • 100% OFFLINE • ZERO EXTERNAL APIS</div>
+    </footer>
+
+    <script>
+        // Offline-safe knowledge base
+        const knowledge = {
+            'fee drag': 'Fee drag: 0.007 SOL bank = ~12% fee drag per round-trip. Need >15% pump to profit.',
+            'stop loss': 'HARD_SL_CAP = -3% embedded. Never override. 3% hurts but saves.',
+            'momentum': 'Vol ×2 + delta green = ride. Vol ÷2 + flat = hide.',
+            'whale': '3 whales >$2K = bypass. 1 whale = consider. 0 = ignore.',
+            'jackie': 'First live trade: -1.08% MAX_HOLD 17s. Root: size too small, no momentum.',
+            'status': 'BRAIN 🧠 | HEART 🫀 | KIDNEYS 🫘 | LIVER 🧪 | LUNGS 🫁 PID 10760',
+            'sl': 'Hard cap -3%. Embedded in exit-strategy.js.',
+            'tp': 'Take profit: 12% default.',
+            'bankroll': '0.0071 SOL. Below minCycle 0.0244. Scanning.',
+            'liquidity': 'KIDNEYS: <$300 = toxic. $300-1K = risky. >$1K = safe.',
+            'duplicate': 'One mint. One symbol. One trade. Forever.'
+        };
+
+        function consultOracle() {
+            const input = document.getElementById('oracleInput');
+            const output = document.getElementById('oracleOutput');
+            const query = input.value.trim().toLowerCase();
+            
+            if (!query) return;
+            
+            // Add user query
+            const userLine = document.createElement('div');
+            userLine.className = 'oracle-line';
+            userLine.style.color = '#ffaa00';
+            userLine.innerHTML = `<span style="color:#ffaa00">YOU:</span> ${input.value}`;
+            output.appendChild(userLine);
+            
+            // Find response
+            let response = 'Consulting deeper wisdom...';
+            for (const [key, value] of Object.entries(knowledge)) {
+                if (query.includes(key)) {
+                    response = value;
+                    break;
+                }
+            }
+            
+            // Add response
+            setTimeout(() => {
+                const responseLine = document.createElement('div');
+                responseLine.className = 'oracle-line';
+                responseLine.style.color = '#00f5ff';
+                responseLine.innerHTML = `<span style="color:#00f5ff">ATHENA:</span> ${response}`;
+                output.appendChild(responseLine);
+                output.scrollTop = output.scrollHeight;
+            }, 200);
+            
+            input.value = '';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Enter key support
+        document.getElementById('oracleInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') consultOracle();
+        });
+
+        // Prevent zoom on double-tap
+        document.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>

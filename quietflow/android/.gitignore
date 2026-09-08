@@ -1,0 +1,25 @@
+# Build outputs
+build/
+build-tmp/
+build-tmp2/
+*.apk
+*.apks
+*.aab
+
+# Signing
+*.jks
+*.keystore
+keystore.properties
+
+# Gradle
+.gradle/
+**/build/
+**/captures/
+
+# Local configuration
+local.properties
+
+# Log files
+*.log
+
+# Generated files

@@ -1,0 +1,73 @@
+7/25/2026 8:50:09 [VBS] QuietFlow starting...
+7/25/2026 8:50:10 [VBS] Killed stale process on port 3456 (PID: 22312)
+7/25/2026 8:50:11 [VBS] Killed stale process on port 3456 (PID: 22312)
+7/25/2026 8:50:11 [VBS] Production build found. Starting server...
+⨯ Failed to start server
+Error: listen EADDRINUSE: address already in use :::3456
+    at <unknown> (Error: listen EADDRINUSE: address already in use :::3456)
+    at new Promise (<anonymous>) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3456
+}
+7/25/2026 8:50:13 [VBS] Server ready on port 3456
+7/25/2026 8:50:13 [VBS] Browser window opened
+7/26/2026 12:12:54 [VBS] QuietFlow starting...
+7/26/2026 12:12:55 [VBS] Production build found. Starting server...
+▲ Next.js 16.2.12
+- Local:         http://localhost:3456
+- Network:       http://192.168.1.5:3456
+✓ Ready in 1317ms
+7/26/2026 12:53:32 [VBS] QuietFlow starting...
+7/26/2026 12:53:33 [VBS] Production build found. Starting server...
+▲ Next.js 16.2.12
+- Local:         http://localhost:3456
+- Network:       http://192.168.1.5:3456
+✓ Ready in 514ms
+8/1/2026 1:35:05 [VBS] QuietFlow starting...
+8/1/2026 1:35:07 [VBS] Killed stale process on port 3456 (PID: 9008)
+8/1/2026 1:35:07 [VBS] Killed stale process on port 3456 (PID: 9008)
+8/1/2026 1:35:07 [VBS] Production build found. Starting server...
+⨯ Failed to start server
+Error: listen EADDRINUSE: address already in use :::3456
+    at <unknown> (Error: listen EADDRINUSE: address already in use :::3456)
+    at new Promise (<anonymous>) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 3456
+}
+8/1/2026 1:35:14 [VBS] Server ready on port 3456
+8/1/2026 1:35:14 [VBS] Browser window opened
+8/7/2026 5:26:01 [VBS] QuietFlow starting...
+8/7/2026 5:26:02 [VBS] Production build found. Starting server...
+▲ Next.js 16.2.12
+- Local:         http://localhost:3456
+- Network:       http://192.168.1.5:3456
+✓ Ready in 19.6s
+Error: "next start" does not work with "output: export" configuration. Use "npx serve@latest out" instead.
+    at ignore-listed frames
+8/22/2026 9:27:31 [VBS] QuietFlow starting...
+8/22/2026 9:27:31 [VBS] No production build. Starting dev server...
+Already up to date
+Done in 1.2s using pnpm v11.17.0
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 11.17.0 → 11.22.0.   │
+   │   Changelog: https://pnpm.io/v/11.22.0   │
+   │     To update, run: pnpm self-update     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+Already up to date
+Done in 1.1s using pnpm v11.17.0
+▲ Next.js 16.2.12 (Turbopack)
+- Local:         http://localhost:3456
+- Network:       http://192.168.1.5:3456
+✓ Ready in 12.7s
+○ Compiling middleware ...
+

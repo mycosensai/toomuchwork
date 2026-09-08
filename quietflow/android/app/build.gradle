@@ -1,0 +1,95 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'com.quietflow.app'
+    compileSdkVersion 36
+    
+    defaultConfig {
+        applicationId "com.quietflow.app"
+        minSdkVersion 26
+        targetSdkVersion 36
+        versionCode 1000000
+        versionName "1.0.0"
+    }
+    
+    // Load keystore properties
+    def keystoreProperties = new Properties()
+    def keystorePropertiesFile = file('keystore.properties')
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    }
+    
+    signingConfigs {
+        release {
+            storeFile file('../quietflow-release.jks')
+            storePassword keystoreProperties['storePassword']
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+        }
+    }
+    
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+        }
+    }
+
+    // App Bundle configuration for Play Store
+    bundle {
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
+        language {
+            enableSplit = true
+        }
+    }
+    
+    // Product flavors for separate apps
+    flavorDimensions "app"
+    productFlavors {
+        quietflow {
+            dimension "app"
+            applicationId "com.quietflow.app"
+            resValue "string", "app_name", "QuietFlow"
+            buildConfigField "String", "START_URL", '"file:///android_asset/public/index.html"'
+        }
+        athena {
+            dimension "app"
+            applicationId "com.athena.trader"
+            resValue "string", "app_name", "ATHENA Trader"
+            buildConfigField "String", "START_URL", '"file:///android_asset/athena/index.html"'
+        }
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+repositories {
+    flatDir {
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation project(':capacitor-android')
+    implementation project(':capacitor-cordova-android-plugins')
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.core:core:1.12.0'
+}

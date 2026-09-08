@@ -1,0 +1,12 @@
+C:\Users\vdako\quietflow\src-tauri\target\debug\deps\wry-ac1d41e11dfcde82.d: C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\lib.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\custom_protocol_workaround.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\error.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\proxy.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\web_context.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\mod.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\drag_drop.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\util.rs
+
+C:\Users\vdako\quietflow\src-tauri\target\debug\deps\libwry-ac1d41e11dfcde82.rmeta: C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\lib.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\custom_protocol_workaround.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\error.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\proxy.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\web_context.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\mod.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\drag_drop.rs C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\util.rs
+
+C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\lib.rs:
+C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\custom_protocol_workaround.rs:
+C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\error.rs:
+C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\proxy.rs:
+C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\web_context.rs:
+C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\mod.rs:
+C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\drag_drop.rs:
+C:\Users\vdako\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wry-0.55.1\src\webview2\util.rs:

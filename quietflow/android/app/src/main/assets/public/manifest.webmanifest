@@ -1,0 +1,19 @@
+{
+  "name": "QuietFlow",
+  "short_name": "QuietFlow",
+  "description": "Find the calmest time and place to go out — live density, cameras, and quiet windows.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0910",
+  "theme_color": "#ffd700",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
