@@ -1,0 +1,1696 @@
+{
+  "address": "3rbrhfWw3ZyiYrPgMG8VbLF8cEptUjAbZJaFBtMKbDVc",
+  "metadata": {
+    "name": "solana_buyback",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Token-2022 buyback + rewards protocol"
+  },
+  "instructions": [
+    {
+      "name": "burn_and_earn",
+      "discriminator": [
+        29,
+        109,
+        60,
+        251,
+        89,
+        43,
+        111,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_ata",
+          "writable": true
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true
+        },
+        {
+          "name": "mint",
+          "writable": true,
+          "isMut": true
+        },
+        {
+          "name": "rewards_pda"
+        },
+        {
+          "name": "position",
+          "docs": [
+            "Optional open stake position \u2192 earn weight (NO_POSITION = 1x)."
+          ],
+          "optional": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "burn_amount",
+          "type": "u64"
+        },
+        {
+          "name": "position_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "claim_airdrop",
+      "discriminator": [
+        137,
+        50,
+        122,
+        111,
+        89,
+        254,
+        8,
+        20
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "claim",
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "user_ata",
+          "writable": true
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "rewards_pda"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "index",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "claim_genesis",
+      "discriminator": [
+        40,
+        81,
+        178,
+        99,
+        190,
+        154,
+        208,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "holder",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_ata",
+          "writable": true
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "rewards_pda"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "claim_performance_bonus",
+      "discriminator": [
+        36,
+        222,
+        201,
+        16,
+        46,
+        177,
+        60,
+        10
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "claim",
+          "writable": true,
+          "signer": false
+        },
+        {
+          "name": "user_ata",
+          "writable": true
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "rewards_pda"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "index",
+          "type": "u64"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "proof",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "diversify",
+      "discriminator": [
+        139,
+        57,
+        93,
+        208,
+        105,
+        2,
+        108,
+        31
+      ],
+      "accounts": [
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "keeper",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "fee_holding",
+          "docs": [
+            "ATA(owner = fee_holding PDA) \u2014 swap input (fee tokens)."
+          ],
+          "writable": true,
+          "relations": [
+            "state"
+          ]
+        },
+        {
+          "name": "fee_holding_pda",
+          "docs": [
+            "PDA \u2014 signs the CPI via seeds."
+          ]
+        },
+        {
+          "name": "treasury_sol",
+          "docs": [
+            "PDA system account \u2014 swap output (SOL lands here via Jupiter unwrap)."
+          ],
+          "writable": true,
+          "relations": [
+            "state"
+          ]
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "state"
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "swap_data",
+          "type": "bytes"
+        },
+        {
+          "name": "expected_out",
+          "type": "u64"
+        },
+        {
+          "name": "slippage_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "execute_buyback",
+      "discriminator": [
+        47,
+        32,
+        19,
+        100,
+        184,
+        96,
+        144,
+        49
+      ],
+      "accounts": [
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "keeper",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "treasury_sol",
+          "docs": [
+            "PDA system account \u2014 swap input (SOL). Signs the CPI via seeds."
+          ],
+          "writable": true,
+          "relations": [
+            "state"
+          ]
+        },
+        {
+          "name": "rewards_vault",
+          "docs": [
+            "ATA(owner = rewards PDA) \u2014 swap destination. Must be in remaining_accounts."
+          ],
+          "writable": true,
+          "relations": [
+            "state"
+          ]
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "state"
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "swap_data",
+          "type": "bytes"
+        },
+        {
+          "name": "expected_out",
+          "type": "u64"
+        },
+        {
+          "name": "liquidity_usd",
+          "type": "u64"
+        },
+        {
+          "name": "price_usd",
+          "type": "u64"
+        },
+        {
+          "name": "slippage_bps",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "gov_update",
+      "discriminator": [
+        215,
+        206,
+        138,
+        206,
+        194,
+        63,
+        12,
+        34
+      ],
+      "accounts": [
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "state"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "field",
+          "type": {
+            "defined": {
+              "name": "GovField"
+            }
+          }
+        },
+        {
+          "name": "value",
+          "type": "u64"
+        },
+        {
+          "name": "pubkey",
+          "type": {
+            "option": "pubkey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize",
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint",
+          "docs": [
+            "Token-2022 mint (TransferFeeConfig enabled)."
+          ]
+        },
+        {
+          "name": "fee_holding",
+          "docs": [
+            "ATA(owner = fee_holding PDA) \u2014 withheld pool. Must exist."
+          ]
+        },
+        {
+          "name": "rewards_vault",
+          "docs": [
+            "ATA(owner = rewards PDA) \u2014 buyback + escrow + payouts. Must exist."
+          ]
+        },
+        {
+          "name": "creator_ata",
+          "docs": [
+            "Creator token ATA \u2014 1/3 stream. Must exist."
+          ]
+        },
+        {
+          "name": "treasury_sol",
+          "docs": [
+            "PDA system account \u2014 SOL war chest (fund BEFORE initialize)."
+          ]
+        },
+        {
+          "name": "fee_holding_pda",
+          "docs": [
+            "Fee-holding PDA (owner of the fee_holding ATA) \u2014 CPI signer."
+          ]
+        },
+        {
+          "name": "rewards_pda",
+          "docs": [
+            "Rewards PDA (owner of the rewards_vault ATA) \u2014 CPI signer."
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "threshold",
+          "type": "u64"
+        },
+        {
+          "name": "min_liquidity_usd",
+          "type": "u64"
+        },
+        {
+          "name": "genesis_total",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "pause",
+      "discriminator": [
+        211,
+        22,
+        221,
+        251,
+        74,
+        121,
+        193,
+        47
+      ],
+      "accounts": [
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "state"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "paused",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "record_holder",
+      "discriminator": [
+        207,
+        6,
+        107,
+        117,
+        235,
+        191,
+        96,
+        19
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "holder",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "route_fees",
+      "discriminator": [
+        227,
+        170,
+        48,
+        115,
+        154,
+        57,
+        59,
+        81
+      ],
+      "accounts": [
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "state"
+          ]
+        },
+        {
+          "name": "mint",
+          "relations": [
+            "state"
+          ],
+          "writable": true,
+          "isMut": true
+        },
+        {
+          "name": "fee_holding",
+          "docs": [
+            "ATA(owner = fee_holding PDA) \u2014 receives the whole withheld pool."
+          ],
+          "writable": true,
+          "relations": [
+            "state"
+          ]
+        },
+        {
+          "name": "creator_ata",
+          "docs": [
+            "Creator ATA \u2014 1/3 stream."
+          ],
+          "writable": true
+        },
+        {
+          "name": "fee_holding_pda",
+          "docs": [
+            "Fee-holding PDA \u2014 signs the split transfers/burn."
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "set_merkle_root",
+      "discriminator": [
+        43,
+        24,
+        91,
+        60,
+        240,
+        137,
+        28,
+        102
+      ],
+      "accounts": [
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "state"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "root",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_price",
+      "discriminator": [
+        16,
+        19,
+        182,
+        8,
+        149,
+        83,
+        72,
+        181
+      ],
+      "accounts": [
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "keeper",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "price_usd",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "stake",
+      "discriminator": [
+        206,
+        176,
+        202,
+        18,
+        200,
+        209,
+        179,
+        108
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "holder",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  107,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user_ata",
+          "writable": true
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "rewards_pda",
+          "docs": [
+            "Rewards PDA \u2014 owner of rewards_vault ATA (signs payouts)."
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "lock_days",
+          "type": "i64"
+        },
+        {
+          "name": "position_id",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "unstake",
+      "discriminator": [
+        90,
+        95,
+        107,
+        42,
+        205,
+        124,
+        50,
+        225
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "holder",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  111,
+                  108,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "user_ata",
+          "writable": true
+        },
+        {
+          "name": "rewards_vault",
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "rewards_pda"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "writable": false,
+          "signer": false
+        }
+      ],
+      "args": [
+        {
+          "name": "position_id",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "ClaimRecord",
+      "discriminator": [
+        57,
+        229,
+        0,
+        9,
+        65,
+        62,
+        96,
+        7
+      ]
+    },
+    {
+      "name": "Holder",
+      "discriminator": [
+        37,
+        121,
+        1,
+        40,
+        55,
+        46,
+        199,
+        157
+      ]
+    },
+    {
+      "name": "ProtocolState",
+      "discriminator": [
+        33,
+        51,
+        173,
+        134,
+        35,
+        140,
+        195,
+        248
+      ]
+    },
+    {
+      "name": "StakePosition",
+      "discriminator": [
+        78,
+        165,
+        30,
+        111,
+        171,
+        125,
+        11,
+        220
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "UnauthorizedAuthority",
+      "msg": "Only the protocol authority may call this"
+    },
+    {
+      "code": 6001,
+      "name": "UnauthorizedKeeper",
+      "msg": "Only the keeper (or authority) may call this"
+    },
+    {
+      "code": 6002,
+      "name": "ProtocolPaused",
+      "msg": "Protocol is paused"
+    },
+    {
+      "code": 6003,
+      "name": "BelowBuybackThreshold",
+      "msg": "Treasury SOL below buyback threshold"
+    },
+    {
+      "code": 6004,
+      "name": "InsufficientLiquidity",
+      "msg": "Liquidity below minimum"
+    },
+    {
+      "code": 6005,
+      "name": "SwapProgramNotAllowed",
+      "msg": "Swap program not on allowlist"
+    },
+    {
+      "code": 6006,
+      "name": "DestinationNotInSwap",
+      "msg": "Destination account missing from swap"
+    },
+    {
+      "code": 6007,
+      "name": "SlippageTooHigh",
+      "msg": "Swap delivered below slippage floor"
+    },
+    {
+      "code": 6008,
+      "name": "CircuitBreakerTriggered",
+      "msg": "Price drop exceeds circuit breaker \u2014 protocol paused"
+    },
+    {
+      "code": 6009,
+      "name": "StalePrice",
+      "msg": "Price reference is stale; call set_price first"
+    },
+    {
+      "code": 6010,
+      "name": "VaultEmpty",
+      "msg": "Rewards vault has insufficient tokens"
+    },
+    {
+      "code": 6011,
+      "name": "PositionNotFound",
+      "msg": "Position not found"
+    },
+    {
+      "code": 6012,
+      "name": "AlreadyClaimed",
+      "msg": "Claim already made"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidMerkleProof",
+      "msg": "Invalid merkle proof"
+    },
+    {
+      "code": 6014,
+      "name": "MerkleRootNotSet",
+      "msg": "Merkle root not set"
+    },
+    {
+      "code": 6015,
+      "name": "ExceedsGenesisCap",
+      "msg": "Exceeds genesis cap"
+    },
+    {
+      "code": 6016,
+      "name": "BudgetExhausted",
+      "msg": "Claim budget exhausted"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidAmount",
+      "msg": "Invalid amount"
+    },
+    {
+      "code": 6018,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6019,
+      "name": "AllowlistFull",
+      "msg": "Swap allowlist is full"
+    },
+    {
+      "code": 6020,
+      "name": "AlreadyAllowed",
+      "msg": "Swap program already allowed"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidTokenAccount",
+      "msg": "Invalid token account"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidMint",
+      "msg": "Invalid mint account"
+    },
+    {
+      "code": 6023,
+      "name": "NoTransferFeeConfig",
+      "msg": "Mint has no transfer fee config"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidFeeHolding",
+      "msg": "Invalid fee holding account"
+    },
+    {
+      "code": 6025,
+      "name": "InvalidRewardsVault",
+      "msg": "Invalid rewards vault account"
+    },
+    {
+      "code": 6026,
+      "name": "InvalidCreatorAta",
+      "msg": "Invalid creator token account"
+    },
+    {
+      "code": 6027,
+      "name": "InvalidTreasury",
+      "msg": "Invalid treasury account"
+    },
+    {
+      "code": 6028,
+      "name": "InvalidPda",
+      "msg": "Invalid PDA for seeds"
+    }
+  ],
+  "types": [
+    {
+      "name": "ClaimRecord",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "index",
+            "type": "u64"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GovField",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "BuybackThreshold"
+          },
+          {
+            "name": "MinLiquidityUsd"
+          },
+          {
+            "name": "EarnRateBps"
+          },
+          {
+            "name": "StakeFeeBps"
+          },
+          {
+            "name": "CircuitBreakerPct"
+          },
+          {
+            "name": "Keeper"
+          },
+          {
+            "name": "GenesisCapPerUser"
+          },
+          {
+            "name": "GenesisVestStart"
+          },
+          {
+            "name": "GenesisVestDuration"
+          },
+          {
+            "name": "GenesisBudget"
+          },
+          {
+            "name": "AirdropBudget"
+          },
+          {
+            "name": "BonusBudget"
+          },
+          {
+            "name": "AddSwapProgram"
+          },
+          {
+            "name": "RemoveSwapProgram"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Holder",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "staked_amount",
+            "type": "u64"
+          },
+          {
+            "name": "genesis_claimed",
+            "type": "u64"
+          },
+          {
+            "name": "last_update_ts",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Creator \u2014 governance + route_fees + pause."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "keeper",
+            "docs": [
+              "Dedicated keeper key \u2014 buyback engine (set via gov_update)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "Token-2022 mint (TransferFeeConfig 300 bps)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_holding",
+            "docs": [
+              "ATA(owner = fee_holding PDA) \u2014 withheld-fee pool (buyback share)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury_sol",
+            "docs": [
+              "PDA system account \u2014 SOL war chest (fund BEFORE initialize)."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "rewards_vault",
+            "docs": [
+              "ATA(owner = rewards PDA) \u2014 bought-back tokens + stake escrow + payouts."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "creator_ata",
+            "docs": [
+              "Creator token ATA \u2014 1/3 fee stream."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "buyback_threshold",
+            "docs": [
+              "Lamports gate for execute_buyback."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "min_liquidity_usd",
+            "docs": [
+              "USD liquidity gate (keeper-reported; wire an oracle for prod)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "paused",
+            "docs": [
+              "Circuit breaker / operator pause."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "circuit_breaker_pct",
+            "docs": [
+              "Max intra-window price drop in bps before auto-pause."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "price_ref_usd",
+            "docs": [
+              "24h price reference (fed by set_price)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "price_ref_ts",
+            "docs": [
+              "When price_ref_usd was set."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "rewards_so_far",
+            "docs": [
+              "Vault balance baseline \u2014 buyback slippage floor accounting."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "sol_so_far",
+            "docs": [
+              "Treasury balance baseline \u2014 diversify slippage floor accounting."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "earn_rate_bps",
+            "docs": [
+              "Burn-to-earn payout rate in bps (of burned amount, \u00d7 weight/100)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "stake_fee_bps",
+            "docs": [
+              "Unstake fee in bps (10 = 0.1%). Stays in vault as community rewards."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "genesis_total",
+            "docs": [
+              "Total genesis allocation (informational)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "genesis_budget",
+            "docs": [
+              "Max tokens claimable via genesis (drawn from rewards_vault)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "genesis_claimed_total",
+            "type": "u64"
+          },
+          {
+            "name": "genesis_cap_per_user",
+            "type": "u64"
+          },
+          {
+            "name": "genesis_vest_start",
+            "type": "i64"
+          },
+          {
+            "name": "genesis_vest_duration",
+            "type": "i64"
+          },
+          {
+            "name": "airdrop_budget",
+            "type": "u64"
+          },
+          {
+            "name": "airdrop_claimed_total",
+            "type": "u64"
+          },
+          {
+            "name": "bonus_budget",
+            "type": "u64"
+          },
+          {
+            "name": "bonus_claimed_total",
+            "type": "u64"
+          },
+          {
+            "name": "merkle_root",
+            "docs": [
+              "Merkle root for airdrop + bonus claims (governance-managed)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "allowed_swap_programs",
+            "docs": [
+              "Jupiter (or mock) swap programs the keeper may forward."
+            ],
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "StakePosition",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "position_id",
+            "type": "u64"
+          },
+          {
+            "name": "locked_amount",
+            "type": "u64"
+          },
+          {
+            "name": "lock_end_ts",
+            "type": "i64"
+          },
+          {
+            "name": "weight",
+            "docs": [
+              "100 / 200 / 400 (1x / 2x / 4x earn multiplier)."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "staked_at",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -37,6 +37,8 @@ export const api = {
   getEvents:     (n = 40) => fetchJSON(`/events?n=${n}`),
   getSniper:     () => fetchJSON('/sniper'),
   getPaperProfiles: () => fetchJSON('/paper-profiles'),
+  getPaperConfig: () => fetchJSON('/api/paper-config'),
+  setPaperConfig: (body) => postJSON('/api/paper-config', body),
   getStrategy:   () => fetchJSON('/status/full').then(r => r.strategy),
 
   // Controls

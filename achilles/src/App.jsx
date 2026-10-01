@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { api } from './api'
+import PaperConfig from './PaperConfig'
 
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
 
@@ -390,6 +391,7 @@ export default function App() {
     ['launchpad', 'Launchpad'],
     ['wallet', 'Wallet'],
     ['feed', 'Feed'],
+    ['paperconfig', 'Paper Config'],
     ['settings', 'Settings'],
   ]
 
@@ -772,6 +774,9 @@ export default function App() {
             </table>
           </section>
         )}
+
+        {/* ═══════════════════════ PAPER CONFIG ═══════════════════════ */}
+        {tab === 'paperconfig' && <PaperConfig />}
 
         {/* ═══════════════════════ SETTINGS ═══════════════════════ */}
         {tab === 'settings' && (
