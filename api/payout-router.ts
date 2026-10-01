@@ -153,6 +153,11 @@ export const payoutRouter = createRouter({
         });
       } catch { /* ledger is advisory; order row is source of truth */ }
 
+      await notifyTelegram("💸 PAYOUT SENT", {
+        "Order ID": String(input.orderId),
+        "Amount": `$${(amountCents / 100).toFixed(2)}`,
+        "Transfer": transferId,
+      });
       logAudit({
         ip: getClientIP(ctx.req),
         method: "POST",
@@ -167,3 +172,4 @@ export const payoutRouter = createRouter({
 });
 
 import { users } from "@db/schema";
+import { notifyTelegram } from "./lib/telegram";

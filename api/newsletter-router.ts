@@ -3,6 +3,7 @@ import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { newsletterSubscribers } from "@db/schema";
 import { eq } from "drizzle-orm";
+import { notifyTelegram } from "./lib/telegram";
 
 export const newsletterRouter = createRouter({
   subscribe: publicQuery
@@ -32,6 +33,9 @@ export const newsletterRouter = createRouter({
       await db.insert(newsletterSubscribers).values({
         email: input.email,
         isSubscribed: true,
+      });
+      await notifyTelegram("📧 NEW SUBSCRIBER", {
+        "Email": input.email,
       });
 
       return {

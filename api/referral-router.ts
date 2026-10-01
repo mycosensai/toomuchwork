@@ -4,13 +4,14 @@
  * Generate referral links, track clicks/conversions, compute stats.
  */
 import { z } from "zod";
-import { createRouter, authedQuery } from "./middleware";
+import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq, desc, sql } from "drizzle-orm";
 import { users, referralLinks } from "@db/schema";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
 import { randomBytes } from "crypto";
+import { notifyTelegram } from "./lib/telegram";
 
 function generateReferralCode(): string {
   return randomBytes(4).toString("hex").toUpperCase();
@@ -23,7 +24,7 @@ export const referralRouter = createRouter({
     const userId = ctx.user!.id;
     const code = generateReferralCode();
     await db.insert(referralLinks).values({ userId, code });
-    await logAudit({ userId, action: "referral_link_generated", ip: getClientIP(ctx.req), method: "POST" });
+    await logAudit({ path: "referral.generateLink", userId, action: "referral_link_generated", ip: getClientIP(ctx.req), method: "POST" });
     return { code, link: `${process.env.VAULT_DOMAIN || "https://thevaultdfw.win"}/ref=${code}` };
   }),
 
@@ -48,7 +49,12 @@ export const referralRouter = createRouter({
       await db.update(referralLinks).set({ conversions: link.conversions + 1, revenue: link.revenue + input.amount }).where(eq(referralLinks.id, link.id));
       // Award bonus to referrer
       await db.update(users).set({ memberPoints: sql<number>`member_points + 10` }).where(eq(users.id, link.userId));
-      await logAudit({ userId: link.userId, action: "referral_conversion", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "referral.trackConversion", userId: link.userId, action: "referral_conversion", ip: getClientIP(ctx.req), method: "POST" });
+      await notifyTelegram("🤝 REFERRAL CONVERTED", {
+        "Code": input.code,
+        "Value": `$${input.amount}`,
+        "Referrer": `#${link.userId}`,
+      });
       return { success: true };
     }),
 

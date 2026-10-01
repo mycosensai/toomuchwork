@@ -1,7 +1,9 @@
 import { Link } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { trpc } from '@/providers/trpc'
 import Reveal from '@/components/Reveal'
+import TickerWidget from '@/components/TickerWidget'
 import {
   Diamond, ArrowRight, Sparkles, ShieldCheck, Clock,
   TrendingUp, Gem, Coins, Landmark, Palette, Watch, Trophy, BookOpen,
@@ -628,6 +630,7 @@ export default function Home() {
   return (
     <div>
       <HeroSection />
+      <TickerWidget />
       <MarqueeSection />
       <CalculatorSection />
       <HowItWorksSection />

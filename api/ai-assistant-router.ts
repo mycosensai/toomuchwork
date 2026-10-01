@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { listings, priceSnapshots, priceAlerts } from "@db/schema";
 import { sendEmail } from "./email-service";
 import { TRPCError } from "@trpc/server";

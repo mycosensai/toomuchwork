@@ -5,6 +5,7 @@ import type { TrpcContext } from "./context";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
+  meta: true,
 });
 
 export const createRouter = t.router;
@@ -37,3 +38,6 @@ function requireRole(role: string) {
     return next({ ctx: { ...ctx, user: ctx.user } });
   });
 }
+
+export const authedQuery = t.procedure.use(requireAuth);
+export const adminQuery = t.procedure.use(requireRole("admin"));

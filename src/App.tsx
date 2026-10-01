@@ -46,22 +46,74 @@ const Forum = lazy(() => import('./pages/Forum'))
 const ForumPost = lazy(() => import('./pages/ForumPost'))
 const Messages = lazy(() => import('./pages/Messages'))
 const Concierge = lazy(() => import('./pages/Concierge'))
-const OfferManagement = lazy(() => import("./pages/OfferManagement"))
+const OfferManagement = lazy(() => import('./pages/OfferManagement').then(m => ({ default: m.OfferManagement })))
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"))
 const SettingsDevices = lazy(() => import("./pages/SettingsDevices"))
 const SettingsSecurity = lazy(() => import("./pages/SettingsSecurity"))
 const SettingsNotifications = lazy(() => import("./pages/SettingsNotifications"))
 const AdminAuditLog = lazy(() => import("./pages/AdminAuditLog"))
-const Auctions = lazy(() => import('./pages/Auctions'))
-const Membership = lazy(() => import('./pages/Membership'))
-const Notifications = lazy(() => import('./pages/Notifications'))
-const Alerts = lazy(() => import('./pages/Alerts'))
-const SavedSearches = lazy(() => import('./pages/SavedSearches'))
-const Curated = lazy(() => import('./pages/Curated'))
-const Blog = lazy(() => import('./pages/Blog'))
-const Showcases = lazy(() => import('./pages/Showcases'))
-const Badges = lazy(() => import('./pages/Badges'))
-const AIAssistant = lazy(() => import('./pages/AIAssistant'))
+const Auctions = lazy(() => import('./pages/Auctions').then(m => ({ default: m.Auctions })))
+const Membership = lazy(() => import('./pages/Membership').then(m => ({ default: m.Membership })))
+const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })))
+const Alerts = lazy(() => import('./pages/Alerts').then(m => ({ default: m.Alerts })))
+const SavedSearches = lazy(() => import('./pages/SavedSearches').then(m => ({ default: m.SavedSearches })))
+const Curated = lazy(() => import('./pages/Curated').then(m => ({ default: m.Curated })))
+const Blog = lazy(() => import('./pages/Blog').then(m => ({ default: m.Blog })))
+const Showcases = lazy(() => import('./pages/Showcases').then(m => ({ default: m.Showcases })))
+const Badges = lazy(() => import('./pages/Badges').then(m => ({ default: m.Badges })))
+const AIAssistant = lazy(() => import('./pages/AIAssistant').then(m => ({ default: m.AIAssistant })))
+const Storefront = lazy(() => import('./pages/Storefront'))
+const LiveChat = lazy(() => import('./pages/LiveChat'))
+const OrderTracking = lazy(() => import('./pages/OrderTracking'))
+const TwoFactor = lazy(() => import('./pages/TwoFactor'))
+const BackupCodes = lazy(() => import('./pages/BackupCodes'))
+const SessionManager = lazy(() => import('./pages/SessionManager'))
+const DeviceManager = lazy(() => import('./pages/DeviceManager'))
+const LoginAlerts = lazy(() => import('./pages/LoginAlerts'))
+const PasswordStrength = lazy(() => import('./pages/PasswordStrength'))
+const EmailVerification = lazy(() => import('./pages/EmailVerification'))
+const AccountRecovery = lazy(() => import('./pages/AccountRecovery'))
+const IpWhitelist = lazy(() => import('./pages/IpWhitelist'))
+const AuditLog = lazy(() => import('./pages/AuditLog'))
+const SellerDashboard = lazy(() => import('./pages/SellerDashboard'))
+const RevenueReports = lazy(() => import('./pages/RevenueReports'))
+const BuyerBehavior = lazy(() => import('./pages/BuyerBehavior'))
+const MarketTrends = lazy(() => import('./pages/MarketTrends'))
+const CategoryPerformance = lazy(() => import('./pages/CategoryPerformance'))
+const PriceHistory = lazy(() => import('./pages/PriceHistory'))
+const ConversionTracking = lazy(() => import('./pages/ConversionTracking'))
+const ABTesting = lazy(() => import('./pages/ABTesting'))
+const RealtimeNotifications = lazy(() => import('./pages/RealtimeNotifications'))
+const ExportReports = lazy(() => import('./pages/ExportReports'))
+const DiscordWebhook = lazy(() => import('./pages/DiscordWebhook'))
+const TelegramBot = lazy(() => import('./pages/TelegramBot'))
+const EmailDigest = lazy(() => import('./pages/EmailDigest'))
+const SocialSharing = lazy(() => import('./pages/SocialSharing'))
+const CalendarIntegration = lazy(() => import('./pages/CalendarIntegration'))
+const InvoiceGeneration = lazy(() => import('./pages/InvoiceGeneration'))
+const ReceiptGeneration = lazy(() => import('./pages/ReceiptGeneration'))
+const ApiAccess = lazy(() => import('./pages/ApiAccess'))
+const WebhookEvents = lazy(() => import('./pages/WebhookEvents'))
+const ZapierIntegration = lazy(() => import('./pages/ZapierIntegration'))
+const BulkUpload = lazy(() => import('./pages/BulkUpload'))
+const ListingTemplates = lazy(() => import("./pages/ListingTemplates"))
+const DraftListings = lazy(() => import("./pages/DraftListings"))
+const ListingAnalytics = lazy(() => import("./pages/ListingAnalytics"))
+const SellerRatings = lazy(() => import("./pages/SellerRatings"))
+const BuyerBadges = lazy(() => import("./pages/BuyerBadges"))
+const MakeOffer = lazy(() => import("./pages/MakeOffer"))
+const CommissionCalc = lazy(() => import("./pages/CommissionCalc"))
+const SimilarItems = lazy(() => import("./pages/SimilarItems"))
+const Compare = lazy(() => import("./pages/Compare"))
+const SettingsPage = lazy(() => import("./pages/Settings"))
+const AccessibilityPage = lazy(() => import("./pages/Accessibility"))
+const AgentStatusPage = lazy(() => import("./pages/AgentStatus"))
+const AgentAdaptation = lazy(() => import("./pages/AgentAdaptation"))
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"))
+const PriceComparison = lazy(() => import("./pages/PriceComparison"))
+const AgentFeedback = lazy(() => import("./pages/AgentFeedback"))
+const Tokenize = lazy(() => import("./pages/Tokenize"))
+const TickerWidget = lazy(() => import("./components/TickerWidget"))
 
 function LoadingFallback() {
   return (
@@ -147,6 +199,57 @@ export default function App() {
             <Route path="/settings/security" element={<SettingsSecurity />} />
             <Route path="/settings/notifications" element={<SettingsNotifications />} />
             <Route path="/admin/audit" element={<AdminAuditLog />} />
+            <Route path="/compare" element={<Compare />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/accessibility" element={<AccessibilityPage />} />
+            <Route path="/agent-status" element={<AgentStatusPage />} />
+            <Route path="/agent-adaptation" element={<AgentAdaptation />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/price-comparison" element={<PriceComparison />} />
+            <Route path="/agent-feedback" element={<AgentFeedback />} />
+            <Route path="/tokenize" element={<Tokenize />} />
+            <Route path="/ticker" element={<TickerWidget />} />
+            <Route path="/bulk-upload" element={<BulkUpload />} />
+            <Route path="/templates" element={<ListingTemplates />} />
+            <Route path="/drafts" element={<DraftListings />} />
+            <Route path="/listing-analytics" element={<ListingAnalytics />} />
+            <Route path="/seller-ratings" element={<SellerRatings />} />
+            <Route path="/buyer-badges" element={<BuyerBadges />} />
+            <Route path="/make-offer" element={<MakeOffer />} />
+            <Route path="/commission-calc" element={<CommissionCalc />} />
+            <Route path="/similar-items" element={<SimilarItems />} />
+            <Route path="/live-chat" element={<LiveChat />} />
+            <Route path="/order-tracking" element={<OrderTracking />} />
+            <Route path="/two-factor" element={<TwoFactor />} />
+            <Route path="/backup-codes" element={<BackupCodes />} />
+            <Route path="/session-manager" element={<SessionManager />} />
+            <Route path="/device-manager" element={<DeviceManager />} />
+            <Route path="/login-alerts" element={<LoginAlerts />} />
+            <Route path="/password-strength" element={<PasswordStrength />} />
+            <Route path="/email-verification" element={<EmailVerification />} />
+            <Route path="/account-recovery" element={<AccountRecovery />} />
+            <Route path="/ip-whitelist" element={<IpWhitelist />} />
+            <Route path="/audit-log" element={<AuditLog />} />
+            <Route path="/seller-dashboard" element={<SellerDashboard />} />
+            <Route path="/revenue-reports" element={<RevenueReports />} />
+            <Route path="/buyer-behavior" element={<BuyerBehavior />} />
+            <Route path="/market-trends" element={<MarketTrends />} />
+            <Route path="/category-performance" element={<CategoryPerformance />} />
+            <Route path="/price-history" element={<PriceHistory />} />
+            <Route path="/conversion-tracking" element={<ConversionTracking />} />
+            <Route path="/ab-testing" element={<ABTesting />} />
+            <Route path="/realtime-notifications" element={<RealtimeNotifications />} />
+            <Route path="/export-reports" element={<ExportReports />} />
+            <Route path="/discord-webhook" element={<DiscordWebhook />} />
+            <Route path="/telegram-bot" element={<TelegramBot />} />
+            <Route path="/email-digest" element={<EmailDigest />} />
+            <Route path="/social-sharing" element={<SocialSharing />} />
+            <Route path="/calendar-integration" element={<CalendarIntegration />} />
+            <Route path="/invoices" element={<InvoiceGeneration />} />
+            <Route path="/receipts" element={<ReceiptGeneration />} />
+            <Route path="/api-access" element={<ApiAccess />} />
+            <Route path="/webhook-events" element={<WebhookEvents />} />
+            <Route path="/zapier" element={<ZapierIntegration />} />
             <Route path="/sso-callback" element={<SSOCallback />} />
             <Route path="/auth-success" element={<AuthSuccess />} />
             <Route path="*" element={<NotFound />} />

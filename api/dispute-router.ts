@@ -26,7 +26,12 @@ export const disputeRouter = createRouter({
         evidence: input.evidence,
         status: "open",
       });
-      await logAudit({ userId: ctx.user!.id, action: "dispute_created", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "dispute.createDispute", userId: ctx.user!.id, action: "dispute_created", ip: getClientIP(ctx.req), method: "POST" });
+      await notifyTelegram("⚖️ DISPUTE OPENED", {
+        "Order ID": String(input.orderId),
+        "Reason": input.reason.slice(0, 150),
+        "Raised By": `#${ctx.user!.id}`,
+      });
       return { success: true };
     }),
 
@@ -36,7 +41,7 @@ export const disputeRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
       await db.update(disputes).set({ status: "resolved", resolution: input.resolution, notes: input.notes, resolvedAt: new Date() }).where(eq(disputes.id, input.disputeId));
-      await logAudit({ userId: ctx.user!.id, action: "dispute_resolved", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "dispute.resolveDispute", userId: ctx.user!.id, action: "dispute_resolved", ip: getClientIP(ctx.req), method: "POST" });
       return { success: true };
     }),
 
@@ -50,4 +55,5 @@ export const disputeRouter = createRouter({
 
 // Need to import disputes table — add inline
 import { sql } from "drizzle-orm";
+import { notifyTelegram } from "./lib/telegram";
 const disputes = { id: sql`id`, orderId: sql`order_id`, raisedBy: sql`raised_by`, reason: sql`reason`, evidence: sql`evidence`, status: sql`status`, resolution: sql`resolution`, notes: sql`notes`, resolvedAt: sql`resolved_at`, createdAt: sql`created_at` };

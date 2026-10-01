@@ -446,6 +446,93 @@ async function handleTRPC(c: any) {
 app.all("/api/trpc", handleTRPC);
 app.all("/api/trpc/*", handleTRPC);
 
+// ─── Telegram inbound webhook (support tickets) ───
+// Telegram POSTs updates here when a dedicated vault support bot is used.
+// Gated by the VAULT_TG_BOT_TOKEN secret — never shares the Hermes gateway
+// bot token, so it cannot conflict with the gateway's own polling.
+// Expected Telegram secret header: "X-Telegram-Bot-Token" (or ?token=).
+app.post("/api/telegram/webhook", async (c) => {
+  const botToken = getEnvString(c.env, "VAULT_TG_BOT_TOKEN");
+  if (!botToken) {
+    return c.json({ ok: false, error: "VAULT_TG_BOT_TOKEN not configured" }, 503);
+  }
+  const headerToken = c.req.header("X-Telegram-Bot-Token") || "";
+  const queryToken = new URL(c.req.url).searchParams.get("token") || "";
+  if (headerToken && headerToken !== botToken) return c.json({ ok: false, error: "bad token" }, 401);
+  if (!headerToken && queryToken !== botToken) return c.json({ ok: false, error: "bad token" }, 401);
+
+  let update: any;
+  try {
+    update = await c.req.json();
+  } catch {
+    return c.json({ ok: false, error: "invalid json" }, 400);
+  }
+
+  const msg = update?.message || update?.edited_message;
+  if (!msg?.text && !msg?.caption) return c.json({ ok: true, ignored: "no text" });
+
+  const text = (msg.text || msg.caption || "").slice(0, 4000);
+  const from = msg.from || {};
+  const chat = msg.chat || {};
+  const senderName = [from.first_name, from.last_name].filter(Boolean).join(" ") || from.username || "Anonymous";
+  const subject = text.slice(0, 80);
+
+  // Create the ticket via the shared router logic through drizzle.
+  try {
+    const { drizzle } = await import("drizzle-orm/d1");
+    const { eq, desc, sql } = await import("drizzle-orm");
+    const { supportTickets } = await import("../db/schema");
+    const { notifyTelegram, sendTelegramMessage } = await import("../api/lib/telegram");
+    const db = getD1(c.env);
+
+    const [row] = await (drizzle(db) as any)
+      .select({ count: sql<number>`count(*)` })
+      .from(supportTickets);
+    const ticketNo = `VLT-${1001 + Number(row?.count || 0)}`;
+
+    await (drizzle(db) as any).insert(supportTickets).values({
+      ticketNo,
+      channel: "telegram",
+      status: "new",
+      priority: "normal",
+      subject,
+      message: text,
+      customerName: senderName,
+      telegramUserId: String(from.id || ""),
+      telegramUsername: from.username || "",
+      telegramChatId: String(chat.id || ""),
+      assignedAgent: "concierge",
+      acknowledged: false,
+    });
+
+    // Ack the customer in their chat.
+    await sendTelegramMessage(String(chat.id || ""), [
+      `<b>🏛 The Vault DFW — Ticket ${ticketNo}</b>`,
+      `Your inquiry has been received and assigned a ticket.`,
+      ``,
+      `<b>Subject:</b> ${subject}`,
+      `<b>Status:</b> new — an agent will respond shortly.`,
+      ``,
+      `<i>Keep this number for reference: ${ticketNo}</i>`,
+    ].join("\n"));
+
+    // Ack in the owner's inbox — the agent confirms receipt here.
+    await notifyTelegram("🎫 NEW SUPPORT TICKET", {
+      "Ticket": ticketNo,
+      "Channel": "telegram",
+      "Subject": subject,
+      "From": senderName,
+      "Message": text.slice(0, 200),
+      "Status": "acknowledged",
+    });
+
+    return c.json({ ok: true, ticketNo });
+  } catch (err: any) {
+    console.error("[telegram webhook]", err?.message || err);
+    return c.json({ ok: false, error: "ticket creation failed" }, 500);
+  }
+});
+
 app.all("/api/*", (c) => c.json({ error: "API route not found", path: c.req.path }, 404));
 
 // Cloudflare Pages onRequest

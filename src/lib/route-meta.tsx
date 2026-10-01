@@ -81,6 +81,17 @@ const META: Record<string, Meta> = {
   '/settings/security': { title: 'Security | The Vault DFW', description: 'Two-factor authentication, backup codes, and security settings.' },
   '/settings/notifications': { title: 'Notifications | The Vault DFW', description: 'Manage notification preferences.' },
   '/admin/audit': { title: 'Audit Log | The Vault DFW', description: 'Admin audit log.' },
+  '/compare': { title: 'Compare | The Vault DFW', description: 'Compare listings side by side.' },
+  '/settings': { title: 'Settings | The Vault DFW', description: 'Theme, accessibility, and preferences.' },
+  '/accessibility': { title: 'Accessibility | The Vault DFW', description: 'Accessibility audit and preferences.' },
+  '/agent-status': { title: 'Agent Status | The Vault DFW', description: 'Real-time agent status and activity.' },
+  '/agent-adaptation': { title: 'Agent Adaptation | The Vault DFW', description: 'Adapt agent tone, verbosity, and learning preferences.' },
+  '/analytics': { title: 'Analytics | The Vault DFW', description: 'Seller and marketplace analytics dashboard.' },
+  '/price-comparison': { title: 'Price Comparison | The Vault DFW', description: 'Compare listing prices against market averages.' },
+  '/agent-feedback': { title: 'Agent Feedback | The Vault DFW', description: 'Rate agent responses to improve accuracy.' },
+  '/tokenize': { title: 'Tokenize Item | The Vault DFW', description: 'Convert your listing into a blockchain-verified token.' },
+  '/support': { title: 'Support & Inquiries | The Vault DFW', description: 'Submit an inquiry — every message becomes an individual ticket.' },
+  '/ticker': { title: 'Market Ticker | The Vault DFW', description: 'Live vault dfw token ticker and scrolling market list.' },
 }
 
 const DEFAULT_META: Meta = {

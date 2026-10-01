@@ -21,9 +21,8 @@ export const appraisalRouter = createRouter({
 
       // Validate image if provided
       if (input.imageUrl) {
-        const validation = validateImageDataUri(input.imageUrl);
-        if (!validation.valid) {
-          throw new Error(`Image validation failed: ${validation.error}`);
+        if (!validateImageDataUri(input.imageUrl)) {
+          throw new Error("Image validation failed: invalid image URL");
         }
       }
 

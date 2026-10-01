@@ -350,7 +350,7 @@ export default function Admin() {
                     <div className="font-cinzel text-xs text-[#C9A84C] mb-3">Trigger New Deployment</div>
                     <p className="text-xs text-[#8A6E2F] mb-4">This will trigger a new build from the latest Git commit on master branch.</p>
                     <button
-                      onClick={() => { setCloudflareDeploying(true); deployCf({ projectName: 'thevault' }) }}
+                      onClick={() => { setCloudflareDeploying(true); deployCf.mutate({ projectName: 'thevault' }) }}
                       disabled={cloudflareDeploying}
                       className="w-full py-3 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[11px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >

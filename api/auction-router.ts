@@ -17,6 +17,7 @@ import { listings, users } from "@db/schema";
 import { sendEmail } from "./email-service";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
+import { notifyTelegram } from "./lib/telegram";
 
 const AUCTION_INCREMENT_PCT = 5; // minimum bid increment = 5% of current bid
 const SNIPE_EXTENSION_SEC = 300; // 5 min anti-snipe window
@@ -64,6 +65,11 @@ export const auctionRouter = createRouter({
       }).returning().then(r => r[0]);
 
       logAudit({ ip: getClientIP(ctx.req), method: "POST", path: "auction.create", userId: seller.id, action: "auction_created", details: `listing:${row.id} reserve:${input.reservePrice} end:${input.endAt}` });
+      await notifyTelegram("🔨 AUCTION CREATED", {
+        "Title": row.title,
+        "Reserve": `$${input.reservePrice}`,
+        "Ends": input.endAt,
+      });
       return { auctionId: row.id, title: row.title, endAt: input.endAt };
     }),
 
@@ -101,6 +107,11 @@ export const auctionRouter = createRouter({
       }
 
       logAudit({ ip: getClientIP(ctx.req), method: "POST", path: "auction.bid", userId: buyer.id, action: "bid_placed", details: `auction:${input.auctionId} amount:${input.amount}` });
+      await notifyTelegram("💰 NEW BID", {
+        "Auction": auction.title,
+        "Bid": `$${input.amount}`,
+        "Bidder": `#${buyer.id}`,
+      });
       return { auctionId: input.auctionId, newHighest: input.amount, newEnd: new Date(newEnd).toISOString() };
     }),
 

@@ -22,7 +22,7 @@ export const users = sqliteTable("users", {
   createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
   lastSignInAt: integer("lastSignInAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-  email_verified: integer("email_verified").default(false).notNull(),
+  email_verified: integer("email_verified").default(0).notNull(),
   totp_secret: text("totp_secret"),
   backup_codes: text("backup_codes"),
 });
@@ -182,6 +182,51 @@ export const tokenMints = sqliteTable("token_mints", {
   updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
 });
 export type TokenMint = typeof tokenMints.$inferSelect;
+
+// ─── CHAIN CERTIFICATES (multi-chain) ───
+export const chainCerts = sqliteTable("chain_certs", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  listingId: integer("listing_id").notNull(),
+  userId: integer("user_id"),
+  certificateHash: text("certificate_hash").notNull().unique(),
+  contractAddress: text("contract_address"),
+  tokenId: text("token_id"),
+  blockHash: text("block_hash"),
+  blockNumber: integer("block_number"),
+  network: text("network").default("ethereum").notNull(),
+  chainKey: text("chain_key").notNull().default("ethereum"),
+  itemName: text("item_name").notNull(),
+  itemDescription: text("item_description"),
+  metadataUri: text("metadata_uri"),
+  status: text("status").default("pending").notNull(),
+  certificationFee: text("certification_fee").default("0.002"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type ChainCert = typeof chainCerts.$inferSelect;
+export type InsertChainCert = typeof chainCerts.$inferInsert;
+
+// ─── CHAIN TOKEN MINTS (multi-chain on-chain tokenization) ───
+export const chainTokenMints = sqliteTable("chain_token_mints", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  listingId: integer("listing_id").notNull(),
+  certId: integer("cert_id"),
+  mintAddress: text("mint_address").notNull().unique(),
+  treasuryAddress: text("treasury_address").notNull(),
+  tokenName: text("token_name").notNull(),
+  tokenSymbol: text("token_symbol").notNull(),
+  decimals: integer("decimals").default(18).notNull(),
+  totalSupply: text("total_supply").default("1").notNull(),
+  metadataUri: text("metadata_uri"),
+  txSignature: text("tx_signature"),
+  chainKey: text("chain_key").notNull().default("ethereum"),
+  status: text("status").default("minted").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type ChainTokenMint = typeof chainTokenMints.$inferSelect;
+export type InsertChainTokenMint = typeof chainTokenMints.$inferInsert;
+
 // ─── CRYPTO PAYMENTS ───
 export const cryptoPayments = sqliteTable("crypto_payments", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
@@ -1323,13 +1368,40 @@ export const siteConfig = sqliteTable("site_config", {
 export type SiteConfig = typeof siteConfig.$inferSelect;
 export type InsertSiteConfig = typeof siteConfig.$inferInsert;
 
+// ═══════════════════════════════════════════════
+// SUPPORT TICKETS (inquiries → individual tickets)
+// ═══════════════════════════════════════════════
+
+export const supportTickets = sqliteTable("support_tickets", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  ticketNo: text("ticket_no").notNull().unique(), // VLT-1042
+  channel: text("channel").notNull().default("website"), // website | telegram | email
+  status: text("status").notNull().default("new"), // new | open | in_progress | resolved | closed
+  priority: text("priority").notNull().default("normal"), // low | normal | high | urgent
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  customerName: text("customer_name"),
+  customerEmail: text("customer_email"),
+  customerPhone: text("customer_phone"),
+  telegramUserId: text("telegram_user_id"),
+  telegramUsername: text("telegram_username"),
+  telegramChatId: text("telegram_chat_id"),
+  assignedAgent: text("assigned_agent"), // e.g. concierge
+  acknowledged: integer("acknowledged", { mode: "boolean" }).default(false).notNull(),
+  acknowledgedAt: integer("acknowledged_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type SupportTicket = typeof supportTickets.$inferSelect;
+export type InsertSupportTicket = typeof supportTickets.$inferInsert;
+
 // ─── PASSWORD RESET TOKENS ───
 export const passwordResetTokens = sqliteTable("password_reset_tokens", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
   token: text("token").notNull().unique(),
   expiresAt: integer("expires_at").notNull(),
-  used: integer("used").default(false).notNull(),
+  used: integer("used").default(0).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
@@ -1340,7 +1412,7 @@ export const emailVerificationTokens = sqliteTable("email_verification_tokens", 
   userId: integer("user_id").notNull(),
   token: text("token").notNull().unique(),
   expiresAt: integer("expires_at").notNull(),
-  used: integer("used").default(false).notNull(),
+  used: integer("used").default(0).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
@@ -1352,8 +1424,8 @@ export const sessions = sqliteTable("sessions", {
   token: text("token").notNull().unique(),
   deviceInfo: text("device_info"),
   ipAddress: text("ip_address"),
-  isCurrent: integer("is_current").default(true).notNull(),
-  revoked: integer("revoked").default(false).notNull(),
+  isCurrent: integer("is_current").default(1).notNull(),
+  revoked: integer("revoked").default(0).notNull(),
   expiresAt: integer("expires_at").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });

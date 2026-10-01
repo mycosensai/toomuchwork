@@ -8,8 +8,8 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq } from "drizzle-orm";
-import { users } from "@db/schema";
+import { eq, gt } from "drizzle-orm";
+import { users, emailVerificationTokens } from "@db/schema";
 import { sendEmail } from "./email-service";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
@@ -52,11 +52,11 @@ export const emailVerifyRouter = createRouter({
       const [tokenRow] = await db.select().from(emailVerificationTokens)
         .where(eq(emailVerificationTokens.token, input.token))
         .where(eq(emailVerificationTokens.used, 0))
-        .where(eq(emailVerificationTokens.expiresAt, { gt: Math.floor(Date.now() / 1000) }));
+        .where(gt(emailVerificationTokens.expiresAt, Math.floor(Date.now() / 1000)));
       if (!tokenRow) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired verification token" });
       await db.update(users).set({ email_verified: 1, updatedAt: new Date() }).where(eq(users.id, tokenRow.userId));
       await db.update(emailVerificationTokens).set({ used: 1 }).where(eq(emailVerificationTokens.id, tokenRow.id));
-      await logAudit({ userId: tokenRow.userId, action: "email_verified", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "emailVerify.verifyEmail", userId: tokenRow.userId, action: "email_verified", ip: getClientIP(ctx.req), method: "POST" });
       return { success: true };
     }),
 });

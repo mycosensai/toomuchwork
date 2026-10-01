@@ -8,16 +8,14 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq } from "drizzle-orm";
-import { users } from "@db/schema";
+import { eq, gt } from "drizzle-orm";
+import { users, passwordResetTokens } from "@db/schema";
 import { sendEmail } from "./email-service";
 import { TRPCError } from "@trpc/server";
 import { validatePasswordStrength, logAudit, getClientIP } from "./security";
 import { env } from "./lib/env";
 import { SignJWT, jwtVerify } from "jose";
 import { randomBytes } from "crypto";
-
-const resetSecret = env.appSecret;
 
 function generateResetToken(): string {
   return randomBytes(32).toString("hex");
@@ -48,6 +46,7 @@ export const passwordResetRouter = createRouter({
         html: `<a href="${env.vaultDomain}/reset-password?token=${token}">Reset Password</a>`,
       });
       logAudit({
+        path: "passwordReset.forgotPassword",
         userId: user.id,
         action: "password_reset_requested",
         ip: getClientIP(ctx.req),
@@ -68,7 +67,7 @@ export const passwordResetRouter = createRouter({
       const [reset] = await db.select().from(passwordResetTokens)
         .where(eq(passwordResetTokens.token, input.token))
         .where(eq(passwordResetTokens.used, 0))
-        .where(eq(passwordResetTokens.expiresAt, { gt: Math.floor(Date.now() / 1000) }));
+        .where(gt(passwordResetTokens.expiresAt, Math.floor(Date.now() / 1000)));
       if (!reset) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired reset token" });
       }
@@ -77,6 +76,7 @@ export const passwordResetRouter = createRouter({
       await db.update(passwordResetTokens).set({ used: 1 }).where(eq(passwordResetTokens.id, reset.id));
       await db.update(users).set({ updatedAt: new Date() }).where(eq(users.id, reset.userId));
       await logAudit({
+        path: "passwordReset.resetPassword",
         userId: reset.userId,
         action: "password_reset_completed",
         ip: getClientIP(ctx.req),

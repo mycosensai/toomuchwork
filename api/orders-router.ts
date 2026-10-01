@@ -5,6 +5,7 @@ import { orders, sellerPayouts, listings } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
+import { notifyTelegram } from "./lib/telegram";
 
 export const ordersRouter = createRouter({
   list: publicQuery.query(async ({ ctx }) => {
@@ -61,6 +62,12 @@ export const ordersRouter = createRouter({
         orderStatus: "pending",
         shippingAddress: input.shippingAddress || null,
       });
+      await notifyTelegram("🛒 NEW ORDER", {
+        "Order ID": String(result.meta.last_row_id),
+        "Item": input.listingTitle,
+        "Amount": `$${input.amount}`,
+        "Buyer": `#${ctx.user.id}`,
+      });
       return { id: Number(result.meta.last_row_id), success: true };
     }),
 
@@ -110,6 +117,12 @@ export const ordersRouter = createRouter({
       if (input.trackingNumber) updateData.trackingNumber = input.trackingNumber;
 
       await db.update(orders).set(updateData).where(eq(orders.id, input.orderId));
+      await notifyTelegram("📦 ORDER UPDATED", {
+        "Order ID": String(input.orderId),
+        "Item": order.listingTitle,
+        "Status": input.orderStatus || order.orderStatus || "—",
+        "Tracking": input.trackingNumber || "—",
+      });
       return { success: true };
     }),
 

@@ -8,11 +8,11 @@
  *
  * This replaces scattered `sendEmail` + inline notification inserts in every router.
  */
-import { env } from "./lib/env";
-import { getDb } from "./queries/connection";
+import { env } from "../lib/env";
+import { getDb } from "../queries/connection";
 import { notifications, users } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { sendEmail, EmailPayload } from "./email-service";
+import { sendEmail, EmailPayload } from "../email-service";
 
 export interface NotificationOpts {
   userId: number;

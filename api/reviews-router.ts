@@ -4,6 +4,7 @@ import { getDb } from "./queries/connection";
 import { reviews } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 import { sanitizeInput } from "./security";
+import { notifyTelegram } from "./lib/telegram";
 
 export const reviewsRouter = createRouter({
   listByListing: publicQuery
@@ -68,6 +69,12 @@ export const reviewsRouter = createRouter({
         title: input.title ? sanitizeInput(input.title) : null,
         comment: input.comment ? sanitizeInput(input.comment) : null,
         isVerifiedPurchase: input.isVerifiedPurchase || false,
+      });
+      await notifyTelegram("⭐ NEW REVIEW", {
+        "Listing ID": String(input.listingId),
+        "Rating": `${input.rating}/5`,
+        "By": sanitizeInput(input.userName),
+        "Title": input.title ? sanitizeInput(input.title) : "—",
       });
       return { id: Number(result.meta.last_row_id), success: true };
     }),

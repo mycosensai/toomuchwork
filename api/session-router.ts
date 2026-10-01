@@ -26,14 +26,14 @@ export const sessionRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
       await db.update(sessions).set({ revoked: 1 }).where(eq(sessions.id, input.sessionId)).where(eq(sessions.userId, ctx.user!.id));
-      await logAudit({ userId: ctx.user!.id, action: "session_revoked", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "session.revoke", userId: ctx.user!.id, action: "session_revoked", ip: getClientIP(ctx.req), method: "POST" });
       return { success: true };
     }),
 
   /** Revoke all sessions except current. */
   revokeAll: authedQuery.mutation(async ({ ctx }) => {
     await revokeAllUserSessions(ctx.user!.id);
-    await logAudit({ userId: ctx.user!.id, action: "sessions_revoked_all", ip: getClientIP(ctx.req), method: "POST" });
+    await logAudit({ path: "session.revokeAll", userId: ctx.user!.id, action: "sessions_revoked_all", ip: getClientIP(ctx.req), method: "POST" });
     return { success: true };
   }),
 });

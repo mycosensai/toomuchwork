@@ -42,6 +42,7 @@ import { passwordResetRouter } from "./password-reset-router";
 import { emailVerifyRouter } from "./email-verify-router";
 import { webhookRouter } from "./webhook-router";
 import { analyticsRouter } from "./analytics-router";
+import { ticketsRouter } from "./tickets-router";
 import { referralRouter } from "./referral-router";
 import { moderationRouter } from "./moderation-router";
 import { priceCompareRouter } from "./price-compare-router";
@@ -55,8 +56,6 @@ import { offerRouter } from "./offer-router";
 import { auctionRouter } from "./auction-router";
 import { subscriptionRouter } from "./subscription-router";
 import { membershipRouter } from "./membership-router";
-import { wishlistRouter } from "./wishlist-router";
-import { reviewsRouter } from "./reviews-enhancement";
 import { savedSearchRouter } from "./savedSearch-router";
 import { priceAlertRouter } from "./priceAlert-router";
 import { curatorRouter } from "./curator-router";
@@ -112,6 +111,7 @@ export const appRouter = createRouter({
   passwordReset: passwordResetRouter,
   emailVerify: emailVerifyRouter,
   webhook: webhookRouter,
+  tickets: ticketsRouter,
   analytics: analyticsRouter,
   referral: referralRouter,
   moderation: moderationRouter,

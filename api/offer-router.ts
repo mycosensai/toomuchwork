@@ -15,11 +15,12 @@ import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq, desc } from "drizzle-orm";
-import { listings, users } from "@db/schema";
+import { listings, users, orders } from "@db/schema";
 import { sendEmail, buildOfferNotification } from "./email-service";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
 import { createPremiumCheckout } from "./lib/premium-pay";
+import { notifyTelegram } from "./lib/telegram";
 
 export const offerRouter = createRouter({
   /** Submit a new offer on an active listing. */
@@ -53,11 +54,17 @@ export const offerRouter = createRouter({
         shippingAddress: null,
       });
       const offerId = Number(insert.meta.last_row_id);
+      await notifyTelegram("🤝 OFFER RECEIVED", {
+        "Listing": listing.title,
+        "Amount": `$${input.amount}`,
+        "Offer ID": String(offerId),
+        "Buyer": buyer.id ? `#${buyer.id}` : "—",
+      });
 
       // Email the seller
       const [seller] = await db.select().from(users).where(eq(users.id, listing.sellerId)).limit(1);
       if (seller?.email) {
-        const html = buildOfferNotification({
+        const built = buildOfferNotification({
           itemName: listing.title,
           buyerName: buyer.name || "Collector",
           buyerEmail: buyer.email || "",
@@ -65,7 +72,7 @@ export const offerRouter = createRouter({
           message: input.message || "",
           orderId: offerId,
         });
-        await sendEmail({ to: seller.email, subject: `New Offer on "${listing.title}"`, html, text: html.replace(/<[^>]*>/g, "") });
+        await sendEmail({ to: seller.email, subject: `New Offer on "${listing.title}"`, html: built.html, text: built.text });
       }
 
       logAudit({ ip: getClientIP(ctx.req), method: "POST", path: "offer.create", userId: buyer.id, action: "offer_created", details: `order:${offerId} listing:${listing.id} amount:${input.amount}` });

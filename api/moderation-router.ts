@@ -25,7 +25,7 @@ export const moderationRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
       await db.update(editorialArticles).set({ status: "approved", moderatedBy: ctx.user!.id, moderatedAt: new Date() }).where(eq(editorialArticles.id, input.contentId));
-      await logAudit({ userId: ctx.user!.id, action: "content_approved", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "moderation.approveContent", userId: ctx.user!.id, action: "content_approved", ip: getClientIP(ctx.req), method: "POST" });
       return { success: true };
     }),
 
@@ -35,7 +35,7 @@ export const moderationRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
       await db.update(editorialArticles).set({ status: "rejected", moderationNotes: input.reason, moderatedBy: ctx.user!.id, moderatedAt: new Date() }).where(eq(editorialArticles.id, input.contentId));
-      await logAudit({ userId: ctx.user!.id, action: "content_rejected", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "moderation.rejectContent", userId: ctx.user!.id, action: "content_rejected", ip: getClientIP(ctx.req), method: "POST" });
       return { success: true };
     }),
 
@@ -45,7 +45,7 @@ export const moderationRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
       await db.update(editorialArticles).set({ status: "flagged", moderationNotes: input.reason, moderatedBy: ctx.user!.id, moderatedAt: new Date() }).where(eq(editorialArticles.id, input.contentId));
-      await logAudit({ userId: ctx.user!.id, action: "content_flagged", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "moderation.flagContent", userId: ctx.user!.id, action: "content_flagged", ip: getClientIP(ctx.req), method: "POST" });
       return { success: true };
     }),
 });

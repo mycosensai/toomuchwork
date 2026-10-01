@@ -17,7 +17,7 @@ export const webPushRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
       await db.update(users).set({ pushSubscription: JSON.stringify(input) }).where(eq(users.id, ctx.user!.id));
-      await logAudit({ userId: ctx.user!.id, action: "push_subscribed", ip: getClientIP(ctx.req), method: "POST" });
+      await logAudit({ path: "webPush.subscribe", userId: ctx.user!.id, action: "push_subscribed", ip: getClientIP(ctx.req), method: "POST" });
       return { success: true };
     }),
 
@@ -25,7 +25,7 @@ export const webPushRouter = createRouter({
   unsubscribe: authedQuery.mutation(async ({ ctx }) => {
     const db = getDb();
     await db.update(users).set({ pushSubscription: null }).where(eq(users.id, ctx.user!.id));
-    await logAudit({ userId: ctx.user!.id, action: "push_unsubscribed", ip: getClientIP(ctx.req), method: "POST" });
+    await logAudit({ path: "webPush.unsubscribe", userId: ctx.user!.id, action: "push_unsubscribed", ip: getClientIP(ctx.req), method: "POST" });
     return { success: true };
   }),
 });

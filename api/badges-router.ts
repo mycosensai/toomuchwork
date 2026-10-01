@@ -7,8 +7,8 @@
 import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq } from "drizzle-orm";
-import { users } from "@db/schema";
+import { eq, desc, sql } from "drizzle-orm";
+import { users, orders } from "@db/schema";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
 
@@ -51,7 +51,21 @@ export const badgesRouter = createRouter({
     .input(z.object({ limit: z.number().min(1).max(100).optional() }))
     .query(async ({ input }) => {
       const db = getDb();
-      const rows = await db.select({ id: users.id, name: users.name, email: users.email, salesCount: users.salesCount, rank: users.role }).from(users).where(eq(users.role, "seller")).orderBy(desc(users.salesCount)).limit(input.limit || 20);
+      // users has no salesCount column — derive from paid orders per seller.
+      const rows = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          salesCount: sql<number>`count(${orders.id})`,
+          rank: users.role,
+        })
+        .from(users)
+        .leftJoin(orders, eq(orders.sellerId, users.id))
+        .where(sql`${orders.payoutStatus} = 'paid' OR ${orders.id} IS NULL`)
+        .groupBy(users.id)
+        .orderBy(desc(sql`count(${orders.id})`))
+        .limit(input.limit || 20);
       return rows;
     }),
 });

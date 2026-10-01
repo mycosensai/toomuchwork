@@ -5,6 +5,7 @@ import { listings, categories } from "@db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { sanitizeInput, logAudit, getClientIP } from "./security";
 import { getCommissionRateFromTiers } from "./lib/commission";
+import { notifyTelegram } from "./lib/telegram";
 import {
   validateImageDataUris
 } from "./lib/file-upload";
@@ -115,12 +116,8 @@ export const listingsRouter = createRouter({
 
         // Validate data URIs
         if (dataUris.length > 0) {
-          const { valid, errors } = validateImageDataUris(dataUris);
-          if (errors.length > 0) {
-            throw new Error(`Image validation failed: ${errors.join("; ")}`);
-          }
-          // Replace data URIs with validated versions
-          const validatedDataUris = valid.map((v) => `data:${v.mimeType};base64,${v.base64}`);
+          // validateImageDataUris returns validated data-URI strings (or throws).
+          const validatedDataUris = validateImageDataUris(dataUris);
           input.images = [...validatedDataUris, ...urls];
         }
 
@@ -168,6 +165,12 @@ export const listingsRouter = createRouter({
         userId: ctx.user?.id,
         action: "listing_created",
         details: `id:${result.meta.last_row_id}`,
+      });
+
+      await notifyTelegram("📦 NEW LISTING", {
+        "Title": sanitizedInput.title,
+        "Price": `$${input.price}`,
+        "ID": String(result.meta.last_row_id),
       });
 
       // NOTE: autonomous outreach is deliberately NOT dispatched here.

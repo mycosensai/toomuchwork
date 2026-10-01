@@ -37,6 +37,15 @@ export interface CloudflareEnv {
   R2_SECRET_ACCESS_KEY?: string;
   R2_ENDPOINT?: string;
   R2_BUCKET_NAME?: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  // EVM chain treasury private keys (base64-encoded 64-byte hex key)
+  CHAIN_ETHEREUM_TREASURY_SECRET?: string;
+  CHAIN_BASE_TREASURY_SECRET?: string;
+  CHAIN_ARBITRUM_TREASURY_SECRET?: string;
+  CHAIN_POLYGON_TREASURY_SECRET?: string;
+  CHAIN_OPTIMISM_TREASURY_SECRET?: string;
+  CHAIN_BSC_TREASURY_SECRET?: string;
+  CHAIN_AVALANCHE_TREASURY_SECRET?: string;
 }
 
 let cfEnv: CloudflareEnv = {};
@@ -161,5 +170,8 @@ export const env = {
   },
   get r2BucketName(): string {
     return cfEnv.R2_BUCKET_NAME || "thevault-assets";
+  },
+  get telegramBotToken(): string {
+    return cfEnv.TELEGRAM_BOT_TOKEN || "";
   },
 };

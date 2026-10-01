@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { notifications } from "@db/schema";
 import { logAudit, getClientIP } from "./security";
 
@@ -25,7 +25,7 @@ export const notificationsRouter = createRouter({
   /** Get unread count. */
   unreadCount: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
-    const [row] = await db.select({ count: eq(notifications.isRead, 0) }).from(notifications).where(eq(notifications.userId, ctx.user!.id)).where(eq(notifications.isRead, 0));
+    const [row] = await db.select({ count: sql<number>`count(*)` }).from(notifications).where(and(eq(notifications.userId, ctx.user!.id), eq(notifications.isRead, 0)));
     return { unread: Number(row?.count || 0) };
   }),
 
@@ -34,7 +34,7 @@ export const notificationsRouter = createRouter({
     .input(z.object({ id: z.number().positive() }))
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
-      await db.update(notifications).set({ isRead: 1 }).where(eq(notifications.id, input.id)).where(eq(notifications.userId, ctx.user!.id));
+      await db.update(notifications).set({ isRead: 1 }).where(and(eq(notifications.id, input.id), eq(notifications.userId, ctx.user!.id)));
       logAudit({ ip: getClientIP(ctx.req), method: "POST", path: "notifications.markRead", userId: ctx.user!.id, action: "notification_read", details: `notification:${input.id}` });
       return { id: input.id };
     }),
@@ -42,7 +42,7 @@ export const notificationsRouter = createRouter({
   /** Mark all notifications as read. */
   markAllRead: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
-    await db.update(notifications).set({ isRead: 1 }).where(eq(notifications.userId, ctx.user!.id)).where(eq(notifications.isRead, 0));
+    await db.update(notifications).set({ isRead: 1 }).where(and(eq(notifications.userId, ctx.user!.id), eq(notifications.isRead, 0)));
     return { marked: true };
   }),
 });
