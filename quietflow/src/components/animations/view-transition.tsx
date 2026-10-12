@@ -31,7 +31,8 @@ export type ViewKey =
   | 'security'
   | 'my-cameras'
   | 'hud'
-  | 'news';
+  | 'news'
+  | 'wellness';
 
 interface VTContext {
   navigateView: (view: ViewKey, direction?: 'forward' | 'backward') => void;

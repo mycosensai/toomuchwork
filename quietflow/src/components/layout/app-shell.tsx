@@ -33,6 +33,7 @@ import { HudStatusBar } from '@/components/layout/hud-status-bar';
 import { BootScreen } from '@/components/layout/boot-screen';
 import { AppLauncher } from '@/components/layout/app-launcher';
 import { NewsAlertsPanel } from '@/components/layout/news-alerts-panel';
+import { WellnessTools } from '@/components/wellness/wellness-tools';
 
 const mobileNav = [
   { id: 'hud' as const, label: 'Launcher', icon: '⚡' },
@@ -51,6 +52,7 @@ const mobileNav = [
   { id: 'camera-discovery' as const, label: 'Discover', icon: '🔎' },
   { id: 'security' as const, label: 'LAN Sec', icon: '🛡️' },
   { id: 'my-cameras' as const, label: 'My Cams', icon: '📷' },
+  { id: 'wellness' as const, label: 'Wellness', icon: '✨' },
 ];
 
 // Keyboard shortcuts mapped to view IDs
@@ -69,6 +71,7 @@ const viewShortcutMap: Record<string, string> = {
   '`': 'traffic',
   'm': 'my-cameras',
   'n': 'news',
+  'w': 'wellness',
   'r': 'routines',
   's': 'settings',
   '?': 'help',
@@ -273,6 +276,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </ErrorBoundary>
             <ErrorBoundary>
               <NewsAlertsPanel />
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <WellnessTools />
             </ErrorBoundary>
             <ErrorBoundary>
               <BusinessDrawer />

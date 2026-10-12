@@ -119,7 +119,7 @@ interface AppState {
   mapCenter: [number, number];
   mapZoom: number;
   densityLayer: DensityMapLayer | null;
-  activeView: 'map' | 'cameras' | 'quiet-finder' | 'my-places' | 'insights' | 'settings' | 'trip-planner' | 'community' | 'help' | 'camera-discovery' | 'quiet-route' | 'god-view' | 'traffic' | 'routines' | 'security' | 'my-cameras' | 'hud' | 'news';
+  activeView: 'map' | 'cameras' | 'quiet-finder' | 'my-places' | 'insights' | 'settings' | 'trip-planner' | 'community' | 'help' | 'camera-discovery' | 'quiet-route' | 'god-view' | 'traffic' | 'routines' | 'security' | 'my-cameras' | 'hud' | 'news' | 'wellness';
   searchQuery: string;
   showWelcome: boolean;
   showAppLauncher: boolean;

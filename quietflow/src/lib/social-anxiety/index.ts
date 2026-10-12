@@ -28,3 +28,7 @@ export type { MoodEmoji, MoodEntry, MoodSummary } from './anxiety-mood-log';
 
 // Re-export 101-200 batch
 export { default as FeatureBatch2 } from '@/components/social/anxiety-features-200';
+// Re-export 201-500 batches
+export { default as FeatureBatch3 } from '@/components/social/anxiety-features-300';
+export { default as FeatureBatch4 } from '@/components/social/anxiety-features-400';
+export { default as FeatureBatch5 } from '@/components/social/anxiety-features-500';

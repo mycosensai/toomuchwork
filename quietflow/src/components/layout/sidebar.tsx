@@ -6,7 +6,7 @@ import {
   Map, Camera, Search, Heart, BarChart3,
   Settings, Route, MessageSquare, HelpCircle,
   Moon, Sun, Zap,
-  Radar, Activity, CalendarClock, Video, Shield, Compass,
+  Radar, Activity, CalendarClock, Video, Shield, Compass, Sparkles,
 } from 'lucide-react';
 
 /**
@@ -30,6 +30,7 @@ const navItems = [
   { id: 'insights' as const, label: 'Insights', icon: BarChart3 },
   { id: 'camera-discovery' as const, label: 'Discover', icon: Compass },
   { id: 'security' as const, label: 'LAN Security', icon: Shield },
+  { id: 'wellness' as const, label: 'Wellness Tools', icon: Sparkles },
 ];
 
 const bottomItems = [
