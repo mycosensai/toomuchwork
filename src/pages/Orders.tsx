@@ -23,7 +23,7 @@ export default function Orders() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen pt-24 pb-16 px-4 flex items-center justify-center">
+      <div className="min-h-screen pb-16 px-4 flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="w-12 h-12 border border-[#C9A84C] rotate-45 flex items-center justify-center mx-auto mb-6">
             <Diamond className="w-5 h-5 text-[#C9A84C] -rotate-45" />
@@ -39,7 +39,7 @@ export default function Orders() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/browse" className="text-[#C8BC98] hover:text-[#C9A84C] transition-colors">

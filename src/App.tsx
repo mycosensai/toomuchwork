@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router'
+import { Routes, Route, Navigate } from 'react-router'
 import { Suspense, lazy } from 'react'
 import { Diamond } from 'lucide-react'
 import Layout from './components/Layout'
@@ -67,14 +67,11 @@ const LiveChat = lazy(() => import('./pages/LiveChat'))
 const OrderTracking = lazy(() => import('./pages/OrderTracking'))
 const TwoFactor = lazy(() => import('./pages/TwoFactor'))
 const BackupCodes = lazy(() => import('./pages/BackupCodes'))
-const SessionManager = lazy(() => import('./pages/SessionManager'))
-const DeviceManager = lazy(() => import('./pages/DeviceManager'))
 const LoginAlerts = lazy(() => import('./pages/LoginAlerts'))
 const PasswordStrength = lazy(() => import('./pages/PasswordStrength'))
 const EmailVerification = lazy(() => import('./pages/EmailVerification'))
 const AccountRecovery = lazy(() => import('./pages/AccountRecovery'))
 const IpWhitelist = lazy(() => import('./pages/IpWhitelist'))
-const AuditLog = lazy(() => import('./pages/AuditLog'))
 const SellerDashboard = lazy(() => import('./pages/SellerDashboard'))
 const RevenueReports = lazy(() => import('./pages/RevenueReports'))
 const BuyerBehavior = lazy(() => import('./pages/BuyerBehavior'))
@@ -222,14 +219,14 @@ export default function App() {
             <Route path="/order-tracking" element={<OrderTracking />} />
             <Route path="/two-factor" element={<TwoFactor />} />
             <Route path="/backup-codes" element={<BackupCodes />} />
-            <Route path="/session-manager" element={<SessionManager />} />
-            <Route path="/device-manager" element={<DeviceManager />} />
+            <Route path="/session-manager" element={<Navigate to="/settings/devices" replace />} />
+            <Route path="/device-manager" element={<Navigate to="/settings/devices" replace />} />
             <Route path="/login-alerts" element={<LoginAlerts />} />
             <Route path="/password-strength" element={<PasswordStrength />} />
             <Route path="/email-verification" element={<EmailVerification />} />
             <Route path="/account-recovery" element={<AccountRecovery />} />
             <Route path="/ip-whitelist" element={<IpWhitelist />} />
-            <Route path="/audit-log" element={<AuditLog />} />
+            <Route path="/audit-log" element={<Navigate to="/admin/audit" replace />} />
             <Route path="/seller-dashboard" element={<SellerDashboard />} />
             <Route path="/revenue-reports" element={<RevenueReports />} />
             <Route path="/buyer-behavior" element={<BuyerBehavior />} />

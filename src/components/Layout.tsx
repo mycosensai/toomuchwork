@@ -118,10 +118,10 @@ export default function Layout() {
               <span className="font-cinzel text-lg lg:text-xl font-bold tracking-[4px] text-[#C9A84C] hidden sm:block">THE VAULT</span>
             </Link>
 
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden xl:flex items-center gap-4 min-w-0">
               {navLinks.map((link) => (
                 <Link key={link.path} to={link.path}
-                  className={`nav-link text-[10px] tracking-[3px] uppercase transition-colors duration-300 ${
+                  className={`nav-link whitespace-nowrap text-[10px] tracking-[1px] uppercase transition-colors duration-300 ${
                     location.pathname === link.path ? 'nav-active text-[#E8CB7A]' : 'text-[#C8BC98] hover:text-[#E8CB7A]'
                   }`}>
                   {link.label}
@@ -129,7 +129,7 @@ export default function Layout() {
               ))}
             </div>
 
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden xl:flex items-center gap-3 shrink-0">
               <Link to="/browse" className="text-[#C8BC98] hover:text-[#C9A84C] transition-colors" title="Search">
                 <Search className="w-4 h-4" />
               </Link>
@@ -167,20 +167,20 @@ export default function Layout() {
                   </button>
                 </div>
               ) : (
-                <Link to="/login" className="btn-sheen px-5 py-2 border border-[#C9A84C] text-[#C9A84C] text-[10px] tracking-[3px] uppercase font-cinzel font-semibold hover:bg-[#C9A84C] hover:text-[#080808] transition-all duration-300 hover:shadow-[0_0_20px_rgba(201,168,76,0.3)]">
+                <Link to="/login" className="btn-sheen whitespace-nowrap px-4 py-2 border border-[#C9A84C] text-[#C9A84C] text-[10px] tracking-[2px] uppercase font-cinzel font-semibold hover:bg-[#C9A84C] hover:text-[#080808] transition-all duration-300 hover:shadow-[0_0_20px_rgba(201,168,76,0.3)]">
                   Sign In
                 </Link>
               )}
             </div>
 
-            <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden text-[#C9A84C]">
+            <button onClick={() => setMenuOpen(!menuOpen)} className="xl:hidden text-[#C9A84C]" aria-label={menuOpen ? "Close menu" : "Open menu"}>
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
         {menuOpen && (
-          <div className="md:hidden bg-[#080808]/98 backdrop-blur-xl border-t border-[#C9A84C]/20 animate-slide-down overflow-hidden">
+          <div className="xl:hidden bg-[#080808]/98 backdrop-blur-xl border-t border-[#C9A84C]/20 animate-slide-down overflow-hidden max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="px-4 py-6 space-y-1">
               {navLinks.map((link, i) => (
                 <Link key={link.path} to={link.path}
@@ -236,8 +236,8 @@ export default function Layout() {
       {/* Liability Banner on payment pages */}
       {isPaymentPage && <div className="pt-16 lg:pt-20"><LiabilityBanner /></div>}
 
-      {/* Main Content — keyed on pathname so each navigation plays a soft entrance */}
-      <main>
+      {/* Clear the fixed header on every page except the full-bleed home hero. */}
+      <main className={location.pathname === "/" ? "" : "pt-16 lg:pt-20"}>
         <div key={location.pathname} className="page-enter">
           <Outlet />
         </div>
@@ -283,10 +283,10 @@ export default function Layout() {
               {newsletter.error && <p className="text-[10px] text-red-400 mb-3 max-w-xs">{(newsletter.error as any).message}</p>}
               {/* Social Media */}
               <div className="flex gap-2">
-                <SocialIcon href="https://x.com/thevault">
+                <SocialIcon href="https://x.com/thevaultdfw">
                   <XSocialIcon />
                 </SocialIcon>
-                <SocialIcon href="https://instagram.com/thevault">
+                <SocialIcon href="https://instagram.com/thevaultdfw">
                   <InstagramIcon />
                 </SocialIcon>
                 <SocialIcon href="mailto:ratchetkrewelabs@gmail.com">

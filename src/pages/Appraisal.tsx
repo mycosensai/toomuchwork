@@ -118,7 +118,7 @@ export default function Appraisal() {
   const loadingResult = viewingResult && isLoading
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       {/* Structured data for search + AI answer engines */}
       <JsonLd schema={serviceSchema({
         name: 'AI Appraisal Report',

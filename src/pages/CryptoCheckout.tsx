@@ -47,7 +47,7 @@ export default function CryptoCheckout() {
   const total = Number(listing.price)
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <Link to={`/listing/${listingId}`} className="inline-flex items-center gap-2 text-[10px] tracking-[3px] uppercase text-[#C8BC98] hover:text-[#C9A84C] transition-colors mb-8">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Item

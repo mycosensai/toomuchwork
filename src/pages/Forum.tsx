@@ -63,7 +63,7 @@ export default function Forum() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808]">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808]">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

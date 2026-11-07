@@ -18,7 +18,7 @@ export default function Wishlist() {
   })
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/browse" className="text-[#C8BC98] hover:text-[#C9A84C] transition-colors">

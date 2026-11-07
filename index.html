@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Vault DFW | Rare & Luxury Collectibles Marketplace</title>
     <link rel="canonical" href="https://thevaultdfw.win/" />
+    <script>
+      (function () {
+        var origin = "https://thevaultdfw.win";
+        var path = location.pathname || "/";
+        if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+        var href = origin + (path || "/");
+        var link = document.querySelector('link[rel="canonical"]');
+        if (link) link.setAttribute("href", href);
+        var og = document.querySelector('meta[property="og:url"]');
+        if (og) og.setAttribute("content", href);
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
     <link rel="manifest" href="/site.webmanifest" />

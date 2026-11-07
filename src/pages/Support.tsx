@@ -17,9 +17,23 @@ export default function SupportPage() {
     message: "",
   });
   const [ticketNo, setTicketNo] = useState<string | null>(null);
+  const [formError, setFormError] = useState("");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError("");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setFormError("Enter a valid email so we can reply.");
+      return;
+    }
+    if (form.subject.trim().length < 3) {
+      setFormError("Add a subject of at least 3 characters.");
+      return;
+    }
+    if (form.message.trim().length < 10) {
+      setFormError("Tell us a bit more — at least 10 characters.");
+      return;
+    }
     createTicket.mutate(
       {
         channel: "website",
@@ -36,7 +50,7 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808] text-[#E8E2D0]">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808] text-[#E8E2D0]">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-[9px] tracking-[5px] uppercase text-[#C9A84C] font-medium mb-3">Help Center</p>
@@ -132,8 +146,9 @@ export default function SupportPage() {
                 >
                   {createTicket.isPending ? "Creating ticket…" : "Submit Inquiry →"}
                 </button>
+                {formError && <p className="text-red-400 text-sm" role="alert">{formError}</p>}
                 {createTicket.isError && (
-                  <p className="text-red-400 text-sm">Failed to create ticket — please try again.</p>
+                  <p className="text-red-400 text-sm" role="alert">Failed to create ticket. Check the form and try again.</p>
                 )}
               </motion.form>
             )}

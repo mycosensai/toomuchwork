@@ -244,6 +244,15 @@
 .animate-fadeIn {
   animation: fadeIn 1s ease both;
 }
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeIn,
+  .animate-fadeInUp,
+  .page-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
 .animate-slide-down {
   animation: slideDown 0.3s ease-out;
 }
