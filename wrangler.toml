@@ -33,7 +33,6 @@ ENABLE_SECURITY_HEADERS = "true"
 # ─── Web3 Treasury Configuration ───
 # Set your treasury wallet address (Solana public key)
 # SOLANA_TREASURY = "YOUR_SOLANA_TREASURY_ADDRESS"
-# Fallback when the public SOL price feed is down. Production already sets this.
-# Checkout labels the source configured_fallback instead of pretending it is live.
-SOL_USD_RATE = "69.52"
+# SOL_USD_RATE is set as a Pages project secret (fallback when the live SOL feed fails).
+# Do not declare it here: a [vars] entry with the same name blocks the Functions publish.
 USDC_USD_RATE = "1.00"
