@@ -4,7 +4,7 @@
  */
 import { trpc } from "@/providers/trpc"
 import { useAuth } from "@/hooks/useAuth"
-import { Loader2, Trophy, Crown, Shield, Star, Zap } from "lucide-react"
+import { Trophy, Crown, Shield, Star } from "lucide-react"
 
 const TIER_STYLES = {
   Collector: { color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/30', icon: Star },
@@ -17,7 +17,7 @@ export function Badges() {
   const { isAuthenticated } = useAuth()
 
   // Fetch user's tier + leaderboard
-  const { data: tierData, isLoading } = trpc.membership.tier.useQuery(undefined, {
+  const { data: tierData, isLoading: _isLoading } = trpc.membership.tier.useQuery(undefined, {
     enabled: isAuthenticated === true,
   })
   const { data: leaderboard } = trpc.membership.leaderboard.useQuery(undefined, {
@@ -31,7 +31,7 @@ export function Badges() {
   const Icon = style.icon
   const progress = tierData?.progress || 0
   const nextRank = tierData?.nextRank
-  const nextMinSales = tierData?.nextRankMinSales
+  const nextMinSales = tierData?.nextThreshold
 
   const TIER_ICONS: Record<string, string> = {
     Collector: '🪙', Curator: '📋', Appraiser: '🔍', Dealer: '🏛️'

@@ -15,6 +15,7 @@
 import { Connection, Keypair } from "@solana/web3.js";
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, getMint } from "@solana/spl-token";
 import { getRawEnv } from "./env";
+import { redactSecret } from "./redact";
 
 const SOL_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const DEFAULT_RPC = "https://api.mainnet-beta.solana.com";
@@ -139,7 +140,8 @@ export async function tokenizeListing(args: {
       message: `Minted ${supply} ${args.tokenSymbol} SPL token(s) on Solana mainnet.`,
     };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const raw = err instanceof Error ? err.message : String(err);
+    const message = redactSecret(raw, treasurySecret);
     return {
       success: false,
       simulated: false,

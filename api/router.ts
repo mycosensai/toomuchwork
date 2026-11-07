@@ -64,6 +64,8 @@ import { notificationsRouter } from "./notifications-router";
 import { editorialRouter } from "./editorial-router";
 import { showcaseRouter } from "./showcase-router";
 import { badgesRouter } from "./badges-router";
+import { profileRouter } from "./profile-router";
+import { auditLogRouter } from "./audit-log-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -135,6 +137,8 @@ export const appRouter = createRouter({
   editorial: editorialRouter,
   showcase: showcaseRouter,
   badges: badgesRouter,
+  profile: profileRouter,
+  auditLog: auditLogRouter,
 });
 
 export type AppRouter = typeof appRouter;

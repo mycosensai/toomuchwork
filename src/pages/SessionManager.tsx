@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function SessionManager() {
-  const [sessions, setSessions] = useState([
+  const [sessions, _setSessions] = useState([
     { id: "1", device: "Chrome / Windows", ip: "192.168.1.1", active: true },
     { id: "2", device: "Safari / iPhone", ip: "10.0.0.1", active: false },
   ]);

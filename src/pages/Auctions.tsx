@@ -5,17 +5,15 @@
 import { trpc } from "@/providers/trpc"
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
-import { Clock, Gavel, Trophy, Loader2, TrendingUp, AlertTriangle } from "lucide-react"
+import { Clock, Gavel, Trophy, Loader2, AlertTriangle } from "lucide-react"
 
 export function Auctions() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user: _user } = useAuth()
   const [selectedAuction, setSelectedAuction] = useState<number | null>(null)
   const [bidAmount, setBidAmount] = useState("")
 
   // Fetch active auctions
-  const { data: auctions, isLoading } = trpc.auctions.get.useQuery(undefined, {
-    enabled: isAuthenticated === true,
-  })
+  const { data: auctions, isLoading } = trpc.auctions.active.useQuery(undefined)
 
   // Place bid mutation
   const bidMutation = trpc.auctions.bid.useMutation({

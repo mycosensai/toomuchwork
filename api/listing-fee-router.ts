@@ -6,6 +6,7 @@
 
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
 import { listings, listingFees } from "@db/schema";
 import { eq, desc, sql } from "drizzle-orm";
@@ -58,7 +59,7 @@ export const listingFeeRouter = createRouter({
         .limit(1);
 
       if (!listing) throw new Error("Listing not found");
-      if (listing.sellerId !== user.id && user.role !== "admin") {
+      if (listing.sellerId !== user.id && !isProvisionedAdmin(user)) {
         throw new Error("You do not own this listing");
       }
 

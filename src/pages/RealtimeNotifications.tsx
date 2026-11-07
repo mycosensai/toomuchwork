@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function RealtimeNotifications() {
-  const [notifications, setNotifications] = useState([
+  const [notifications, _setNotifications] = useState([
     { time: "10:23", text: "New bid on your listing", read: false },
     { time: "10:15", text: "Your item sold", read: true },
   ]);

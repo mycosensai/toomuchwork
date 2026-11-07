@@ -3,9 +3,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function ListingAnalytics() {
-  const [views, setViews] = useState(1247);
-  const [clicks, setClicks] = useState(89);
-  const [saves, setSaves] = useState(23);
+  const [views, _setViews] = useState(1247);
+  const [clicks, _setClicks] = useState(89);
+  const [saves, _setSaves] = useState(23);
 
   return (
     <section className="space-y-6">

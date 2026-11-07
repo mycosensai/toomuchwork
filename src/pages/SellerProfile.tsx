@@ -32,7 +32,7 @@ export default function SellerProfile() {
   const accent = profile.accentColor || "#C9A84C";
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <div className="border border-[#C9A84C]/20 bg-[#161616] overflow-hidden mb-8">
           <div

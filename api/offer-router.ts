@@ -13,6 +13,7 @@
  */
 import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
 import { eq, desc } from "drizzle-orm";
 import { listings, users, orders } from "@db/schema";
@@ -82,7 +83,7 @@ export const offerRouter = createRouter({
   /** Get all offers for a listing (buyer-facing) or for the seller's own listings. */
   list: publicQuery
     .input(z.object({ listingId: z.number().positive() }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input, ctx: _ctx }) => {
       const db = getDb();
       const rows = await db.select().from(orders).where(eq(orders.listingId, input.listingId)).orderBy(desc(orders.createdAt)).limit(50);
       return rows.map(r => ({ ...r, id: r.id }));
@@ -102,13 +103,13 @@ export const offerRouter = createRouter({
       const db = getDb();
       const [order] = await db.select().from(orders).where(eq(orders.id, input.offerId)).limit(1);
       if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "Offer not found" });
-      if (order.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
+      if (order.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
       if (order.orderStatus !== "pending_offer") throw new TRPCError({ code: "BAD_REQUEST", message: "Offer not pending" });
 
       await db.update(orders).set({ orderStatus: "accepted" }).where(eq(orders.id, input.offerId));
 
       // Auto-create Stripe checkout so buyer pays the offer amount
-      const checkoutRes = await createPremiumCheckout({
+      const _checkoutRes = await createPremiumCheckout({
         type: "appraisal",
         targetId: input.offerId,
         itemName: `Offer accepted — $${order.amount}`,
@@ -127,7 +128,7 @@ export const offerRouter = createRouter({
       const db = getDb();
       const [order] = await db.select().from(orders).where(eq(orders.id, input.offerId)).limit(1);
       if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "Offer not found" });
-      if (order.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
+      if (order.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
       if (order.orderStatus !== "pending_offer") throw new TRPCError({ code: "BAD_REQUEST", message: "Offer not pending" });
 
       await db.update(orders).set({ orderStatus: "declined" }).where(eq(orders.id, input.offerId));

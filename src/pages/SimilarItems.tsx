@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function SimilarItems() {
-  const [items, setItems] = useState([
+  const [items, _setItems] = useState([
     { name: "Rolex Submariner", price: "$5,200" },
     { name: "Omega Speedmaster", price: "$3,800" },
     { name: "Cartier Tank", price: "$2,900" },

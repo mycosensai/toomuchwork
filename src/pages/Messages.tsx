@@ -7,6 +7,7 @@ import {
 import { Link } from 'react-router'
 
 export default function Messages() {
+  const utils = trpc.useUtils();
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [activeView, setActiveView] = useState<'inbox' | 'outbox' | 'compose'>('inbox')
   const [selectedMsg, setSelectedMsg] = useState<any>(null)
@@ -28,21 +29,21 @@ export default function Messages() {
 
   const markRead = trpc.messages.markRead.useMutation({
     onSuccess: () => {
-      trpc.messages.inbox.invalidate()
-      trpc.messages.unreadCount.invalidate()
+      utils.messages.inbox.invalidate()
+      utils.messages.unreadCount.invalidate()
     }
   })
   const deleteMsg = trpc.messages.delete.useMutation({
     onSuccess: () => {
-      trpc.messages.inbox.invalidate()
-      trpc.messages.outbox.invalidate()
+      utils.messages.inbox.invalidate()
+      utils.messages.outbox.invalidate()
       setSelectedMsg(null)
     }
   })
   const replyMutation = trpc.messages.reply.useMutation({
     onSuccess: () => {
-      trpc.messages.inbox.invalidate()
-      trpc.messages.outbox.invalidate()
+      utils.messages.inbox.invalidate()
+      utils.messages.outbox.invalidate()
       setReplyText('')
     }
   })
@@ -69,7 +70,7 @@ export default function Messages() {
   const msgs = activeView === 'inbox' ? inbox?.messages : outbox?.messages
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808]">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808]">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

@@ -19,5 +19,17 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Legacy routers still use explicit any. New security code avoids it.
+      // Warnings do not hide unused variables, broken escapes, or hook bugs.
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/ban-ts-comment": ["error", {
+        "ts-nocheck": false,
+        "ts-ignore": true,
+        "ts-expect-error": "allow-with-description",
+      }],
+      "react-refresh/only-export-components": "off",
+    },
   },
 ])

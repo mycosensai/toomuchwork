@@ -3,7 +3,7 @@ import { Diamond, ShieldCheck, Globe, Users, Award } from 'lucide-react'
 
 export default function About() {
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">

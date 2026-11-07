@@ -5,7 +5,7 @@
 import { trpc } from "@/providers/trpc"
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
-import { Bell, Check, X, Mail, AlertTriangle, Gavel, Crown, Loader2 } from "lucide-react"
+import { Bell, Check, Mail, AlertTriangle, Gavel, Crown, Loader2 } from "lucide-react"
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   offer: <Gavel className="w-4 h-4 text-gold-400" />,
@@ -51,7 +51,7 @@ export function Notifications() {
         </div>
         {unreadCount > 0 && (
           <button
-            onClick={() => markAllMutation.mutateAsync({})}
+            onClick={() => markAllMutation.mutateAsync()}
             disabled={markAllMutation.isPending}
             className="px-4 py-2 bg-gray-700 text-white text-sm rounded-lg hover:bg-gray-600 transition"
           >
@@ -94,7 +94,7 @@ export function Notifications() {
               </div>
               {!n.read && (
                 <button
-                  onClick={() => markReadMutation.mutateAsync({ notificationId: n.id })}
+                  onClick={() => markReadMutation.mutateAsync({ id: n.id })}
                   className="flex-shrink-0 p-1 hover:bg-gray-700 rounded transition"
                   title="Mark as read"
                 >

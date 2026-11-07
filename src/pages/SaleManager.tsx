@@ -95,7 +95,7 @@ export default function SaleManager() {
     ]
 
     return (
-      <div className="min-h-screen bg-[#080808] pt-24 pb-20">
+      <div className="min-h-screen bg-[#080808] pb-20">
         <div className="max-w-4xl mx-auto px-4">
           <Link to="/sale" className="flex items-center gap-2 text-[#8A6E2F] hover:text-[#C9A84C] text-xs mb-6 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Sales
@@ -253,7 +253,7 @@ export default function SaleManager() {
 
   // Show my sales list
   return (
-    <div className="min-h-screen bg-[#080808] pt-24 pb-20">
+    <div className="min-h-screen bg-[#080808] pb-20">
       <div className="max-w-6xl mx-auto px-4">
         <h1 className="font-cinzel text-xl tracking-[6px] text-[#F5EED8] uppercase mb-2">
           My Sales

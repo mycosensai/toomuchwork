@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function AgentPersonalitySliders({ agentId }: { agentId: string }) {
+export function AgentPersonalitySliders({ agentId: _agentId }: { agentId: string }) {
   const [formality, setFormality] = useState(50);
   const [verbosity, setVerbosity] = useState(50);
   const [risk, setRisk] = useState(50);

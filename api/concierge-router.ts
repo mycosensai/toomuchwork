@@ -159,7 +159,7 @@ export const conciergeRouter = createRouter({
           temperature: 0.7,
           max_tokens: 1500,
         },
-        (chunk, done) => {
+        (chunk, _done) => {
           fullResponse += chunk;
         }
       );

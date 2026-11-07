@@ -5,8 +5,9 @@ import { users } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { TRPCError } from "@trpc/server";
-import { validatePasswordStrength, logAudit, getClientIP, isTokenRevoked, isUserSessionRevoked } from "./security";
+import { validatePasswordStrength, logAudit, getClientIP, isTokenRevoked, isUserSessionRevoked, assertSensitiveLimit } from "./security";
 import { env } from "./lib/env";
+import { publicRole } from "./lib/admin-access";
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 const ABSOLUTE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -112,6 +113,7 @@ export const localAuthRouter = createRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertSensitiveLimit(ctx.req, "auth");
       // Validate password strength
       const strength = validatePasswordStrength(input.password);
       if (!strength.valid) {
@@ -144,12 +146,12 @@ export const localAuthRouter = createRouter({
       }
 
       const hashedPassword = await hashPassword(input.password);
-      const isAdmin = env.adminEmails.includes(input.email.toLowerCase());
       const insertResult = await db.insert(users).values({
         name: input.name,
         email: input.email,
         password: hashedPassword,
-        role: isAdmin ? "admin" : "user",
+        role: "user",
+        email_verified: 0,
       });
       const userId = Number(insertResult.meta.last_row_id);
 
@@ -181,6 +183,7 @@ export const localAuthRouter = createRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertSensitiveLimit(ctx.req, "auth");
       const db = getDb();
       const [user] = await db
         .select()
@@ -234,7 +237,7 @@ export const localAuthRouter = createRouter({
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role,
+          role: publicRole(user),
         },
       };
     }),
@@ -258,7 +261,8 @@ export const localAuthRouter = createRouter({
       .where(eq(users.id, userId))
       .limit(1);
 
-    return user || null;
+    if (!user) return null;
+    return { ...user, role: publicRole(user) };
   }),
 });
 
@@ -283,7 +287,7 @@ async function verifyPassword(password: string, stored: string): Promise<boolean
   const [scheme, iterationStr, saltB64, hashB64] = stored.split("$");
   if (scheme !== "pbkdf2" || !iterationStr || !saltB64 || !hashB64) return false;
   const iterations = Number(iterationStr);
-  const salt = base64ToBytes(saltB64);
+  const salt = Uint8Array.from(base64ToBytes(saltB64));
   const expected = base64ToBytes(hashB64);
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations, hash: "SHA-256" }, key, expected.length * 8);

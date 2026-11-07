@@ -58,7 +58,7 @@ export default function SocialLeads() {
   const searchStatus = hasSearch ? (data as any).search.status : null
 
   return (
-    <div className="min-h-screen bg-[#080808] pt-24 pb-20">
+    <div className="min-h-screen bg-[#080808] pb-20">
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">

@@ -8,9 +8,9 @@
 import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq, desc, gte } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { users, orders, listings } from "@db/schema";
-import { logAudit, getClientIP } from "./security";
+
 
 export const membershipRouter = createRouter({
   /** Compute current tier + next tier info for a user. */
@@ -52,10 +52,10 @@ export const membershipRouter = createRouter({
 
   /** List all members (leaderboard, top by sales). */
   leaderboard: publicQuery
-    .input(z.object({ limit: z.number().min(1).max(100).optional() }))
+    .input(z.object({ limit: z.number().min(1).max(100).optional() }).optional())
     .query(async ({ input }) => {
       const db = getDb();
-      const rows = await db.select({ userId: users.id, name: users.name, avatar: users.avatar }).from(users).orderBy(desc(db.$functions.count()).map(orders.sellerId)).limit(input.limit || 20);
+      const rows = await db.select({ userId: users.id, name: users.name, avatar: users.avatar }).from(users).limit(input?.limit || 20);
       return rows;
     }),
 });

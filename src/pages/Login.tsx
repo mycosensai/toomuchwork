@@ -79,8 +79,13 @@ export default function Login() {
     const email = (form.elements.namedItem('email') as HTMLInputElement)?.value?.trim()
     const password = (form.elements.namedItem('password') as HTMLInputElement)?.value
 
-    if (!email || !password) {
-      setError('Please enter both email and password.')
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Enter a valid email address.')
+      setPending(false)
+      return
+    }
+    if (!password) {
+      setError('Enter your password.')
       setPending(false)
       return
     }
@@ -119,8 +124,18 @@ export default function Login() {
     const email = (form.elements.namedItem('email') as HTMLInputElement)?.value?.trim()
     const password = (form.elements.namedItem('password') as HTMLInputElement)?.value
 
-    if (!email || !password) {
-      setError('Please enter both email and password.')
+    if (!name) {
+      setError('Please enter your name.')
+      setPending(false)
+      return
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Enter a valid email address.')
+      setPending(false)
+      return
+    }
+    if (!password || password.length < 8 || !/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      setError('Password needs 8 or more characters, with upper and lower case, a number, and a symbol.')
       setPending(false)
       return
     }
@@ -151,7 +166,7 @@ export default function Login() {
   const formAction = mode === 'login' ? handleLogin : handleRegister
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-10">

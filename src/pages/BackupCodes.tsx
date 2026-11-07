@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function BackupCodes() {
-  const [codes, setCodes] = useState([
+  const [codes, _setCodes] = useState([
     { code: "ABCD-1234", used: false },
     { code: "EFGH-5678", used: true },
   ]);

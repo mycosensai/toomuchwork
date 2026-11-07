@@ -10,7 +10,7 @@ import { getDb } from "./queries/connection";
 import { eq, desc, sql } from "drizzle-orm";
 import { users, orders } from "@db/schema";
 import { TRPCError } from "@trpc/server";
-import { logAudit, getClientIP } from "./security";
+
 
 const RANKS = [
   { rank: "Collector", minSales: 0, icon: "🪙" },

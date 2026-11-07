@@ -4,22 +4,18 @@ compatibility_flags = ["nodejs_compat"]
 
 pages_build_output_dir = "dist"
 
-main = "./functions/[[path]].ts"
-
 [observability]
 enabled = true
 
 [placement]
 mode = "smart"
 
+# Production Pages project `thevault` has one binding: D1 `DB`.
+# There is no KV namespace and no R2 bucket bound. Do not declare them here.
 [[d1_databases]]
 binding = "DB"
 database_name = "thevault-db"
 database_id = "375949ce-7c7d-4822-8235-461446769258"
-
-[[r2_buckets]]
-binding = "ASSETS"
-bucket_name = "thevault-assets"
 
 [vars]
 ENVIRONMENT = "production"
@@ -37,5 +33,7 @@ ENABLE_SECURITY_HEADERS = "true"
 # ─── Web3 Treasury Configuration ───
 # Set your treasury wallet address (Solana public key)
 # SOLANA_TREASURY = "YOUR_SOLANA_TREASURY_ADDRESS"
+# Fallback when the public SOL price feed is down. Production already sets this.
+# Checkout labels the source configured_fallback instead of pretending it is live.
 SOL_USD_RATE = "69.52"
 USDC_USD_RATE = "1.00"

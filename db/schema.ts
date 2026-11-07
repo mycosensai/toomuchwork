@@ -29,6 +29,24 @@ export const users = sqliteTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+export const sellerProfiles = sqliteTable("seller_profiles", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().unique(),
+  handle: text("handle").notNull().unique(),
+  displayName: text("display_name"),
+  bio: text("bio"),
+  location: text("location"),
+  website: text("website"),
+  contactEmail: text("contact_email"),
+  avatarUrl: text("avatar_url"),
+  bannerUrl: text("banner_url"),
+  accentColor: text("accent_color").default("#C9A84C"),
+  isPublic: integer("is_public", { mode: "boolean" }).default(true).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type SellerProfile = typeof sellerProfiles.$inferSelect;
+
 // ─── CATEGORIES ───
 export const categories = sqliteTable("categories", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
@@ -125,6 +143,36 @@ export const stripeSessions = sqliteTable("stripe_sessions", {
   status: text("status").default("pending").notNull(),
   metadata: text("metadata"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+
+export const premiumPurchases = sqliteTable("premium_purchases", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  reportType: text("report_type").notNull(),
+  targetId: integer("target_id").notNull(),
+  sessionId: text("session_id").notNull().unique(),
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull().default("pending"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+});
+export type PremiumPurchase = typeof premiumPurchases.$inferSelect;
+
+export const stripeEventLedger = sqliteTable("stripe_event_ledger", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  provider: text("provider").notNull(),
+  externalEventId: text("external_event_id").notNull(),
+  eventType: text("event_type").notNull(),
+  payload: text("payload"),
+  status: text("status").notNull().default("processing"),
+  retries: integer("retries").notNull().default(0),
+  processedAt: integer("processed_at"),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const orderPaymentKeys = sqliteTable("order_payment_keys", {
+  stripeSessionId: text("stripe_session_id").primaryKey(),
+  createdAt: integer("created_at").notNull(),
 });
 
 // ─── AI AGENT LOGS ───
@@ -1399,9 +1447,9 @@ export type InsertSupportTicket = typeof supportTickets.$inferInsert;
 export const passwordResetTokens = sqliteTable("password_reset_tokens", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
-  token: text("token").notNull().unique(),
+  tokenHash: text("token_hash").notNull().unique(),
   expiresAt: integer("expires_at").notNull(),
-  used: integer("used").default(0).notNull(),
+  usedAt: integer("used_at"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
@@ -1410,9 +1458,9 @@ export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export const emailVerificationTokens = sqliteTable("email_verification_tokens", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
-  token: text("token").notNull().unique(),
+  tokenHash: text("token_hash").notNull().unique(),
   expiresAt: integer("expires_at").notNull(),
-  used: integer("used").default(0).notNull(),
+  usedAt: integer("used_at"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;

@@ -120,7 +120,7 @@ export default function AgentCommand() {
     onSuccess: () => utils.graphWorkflow.engineStats.invalidate()
   });
   const difyCommand = trpc.graphWorkflow.command.useMutation();
-  const auditFleetHallucinations = trpc.samson.auditFleetHallucinations.useMutation({
+  const auditFleetHallucinations = trpc.samson.runQualityAudit.useMutation({
     onSuccess: (data) => setAuditResult(data),
   });
 
@@ -204,7 +204,7 @@ export default function AgentCommand() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#080808] pt-24 pb-16 px-4 flex justify-center">
+    <div className="min-h-screen bg-[#080808] pb-16 px-4 flex justify-center">
       <div className="w-full max-w-6xl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -1245,7 +1245,7 @@ export default function AgentCommand() {
                   onClick={() => {
                     setAuditLoading(true);
                     auditFleetHallucinations.mutate(
-                      { perAgent: 10 },
+                      { type: "all" },
                       { onSettled: () => setAuditLoading(false) },
                     );
                   }}

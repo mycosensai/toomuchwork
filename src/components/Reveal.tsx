@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 
 /**
  * Reveal — wraps children in a scroll-triggered entrance.
@@ -51,12 +51,12 @@ export default function Reveal({
   const delayClass = delay && delay >= 1 && delay <= 8 ? ` reveal-delay-${delay}` : ''
 
   return (
-    // @ts-expect-error — dynamic tag render
-    <Tag
-      ref={ref}
+    <div
+      ref={ref as RefObject<HTMLDivElement>}
       className={`${visible ? 'reveal-visible' : 'reveal'}${delayClass}${className ? ` ${className}` : ''}`}
+      data-as={Tag}
     >
       {children}
-    </Tag>
+    </div>
   )
 }

@@ -101,7 +101,7 @@ if ($Action -eq "status") {
     Write-Host "  THE VAULT — AGENT FLEET STATUS" -ForegroundColor Cyan
     Write-Host "═══════════════════════════════════════════════════`n" -ForegroundColor Cyan
 
-    $samson = Invoke-VaultApi GET "/agent.samsonStatus"
+    $samson = Invoke-VaultApi GET "/samson.samsonStatus"
     if ($samson) {
         $color = if ($samson.armed) { "Red" } else { "Green" }
         Write-Host "  SAMSON KILL SWITCH: $($samson.message)" -ForegroundColor $color
@@ -144,7 +144,7 @@ if ($Action -eq "status") {
 # ─── ACTION: SAMSON ARM ───
 if ($Action -eq "samson-arm") {
     Write-Host "ARMING SAMSON..." -ForegroundColor Red
-    $result = Invoke-VaultApi POST "/agent.armSamson" @{}
+    $result = Invoke-VaultApi POST "/samson.armSamson" @{}
     if ($result) {
         Write-Host $result.message -ForegroundColor Red
         Write-Host "`nAll agents are now FROZEN." -ForegroundColor Red
@@ -155,7 +155,7 @@ if ($Action -eq "samson-arm") {
 # ─── ACTION: SAMSON DISARM ───
 if ($Action -eq "samson-disarm") {
     Write-Host "DISARMING SAMSON..." -ForegroundColor Green
-    $result = Invoke-VaultApi POST "/agent.disarmSamson" @{}
+    $result = Invoke-VaultApi POST "/samson.disarmSamson" @{}
     if ($result) {
         Write-Host $result.message -ForegroundColor Green
     }
@@ -175,7 +175,7 @@ if ($Action -eq "toggle") {
     }
     $newState = -not $project.active
     Write-Host "Toggling $($project.name) to $(if ($newState) { 'ACTIVE' } else { 'OFFLINE' })..." -ForegroundColor $(if ($newState) { "Green" } else { "Yellow" })
-    $result = Invoke-VaultApi POST "/agent.toggleAgent" @{ projectId = $ProjectId; active = $newState }
+    $result = Invoke-VaultApi POST "/samson.toggleAgent" @{ projectId = $ProjectId; active = $newState }
     if ($result) {
         Write-Host "Success: $($result.projectId) is now $(if ($result.active) { 'ACTIVE' } else { 'OFFLINE' })" -ForegroundColor $(if ($result.active) { "Green" } else { "Yellow" })
     }
@@ -188,7 +188,7 @@ if ($Action -eq "prompt") {
         exit 1
     }
     Write-Host "Sending prompt to $ProjectId..." -ForegroundColor Cyan
-    $result = Invoke-VaultApi POST "/agent.promptAgent" @{ projectId = $ProjectId; prompt = $Prompt; model = $Model }
+    $result = Invoke-VaultApi POST "/samson.promptAgent" @{ projectId = $ProjectId; prompt = $Prompt; model = $Model }
     if ($result) {
         if ($result.success) {
             Write-Host "`nOUTPUT (Model: $($result.model), Tokens: $($result.tokensUsed)):`" -ForegroundColor Green
@@ -205,7 +205,7 @@ if ($Action -eq "prompt") {
 # ─── ACTION: AUDIT ───
 if ($Action -eq "audit") {
     Write-Host "Running quality legitimacy audit..." -ForegroundColor Cyan
-    $result = Invoke-VaultApi POST "/agent.runQualityAudit" @{ type = "all" }
+    $result = Invoke-VaultApi POST "/samson.runQualityAudit" @{ type = "all" }
     if ($result) {
         Write-Host "`nAUDIT COMPLETE — Overall Legitimacy: $($result.overallLegitimacy)%" -ForegroundColor $(if ($result.overallLegitimacy -ge 80) { "Green" } elseif ($result.overallLegitimacy -ge 50) { "Yellow" } else { "Red" })
         if ($result.results.appraisal) {
@@ -255,7 +255,7 @@ if ($Action -eq "partnerships") {
 
 # ─── ACTION: BOUNDARIES ───
 if ($Action -eq "boundaries") {
-    $logs = Invoke-VaultApi GET "/agent.getBoundaryLog?input=%7B%22limit%22%3A20%7D"
+    $logs = Invoke-VaultApi GET "/samson.getBoundaryLog?input=%7B%22limit%22%3A20%7D"
     if ($logs) {
         Write-Host "`nBOUNDARY VIOLATIONS:" -ForegroundColor Cyan
         $logs | ForEach-Object {

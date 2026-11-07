@@ -1,0 +1,18 @@
+# Separate Worker. Do not deploy this with the Pages project.
+#   npx wrangler deploy -c wrangler.scheduler.toml
+# Secrets to set on THIS worker before the first cron (names only):
+#   NOUS_API_KEY is not required for the claim tick.
+#   RESEND_API_KEY enables the email outbox drain.
+# The D1 binding below is the production database. Deploy does not migrate it.
+name = "thevault-scheduler"
+main = "./workers/vault-scheduler.ts"
+compatibility_date = "2026-05-22"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "thevault-db"
+database_id = "375949ce-7c7d-4822-8235-461446769258"

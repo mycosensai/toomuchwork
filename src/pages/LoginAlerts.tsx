@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function LoginAlerts() {
-  const [alerts, setAlerts] = useState([
+  const [alerts, _setAlerts] = useState([
     { time: "2026-09-08 10:23", ip: "192.168.1.1", success: true },
     { time: "2026-09-08 09:15", ip: "10.0.0.1", success: false },
   ]);

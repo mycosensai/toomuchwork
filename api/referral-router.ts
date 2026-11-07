@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { users, referralLinks } from "@db/schema";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
@@ -31,7 +31,7 @@ export const referralRouter = createRouter({
   /** Track a referral click. */
   trackClick: publicQuery
     .input(z.object({ code: z.string().length(8) }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx: _ctx }) => {
       const db = getDb();
       const [link] = await db.select().from(referralLinks).where(eq(referralLinks.code, input.code));
       if (!link) throw new TRPCError({ code: "NOT_FOUND", message: "Invalid referral code" });

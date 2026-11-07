@@ -3,7 +3,7 @@
  */
 import { useState } from "react";
 import { trpc } from "@/providers/trpc";
-import { Mail, Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -21,12 +21,12 @@ export default function ForgotPassword() {
         <p className="text-gray-400 mb-6">Enter your email and we'll send you a reset link.</p>
         {sent ? (
           <div className="text-center text-emerald-400 flex flex-col items-center gap-2">
-            <FiCheck className="w-8 h-8" />
+            <Check className="w-8 h-8" />
             <p>Reset link sent! Check your email.</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {error && <div className="text-red-400 text-sm flex items-center gap-2"><FiAlertCircle /> {error}</div>}
+            {error && <div className="text-red-400 text-sm flex items-center gap-2"><AlertCircle /> {error}</div>}
             <input type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-dark-900 border border-gold-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-gold-400" />
             <button onClick={() => mutation.mutate({ email })} disabled={mutation.isPending || !email} className="w-full px-4 py-3 bg-gold-500/90 text-black font-semibold rounded-lg hover:bg-gold-400 transition disabled:opacity-50">
               {mutation.isPending ? "Sending..." : "Send Reset Link"}

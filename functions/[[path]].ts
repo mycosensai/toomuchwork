@@ -12,6 +12,10 @@ import { createContext } from "../api/context";
 import { setDb } from "../api/queries/connection";
 import { setCloudflareEnv } from "../api/lib/env";
 import { checkRateLimit, getSecurityHeaders, getCorsConfig } from "../api/security";
+import { env } from "../api/lib/env";
+import { publicPublishableKey } from "../api/lib/redact";
+import { applyStripeEvent, claimStripeEvent, markStripeEvent } from "../api/lib/stripe-events";
+import { runScheduledMaintenance } from "../api/lib/scheduled-jobs";
 
 type Env = Record<string, unknown> & {
   DB?: D1Database;
@@ -136,9 +140,11 @@ app.use(async (c, next) => {
 // ─── Security headers ───
 app.use(async (c, next) => {
   await next();
-  const headers = getSecurityHeaders();
-  for (const [key, value] of Object.entries(headers)) {
-    c.header(key, value);
+  if (env.securityHeadersEnabled) {
+    const headers = getSecurityHeaders();
+    for (const [key, value] of Object.entries(headers)) {
+      c.header(key, value);
+    }
   }
 });
 
@@ -150,20 +156,17 @@ app.use(trimTrailingSlash());
 
 // ─── Rate limiting ───
 app.use("/api/*", async (c, next) => {
-  if (c.req.path === "/api/stripe/webhook") {
+  if (!env.rateLimitingEnabled || c.req.path === "/api/stripe/webhook") {
     await next();
     return;
   }
 
-  const isAuth =
-    c.req.path.includes("/api/auth/") ||
-    c.req.path.includes("localAuth.login") ||
-    c.req.path.includes("localAuth.register") ||
-    c.req.path.includes("oauth.initiate") ||
-    c.req.path.includes("oauth.callback");
-
-  const config = isAuth ? { maxRequests: 5, windowMs: 60_000 } : undefined;
-  const result = checkRateLimit(c.req.raw, config);
+  const ip = c.req.header("cf-connecting-ip") || "unknown";
+  const result = checkRateLimit(c.req.raw, {
+    windowMs: 60_000,
+    maxRequests: 60,
+    keyGenerator: () => `api:${ip}`,
+  });
 
   if (!result.allowed) {
     return c.json(
@@ -237,106 +240,26 @@ app.post("/api/stripe/webhook", async (c) => {
     return c.json({ ok: false, error: "Invalid JSON payload" }, 400);
   }
 
+  if (!env.stripeWebhooksEnabled) return c.json({ ok: false, error: "Stripe webhooks are disabled" }, 503);
+
   if (!event.id || !event.type) return c.json({ ok: false, error: "Invalid Stripe event" }, 400);
 
-  const duplicate = await db.prepare("SELECT id FROM webhook_events WHERE id = ? LIMIT 1").bind(event.id).first();
-  if (duplicate) return c.json({ ok: true, duplicate: true, eventId: event.id });
+  const claim = await claimStripeEvent(db, { id: event.id, type: event.type, data: event.data }, rawBody);
+  if (claim === "processed") return c.json({ ok: true, duplicate: true, eventId: event.id });
 
   if (!STRIPE_ALLOWED_EVENTS.has(event.type)) {
-    await db
-      .prepare("INSERT INTO webhook_events (id, provider, event_type, processed_at, metadata) VALUES (?, ?, ?, ?, ?)")
-      .bind(event.id, "stripe", event.type, Date.now(), JSON.stringify({ ignored: true }))
-      .run();
+    await markStripeEvent(db, event.id, "processed");
     return c.json({ ok: true, ignored: true, type: event.type });
   }
 
-  const object = event.data?.object || {};
-  const sessionId = typeof object.id === "string" ? object.id : "";
-
-  if (event.type === "checkout.session.completed" && sessionId) {
-    // 0a. LISTING FEE session? → mark fee paid + activate listing (gate unlock).
-    //     Fee sessions live in listing_fees (not stripe_sessions), so check here first.
-    const feeRow = await db.prepare("SELECT id, listing_id FROM listing_fees WHERE stripe_session_id = ? AND status != 'paid' LIMIT 1").bind(sessionId).first<{ id: number; listing_id: number | null }>();
-    if (feeRow?.id) {
-      await db.prepare("UPDATE listing_fees SET status = 'paid', paid_at = unixepoch() WHERE id = ?").bind(feeRow.id).run();
-      if (feeRow.listing_id) {
-        await db.prepare("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'pending_fee'").bind(feeRow.listing_id).run();
-      }
-    }
-
-    // 0b. Purchase session → mark stripe session completed + create order.
-    await db.prepare("UPDATE stripe_sessions SET status = ? WHERE session_id = ?").bind("completed", sessionId).run();
-    const sessionRow = await db.prepare("SELECT listing_id, user_id, amount, commission FROM stripe_sessions WHERE session_id = ? LIMIT 1").bind(sessionId).first<{ listing_id: number; user_id: number | null; amount: string; commission: string }>();
-    if (sessionRow?.listing_id) {
-      // 1. Mark listing sold
-      await db.prepare("UPDATE listings SET status = ? WHERE id = ?").bind("sold", sessionRow.listing_id).run();
-      // 2. Create the canonical ORDER row (buyer purchase record)
-      const listingRow = await db.prepare("SELECT title, images, seller_id FROM listings WHERE id = ? LIMIT 1").bind(sessionRow.listing_id).first<{ title: string; images: string | null; seller_id: number | null }>();
-      const buyerEmail = typeof object.customer_email === "string" ? object.customer_email : null;
-      const shippedAddress = typeof object.shipping === "object" && object.shipping ? JSON.stringify(object.shipping) : null;
-      const commissionNum = Number(sessionRow.commission) || 0;
-      const payoutAmount = (Number(sessionRow.amount) - commissionNum).toFixed(2);
-      await db
-        .prepare(
-          "INSERT INTO orders (user_id, seller_id, listing_id, listing_title, listing_image, amount, commission, payment_method, payment_status, order_status, shipping_address, payout_status, payout_amount, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'stripe', 'completed', 'confirmed', ?, 'pending', ?, ?, unixepoch(), unixepoch())"
-        )
-        .bind(
-          sessionRow.user_id,
-          listingRow?.seller_id || null,
-          sessionRow.listing_id,
-          listingRow?.title || "Vault Purchase",
-          listingRow?.images || null,
-          sessionRow.amount,
-          sessionRow.commission,
-          shippedAddress,
-          payoutAmount,
-          JSON.stringify({ stripe_session_id: sessionId, buyer_email: buyerEmail })
-        )
-        .run();
-      // 3. Queue seller notification (email row, sent by notification worker)
-      if (listingRow?.seller_id) {
-        const seller = await db.prepare("SELECT id, email, name FROM users WHERE id = ? LIMIT 1").bind(listingRow.seller_id).first<{ id: number; email: string | null; name: string | null }>();
-        if (seller?.email) {
-          await db
-            .prepare("INSERT INTO email_notifications (user_id, recipient_email, type, subject, body_text, status, created_at) VALUES (?, ?, 'order_placed', ?, ?, 'pending', unixepoch())")
-            .bind(
-              seller.id,
-              seller.email,
-              `Your item sold: ${listingRow.title}`,
-              `Great news! Your item "${listingRow.title}" was purchased for $${sessionRow.amount}. We'll notify you when payment settles.`
-            )
-            .run();
-        }
-      }
-    }
+  try {
+    await applyStripeEvent(db, { id: event.id, type: event.type, data: event.data });
+    await markStripeEvent(db, event.id, "processed");
+  } catch (error) {
+    await markStripeEvent(db, event.id, "failed");
+    console.error("[stripe webhook]", error instanceof Error ? error.message : error);
+    return c.json({ ok: false, error: "Webhook processing failed" }, 500);
   }
-
-  // Released hold: buyer abandoned checkout or payment failed → listing back to active
-  if (event.type === "checkout.session.expired" && sessionId) {
-    await db.prepare("UPDATE stripe_sessions SET status = ? WHERE session_id = ?").bind("expired", sessionId).run();
-    const sessionRow = await db.prepare("SELECT listing_id FROM stripe_sessions WHERE session_id = ? LIMIT 1").bind(sessionId).first<{ listing_id: number }>();
-    if (sessionRow?.listing_id) {
-      await db.prepare("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'reserved'").bind(sessionRow.listing_id).run();
-    }
-  }
-
-  if (event.type === "payment_intent.payment_failed") {
-      // NOTE: payment_intent events carry a PaymentIntent ID (pi_...) as object.id,
-      // NOT a Checkout Session ID (cs_...). stripe_sessions stores cs_... IDs, so a
-      // session_id lookup never matches. Release the hold via the listing from
-      // event metadata instead.
-      const obj = (event.data?.object || {}) as Record<string, any>;
-      const listingFromMeta = Number(obj?.metadata?.listingId) || 0;
-      await db.prepare("UPDATE stripe_sessions SET status = ? WHERE session_id = ?").bind("failed", sessionId).run();
-      if (listingFromMeta) {
-        await db.prepare("UPDATE listings SET status = 'active' WHERE id = ? AND status = 'reserved'").bind(listingFromMeta).run();
-      }
-    }
-
-  await db
-    .prepare("INSERT INTO webhook_events (id, provider, event_type, processed_at, metadata) VALUES (?, ?, ?, ?, ?)")
-    .bind(event.id, "stripe", event.type, Date.now(), JSON.stringify({ sessionId }))
-    .run();
 
   return c.json({ ok: true, eventId: event.id, type: event.type });
 });
@@ -415,13 +338,12 @@ app.get("/api/oauth/callback/:provider", async (c) => {
 
 // ─── Client config endpoint (exposes public env vars at runtime) ───
 app.get("/api/config", (c) => {
-  const stripeKey =
-    (c.env as any)?.VITE_STRIPE_PUBLISHABLE_KEY ||
-    (typeof process !== "undefined" && (process as any).env?.VITE_STRIPE_PUBLISHABLE_KEY) ||
-    "";
+  const stripeKey = publicPublishableKey(
+    (c.env as { VITE_STRIPE_PUBLISHABLE_KEY?: string })?.VITE_STRIPE_PUBLISHABLE_KEY,
+  );
   return c.json({
     VITE_STRIPE_PUBLISHABLE_KEY: stripeKey,
-    VAULT_DOMAIN: (c.env as any)?.VAULT_DOMAIN || "thevaultdfw.win",
+    VAULT_DOMAIN: (c.env as { VAULT_DOMAIN?: string })?.VAULT_DOMAIN || "thevaultdfw.win",
   });
 });
 
@@ -480,7 +402,7 @@ app.post("/api/telegram/webhook", async (c) => {
   // Create the ticket via the shared router logic through drizzle.
   try {
     const { drizzle } = await import("drizzle-orm/d1");
-    const { eq, desc, sql } = await import("drizzle-orm");
+    const { _eq, _desc, sql } = await import("drizzle-orm");
     const { supportTickets } = await import("../db/schema");
     const { notifyTelegram, sendTelegramMessage } = await import("../api/lib/telegram");
     const db = getD1(c.env);
@@ -533,14 +455,54 @@ app.post("/api/telegram/webhook", async (c) => {
   }
 });
 
+app.get("/api/assets/*", async (c) => {
+  const key = decodeURIComponent(c.req.path.replace(/^\/api\/assets\//, ""));
+  if (!key.startsWith("uploads/") || key.includes("..")) {
+    return c.json({ error: "invalid key" }, 400);
+  }
+  const bucket = (c.env as { ASSETS?: { get: (key: string) => Promise<{ body: ReadableStream; httpMetadata?: { contentType?: string } } | null> } }).ASSETS;
+  if (!bucket) return c.json({ error: "storage unavailable" }, 503);
+  const obj = await bucket.get(key);
+  if (!obj) return c.json({ error: "not found" }, 404);
+  const contentType = obj.httpMetadata?.contentType || "application/octet-stream";
+  if (!contentType.startsWith("image/")) return c.json({ error: "unsupported object" }, 415);
+  const headers = new Headers();
+  headers.set("content-type", contentType);
+  headers.set("cache-control", "public, max-age=3600");
+  headers.set("x-content-type-options", "nosniff");
+  return new Response(obj.body, { headers });
+});
+
 app.all("/api/*", (c) => c.json({ error: "API route not found", path: c.req.path }, 404));
+
+function canonicalFor(pathname: string): string {
+  const clean = pathname === "/" ? "/" : pathname.replace(/\/$/, "") || "/";
+  return `https://thevaultdfw.win${clean}`;
+}
 
 // Cloudflare Pages onRequest
 export const onRequest = async (context: any) => {
   const url = new URL(context.request.url);
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith("/api/")) {
     return app.fetch(context.request, context.env, context);
   }
-  // Non-API requests fall through to Pages static asset serving
-  return context.next();
+  const response = await context.next();
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("text/html")) return response;
+  const html = await response.text();
+  const canonical = canonicalFor(url.pathname).replace(/"/g, "");
+  const rewritten = html
+    .replace(/<link rel="canonical" href="[^"]*"\s*\/?>/, `<link rel="canonical" href="${canonical}" />`)
+    .replace(/<meta property="og:url" content="[^"]*"\s*\/?>/, `<meta property="og:url" content="${canonical}" />`);
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+  return new Response(rewritten, { status: response.status, statusText: response.statusText, headers });
 };
+
+export async function scheduled(_event: unknown, env: Env, ctx: ExecutionContext): Promise<void> {
+  setCloudflareEnv(env as Record<string, unknown>);
+  const db = getD1(env);
+  if (!db) return;
+  setDb(db);
+  ctx.waitUntil(runScheduledMaintenance());
+}

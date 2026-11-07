@@ -15,9 +15,9 @@ import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq } from "drizzle-orm";
 import { users } from "@db/schema";
-import { sendEmail } from "./email-service";
-import { TRPCError } from "@trpc/server";
-import { logAudit, getClientIP } from "./security";
+
+
+
 
 const PLANS = {
   monthly: { price: 19.99, stripePriceId: "price_vault_pro_monthly", name: "Vault Pro — Monthly" },
@@ -71,7 +71,7 @@ export const subscriptionRouter = createRouter({
   /** Cancel subscription (cancel at period end). */
   cancel: authedQuery
     .input(z.object({ cancelAtPeriodEnd: z.boolean().optional() }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx: _ctx }) => {
       const body = new URLSearchParams();
       if (input.cancelAtPeriodEnd !== false) body.set("cancel_at_period_end", "true");
       const res = await fetch(`https://api.stripe.com/v1/subscriptions/${(globalThis as any).env?.STRIPE_SUBSCRIPTION_ID || ""}`, {
@@ -81,5 +81,3 @@ export const subscriptionRouter = createRouter({
       return { cancelled: !!res?.cancel_at_period_end };
     }),
 });
-
-import { users as _users } from "@db/schema";

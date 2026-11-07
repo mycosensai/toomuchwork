@@ -8,7 +8,7 @@ import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq, desc } from "drizzle-orm";
-import { curatedLists, showcaseListings, listings } from "@db/schema";
+import { curatedLists, showcaseListings } from "@db/schema";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
 
@@ -44,7 +44,7 @@ export const curatorRouter = createRouter({
   /** Add a listing to a curated list. */
   addListing: authedQuery
     .input(z.object({ listId: z.number().positive(), listingId: z.number().positive() }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx: _ctx }) => {
       const db = getDb();
       await db.insert(showcaseListings).values({ showcaseId: input.listId, listingId: input.listingId });
       return { added: true };
@@ -53,7 +53,7 @@ export const curatorRouter = createRouter({
   /** Remove listing from curated list. */
   removeListing: authedQuery
     .input(z.object({ listId: z.number().positive(), listingId: z.number().positive() }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx: _ctx }) => {
       const db = getDb();
       await db.delete(showcaseListings).where(eq(showcaseListings.showcaseId, input.listId)).where(eq(showcaseListings.listingId, input.listingId));
       return { removed: true };

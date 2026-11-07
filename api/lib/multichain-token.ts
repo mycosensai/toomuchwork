@@ -22,8 +22,8 @@
 import { Connection, Keypair } from "@solana/web3.js";
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, getMint } from "@solana/spl-token";
 import { getRawEnv } from "./env";
-import { createPublicClient, http, type Chain } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+
+
 
 // ─── Chain definitions ───────────────────────────────────────────────
 
@@ -147,10 +147,10 @@ export type ChainKey = keyof typeof CHAINS;
 // We deploy a minimal "VaultToken" with name/symbol from listing data.
 // Uses the standard ERC-20 implementation with mint-to-treasury on deploy.
 
-const ERC20_BYTECODE =
+const _ERC20_BYTECODE =
   "0x608060405234801561001057600080fd5b506040516101d93803806101d9833981810160405281019061003391906101c4565b8060008060405160200160405190810160405281019060005b60208110156100b957600080fd5b810190808051906020019092919050505061011d565b60008151905061006e816100fc565b92915050565b60006020828403121561008a57600080fd5b600061009884828501610063565b91505092915050565b6000819050919050565b6100bc816100a7565b81146100c757600080fd5b50565b6000813590506100d9816100b1565b92915050565b6000602082840312156100f557600080fd5b600061010384828501610063565b91505092915050565b610117816100c9565b82525050565b60006020820190506101326000830184610110565b92915050565b6000819050919050565b61014e81610139565b811461015957600080fd5b5056fea2646970667358221220c2a5f1e6e0c8e8e1e6e0c8e8e1e6e0c8e8e1e6e0c8e8e1e6e0c8e8e1e6e0c8e64736f6c63430008190033";
 
-const ERC20_ABI = [
+const _ERC20_ABI = [
   "function name() view returns (string)",
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
@@ -329,103 +329,19 @@ async function tokenizeEvm(
   chain: string;
   message: string;
 }> {
-  const supply = Math.max(1, Math.floor(args.totalSupply ?? 1));
-  const treasuryPrivKey = getEvmPrivateKey(chainKey);
-  const treasuryAddress = getEvmTreasuryAddress(chainKey);
-
-  if (!treasuryPrivKey || !treasuryAddress) {
-    // Simulated: return deterministic address
-    const pseudoMint =
-      "0x" +
-      Array.from({ length: 40 }, () =>
-        "0123456789abcdef"[Math.floor(Math.random() * 16)],
-      ).join("");
-    return {
-      success: false,
-      simulated: true,
-      mintAddress: pseudoMint,
-      treasuryAddress: treasuryAddress || "unconfigured",
-      tokenName: args.tokenName,
-      tokenSymbol: args.tokenSymbol,
-      decimals: config.decimals,
-      totalSupply: String(supply),
-      txSignature: null,
-      chain: chainKey,
-      message: `Tokenization simulated — set CHAIN_${chainKey.toUpperCase()}_TREASURY_SECRET Pages secret (EVM private key) to deploy real ERC-20 on ${config.name}.`,
-    };
-  }
-
-  try {
-    const transport = http(config.rpcUrl);
-    const publicClient = createPublicClient({
-      chain: null as unknown as Chain, // viem null chain = custom
-      transport,
-    });
-
-    const account = privateKeyToAccount(
-      `0x${treasuryPrivKey.startsWith("0x") ? treasuryPrivKey.slice(2) : treasuryPrivKey}`,
-    );
-
-    // Estimate deployment gas
-    const gasEstimate = BigInt(config.deployGasEstimate);
-
-    // Encode constructor call for minimal ERC-20 (name, symbol, initialSupply to treasury)
-    // We'll use a simple bytecode patch approach: the bytecode has placeholder slots
-    // For a real deploy, use a proper factory contract. Here we deploy with initcode.
-
-    // Minimal approach: deploy the bytecode, then call mint()
-    void account; // account needed only for signing; sendRawTransaction takes the serialized tx
-    const deployHash = await publicClient.sendRawTransaction({
-      serializedTransaction: encodeEvmDeployTx({
-        from: account.address,
-        bytecode: ERC20_BYTECODE,
-        gas: gasEstimate,
-        // nonce + chainId filled by wallet — we skip for now since viem needs a wallet client
-      }),
-    });
-
-    // Fallback for Workers env without wallet-client signing: use public RPC calls only
-    // For now, return simulated with a clear message if raw deployment fails
-    return {
-      success: false,
-      simulated: true,
-      mintAddress: "",
-      treasuryAddress,
-      tokenName: args.tokenName,
-      tokenSymbol: args.tokenSymbol,
-      decimals: config.decimals,
-      totalSupply: String(supply),
-      txSignature: null,
-      chain: chainKey,
-      message: `EVM ${config.name} deployment requires wallet signing — configure CHAIN_${chainKey.toUpperCase()}_TREASURY_SECRET and chain RPC. Deploy simulated for preview.`,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      success: false,
-      simulated: true,
-      mintAddress: "",
-      treasuryAddress,
-      tokenName: args.tokenName,
-      tokenSymbol: args.tokenSymbol,
-      decimals: config.decimals,
-      totalSupply: String(supply),
-      txSignature: null,
-      chain: chainKey,
-      message: `EVM ${config.name} deployment failed: ${message}. Simulated result returned.`,
-    };
-  }
-}
-
-function encodeEvmDeployTx(args: {
-  from: `0x${string}`;
-  bytecode: `0x${string}`;
-  gas: bigint;
-}): `0x${string}` {
-  // Minimal raw tx encoding — RLP-encode deploy tx with empty to, data = bytecode
-  // This is a simplified version; full RLP is handled by viem's wallet client
-  // For Workers (no private key in client), we need to use a different approach
-  return "0x" as `0x${string}`;
+  return {
+    success: false,
+    simulated: false,
+    mintAddress: "",
+    treasuryAddress: "",
+    tokenName: args.tokenName,
+    tokenSymbol: args.tokenSymbol,
+    decimals: config.decimals,
+    totalSupply: String(Math.max(1, Math.floor(args.totalSupply ?? 1))),
+    txSignature: null,
+    chain: chainKey,
+    message: `ERC-20 deployment on ${config.name} is unavailable. The transaction encoder is a stub and is not submitted.`,
+  };
 }
 
 // ─── Public API ──────────────────────────────────────────────────────

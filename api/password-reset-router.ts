@@ -1,80 +1,85 @@
 /**
- * password-reset-router.ts — Password reset flow.
- *
- * Flow:
- *   1. POST forgotPassword { email } → generates token, sends reset email
- *   2. POST resetPassword { token, newPassword } → validates token, updates password
+ * Password reset. Tokens are random, stored as SHA-256, and single-use.
+ * The lookup is one AND predicate: hash match, unused (used_at IS NULL), unexpired.
+ * Consumption is an atomic UPDATE so two callers cannot both succeed.
  */
 import { z } from "zod";
+import { and, eq, gt, isNull } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq, gt } from "drizzle-orm";
-import { users, passwordResetTokens } from "@db/schema";
+import { passwordResetTokens, users } from "@db/schema";
 import { sendEmail } from "./email-service";
-import { TRPCError } from "@trpc/server";
-import { validatePasswordStrength, logAudit, getClientIP } from "./security";
+import { validatePasswordStrength, logAudit, getClientIP, assertSensitiveLimit } from "./security";
 import { env } from "./lib/env";
-import { SignJWT, jwtVerify } from "jose";
-import { randomBytes } from "crypto";
-
-function generateResetToken(): string {
-  return randomBytes(32).toString("hex");
-}
+import { hashToken, randomToken } from "./lib/token-hash";
 
 export const passwordResetRouter = createRouter({
-  /** Request a password reset. Sends email with token link. */
   forgotPassword: publicQuery
     .input(z.object({ email: z.string().email().max(320) }))
     .mutation(async ({ input, ctx }) => {
+      await assertSensitiveLimit(ctx.req, "reset");
       const db = getDb();
       const [user] = await db.select().from(users).where(eq(users.email, input.email));
-      if (!user) {
-        // Don't reveal whether the email exists
-        return { success: true };
-      }
-      const token = generateResetToken();
-      const expiresAt = Math.floor(Date.now() / 1000) + 3600; // 1 hour
+      if (!user) return { success: true };
+
+      const token = randomToken(32);
+      const tokenHash = await hashToken(token);
+      const expiresAt = Math.floor(Date.now() / 1000) + 3600;
       await db.insert(passwordResetTokens).values({
         userId: user.id,
-        token,
+        tokenHash,
         expiresAt,
       });
-      await sendEmail({
+      const origin = env.vaultDomain ? `https://${env.vaultDomain.replace(/^https?:\/\//, "")}` : "https://thevaultdfw.win";
+      const delivery = await sendEmail({
         to: input.email,
         subject: "Reset your Vault DFW password",
-        text: `Use this link to reset your password: ${env.vaultDomain}/reset-password?token=${token}`,
-        html: `<a href="${env.vaultDomain}/reset-password?token=${token}">Reset Password</a>`,
+        text: `Use this link to reset your password: ${origin}/reset-password?token=${token}`,
+        html: `<a href="${origin}/reset-password?token=${token}">Reset Password</a>`,
       });
       logAudit({
         path: "passwordReset.forgotPassword",
         userId: user.id,
-        action: "password_reset_requested",
+        action: delivery.success ? "password_reset_requested" : "password_reset_delivery_failed",
         ip: getClientIP(ctx.req),
         method: "POST",
       });
       return { success: true };
     }),
 
-  /** Reset password with token. */
   resetPassword: publicQuery
     .input(z.object({ token: z.string().length(64), newPassword: z.string().min(8) }))
     .mutation(async ({ input, ctx }) => {
-      const db = getDb();
+      await assertSensitiveLimit(ctx.req, "reset");
       const strength = validatePasswordStrength(input.newPassword);
       if (!strength.valid) {
         throw new TRPCError({ code: "BAD_REQUEST", message: strength.errors.join(", ") });
       }
-      const [reset] = await db.select().from(passwordResetTokens)
-        .where(eq(passwordResetTokens.token, input.token))
-        .where(eq(passwordResetTokens.used, 0))
-        .where(gt(passwordResetTokens.expiresAt, Math.floor(Date.now() / 1000)));
+      const db = getDb();
+      const now = Math.floor(Date.now() / 1000);
+      const tokenHash = await hashToken(input.token);
+      const claim = await db
+        .update(passwordResetTokens)
+        .set({ usedAt: now })
+        .where(and(
+          eq(passwordResetTokens.tokenHash, tokenHash),
+          isNull(passwordResetTokens.usedAt),
+          gt(passwordResetTokens.expiresAt, now),
+        ));
+      if (!Number(claim.meta?.changes ?? 0)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired reset token" });
+      }
+      const [reset] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(eq(passwordResetTokens.tokenHash, tokenHash))
+        .limit(1);
       if (!reset) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired reset token" });
       }
       const hashed = await hashPassword(input.newPassword);
-      await db.update(users).set({ password: hashed }).where(eq(users.id, reset.userId));
-      await db.update(passwordResetTokens).set({ used: 1 }).where(eq(passwordResetTokens.id, reset.id));
-      await db.update(users).set({ updatedAt: new Date() }).where(eq(users.id, reset.userId));
+      await db.update(users).set({ password: hashed, updatedAt: new Date() }).where(eq(users.id, reset.userId));
       await logAudit({
         path: "passwordReset.resetPassword",
         userId: reset.userId,

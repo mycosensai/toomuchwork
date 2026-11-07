@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+
 import { trpc } from '@/providers/trpc'
 import Reveal from '@/components/Reveal'
 import TickerWidget from '@/components/TickerWidget'
@@ -41,9 +41,9 @@ function HeroSection() {
           </span>
         </div>
 
-        <h1 className="font-cinzel text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[12px] uppercase leading-[0.9] mb-3 animate-fadeInUp"
+        <h1 className="font-cinzel text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-[4px] sm:tracking-[8px] lg:tracking-[12px] uppercase leading-[0.9] mb-3 animate-fadeInUp"
           style={{ animationDelay: '0.2s' }}>
-          <span className="bg-gradient-to-b from-[#FFD97A] via-[#C9A84C] to-[#8A6E2F] bg-clip-text text-transparent">
+          <span className="text-[#E8CB7A]">
             The Vault
           </span>
         </h1>
@@ -412,7 +412,7 @@ function HowItWorksSection() {
    CATEGORIES
    ═══════════════════════════════════════════ */
 function CategoriesSection() {
-  const { data: categories } = trpc.categories.list.useQuery()
+  const { data: categories, isLoading, isError } = trpc.categories.list.useQuery()
 
   const iconMap: Record<string, React.ReactNode> = {
     'diamond': <Gem className="w-10 h-10" />,
@@ -440,6 +440,17 @@ function CategoriesSection() {
           </div>
         </div>
 
+        {isLoading && (
+          <div className="flex justify-center py-16">
+            <Loader2 className="w-8 h-8 text-[#C9A84C] animate-spin" />
+          </div>
+        )}
+        {isError && (
+          <p className="text-center text-sm text-[#C8BC98] py-12">Active listing counts could not be loaded. Nothing here is a stored total.</p>
+        )}
+        {!isLoading && !isError && (categories || []).length === 0 && (
+          <p className="text-center text-sm text-[#C8BC98] py-12">No categories yet. Active listings: 0.</p>
+        )}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-1">
           {(categories || []).map((cat, i) => (
             <Reveal key={cat.id} delay={((i % 8) + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8}>
@@ -455,7 +466,7 @@ function CategoriesSection() {
                   {cat.name}
                 </h3>
                 <p className="text-[10px] text-[#C8BC98] tracking-[1px] relative z-10">
-                  {cat.listingCount?.toLocaleString()} listings
+                  {cat.listingCount?.toLocaleString()} active listings
                 </p>
               </Link>
             </Reveal>

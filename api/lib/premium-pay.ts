@@ -13,8 +13,9 @@
  * Pricing is a constant here — the single place to change it.
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "../queries/connection";
+import { premiumPurchases } from "@db/schema";
 import { env } from "./env";
 
 const STRIPE_API = "https://api.stripe.com/v1";
@@ -91,13 +92,65 @@ export async function createPremiumCheckout(opts: {
   });
 
   const session = await stripeFetch("/checkout/sessions", body);
+  if (opts.userId) {
+    await getDb().insert(premiumPurchases).values({
+      userId: opts.userId,
+      reportType: opts.type,
+      targetId: opts.targetId,
+      sessionId: session.id,
+      amountCents: cents,
+      currency: "usd",
+      status: "pending",
+    });
+  }
   return { sessionId: session.id, url: session.url, amount };
 }
 
+export type StripeCheckoutView = {
+  payment_status: string;
+  amount_total: number | null;
+  currency: string | null;
+  metadata: Record<string, string>;
+};
+
 /** Confirm payment with Stripe; returns payment_status. */
-export async function fetchStripeSession(sessionId: string): Promise<{ payment_status: string; amount_total: number | null }> {
+export async function fetchStripeSession(sessionId: string): Promise<StripeCheckoutView> {
   const session = await stripeFetch(`/checkout/sessions/${sessionId}`);
-  return { payment_status: session.payment_status, amount_total: session.amount_total };
+  return {
+    payment_status: session.payment_status,
+    amount_total: session.amount_total ?? null,
+    currency: session.currency ?? null,
+    metadata: session.metadata || {},
+  };
+}
+
+export function premiumSessionMatches(
+  session: StripeCheckoutView,
+  expected: { type: string; targetId: number; userId: number; amountCents: number },
+): { ok: true } | { ok: false; reason: string } {
+  if (session.payment_status !== "paid") return { ok: false, reason: "not_paid" };
+  if (session.currency !== "usd") return { ok: false, reason: "currency" };
+  if (session.amount_total !== expected.amountCents) return { ok: false, reason: "amount" };
+  if (session.metadata.premiumType !== expected.type) return { ok: false, reason: "type" };
+  if (Number(session.metadata.targetId) !== expected.targetId) return { ok: false, reason: "target" };
+  if (Number(session.metadata.userId) !== expected.userId) return { ok: false, reason: "user" };
+  return { ok: true };
+}
+
+export async function consumePremiumPurchase(sessionId: string, userId: number, type: string, targetId: number): Promise<"consumed" | "already" | "mismatch"> {
+  const db = getDb();
+  const [purchase] = await db.select().from(premiumPurchases).where(eq(premiumPurchases.sessionId, sessionId)).limit(1);
+  if (!purchase) return "mismatch";
+  if (purchase.userId !== userId || purchase.reportType !== type || purchase.targetId !== targetId) return "mismatch";
+  if (purchase.status === "consumed") return "already";
+  const claim = await db.update(premiumPurchases).set({ status: "consumed" }).where(and(
+    eq(premiumPurchases.id, purchase.id),
+    eq(premiumPurchases.status, "pending"),
+    eq(premiumPurchases.userId, userId),
+    eq(premiumPurchases.reportType, type),
+    eq(premiumPurchases.targetId, targetId),
+  ));
+  return Number(claim.meta?.changes ?? 0) > 0 ? "consumed" : "already";
 }
 
 /**

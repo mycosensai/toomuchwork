@@ -7,6 +7,7 @@
 import { z } from "zod";
 import { AGENT_MODEL } from "./lib/openai";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
 import {
   listings,
@@ -298,7 +299,7 @@ export const socialRouter = createRouter({
         .limit(1);
 
       if (!listing) throw new Error("Listing not found");
-      if (listing.sellerId !== user.id && user.role !== "admin") {
+      if (listing.sellerId !== user.id && !isProvisionedAdmin(user)) {
         throw new Error("You do not own this listing");
       }
 
@@ -430,7 +431,7 @@ export const socialRouter = createRouter({
       if (!search) return null;
 
       // Ownership check
-      if (search.userId && search.userId !== ctx.user?.id && ctx.user?.role !== "admin") {
+      if (search.userId && search.userId !== ctx.user?.id && !isProvisionedAdmin(ctx.user)) {
         return { search: { status: search.status, totalMentionsFound: search.totalMentionsFound }, mentions: [] };
       }
 

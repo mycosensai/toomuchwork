@@ -19,15 +19,27 @@ import { env } from "./env";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
-async function stripeFetch(endpoint: string, body?: URLSearchParams, method = "POST"): Promise<any> {
+async function stripeFetch(
+  endpoint: string,
+  body?: URLSearchParams,
+  method = "POST",
+  extraHeaders?: Record<string, string>,
+): Promise<any> {
   if (!env.stripeSecretKey) throw new Error("Stripe not configured");
-  const res = await fetch(`${STRIPE_API}${endpoint}`, {
-    method: body ? method : "GET",
-    headers: {
-      Authorization: `Bearer ${env.stripeSecretKey}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: body?.toString(),
+  const isRead = method === "GET" || method === "HEAD";
+  const url = new URL(`${STRIPE_API}${endpoint}`);
+  if (isRead && body) {
+    for (const [key, value] of body.entries()) url.searchParams.append(key, value);
+  }
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${env.stripeSecretKey}`,
+    ...extraHeaders,
+  };
+  if (!isRead) headers["Content-Type"] = "application/x-www-form-urlencoded";
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: isRead ? undefined : body?.toString(),
   });
   if (!res.ok) {
     const err = await res.text();
@@ -49,15 +61,9 @@ export async function createSellerConnectAccount(opts: {
   returnUrl: string;
   /** Full URL if they abandon onboarding. */
   refreshUrl: string;
+  existingAccountId?: string | null;
 }): Promise<{ accountId: string; url: string | null }> {
-  // Existing account?
-  const accountBody = new URLSearchParams();
-  accountBody.set("limit", "100");
-  const existing = await stripeFetch("/accounts", accountBody, "GET");
-  const match = (existing?.data || []).find(
-    (a: any) => a.email?.toLowerCase() === opts.email.toLowerCase()
-  );
-  let accountId = match?.id || "";
+  let accountId = opts.existingAccountId || "";
 
   if (!accountId) {
     const create = await stripeFetch("/accounts", new URLSearchParams({
@@ -111,6 +117,7 @@ export async function createSellerTransfer(opts: {
   currency?: string;
   description: string;
   metadata?: Record<string, string>;
+  idempotencyKey?: string;
 }): Promise<{ transferId: string; status: string }> {
   const body = new URLSearchParams({
     amount: String(opts.amountCents),
@@ -121,7 +128,7 @@ export async function createSellerTransfer(opts: {
   for (const [k, v] of Object.entries(opts.metadata || {})) {
     body.set(`metadata[${k}]`, v);
   }
-  const transfer = await stripeFetch("/transfers", body);
+  const transfer = await stripeFetch("/transfers", body, "POST", opts.idempotencyKey ? { "Idempotency-Key": opts.idempotencyKey } : undefined);
   return { transferId: transfer.id, status: transfer.status };
 }
 

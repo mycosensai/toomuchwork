@@ -3,8 +3,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AgentStatusPage() {
-  const [status, setStatus] = useState("active");
-  const [logs, setLogs] = useState([
+  const [status, _setStatus] = useState("active");
+  const [logs, _setLogs] = useState([
     { time: "10:23", agent: "Appraiser", action: "Completed appraisal #4821", status: "success" },
     { time: "10:19", agent: "ProVerify", action: "Verification started for #3910", status: "info" },
     { time: "10:15", agent: "Concierge", action: "Response sent to buyer", status: "success" },

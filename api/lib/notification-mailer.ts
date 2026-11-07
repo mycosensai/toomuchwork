@@ -12,7 +12,7 @@ import { env } from "../lib/env";
 import { getDb } from "../queries/connection";
 import { notifications, users } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { sendEmail, EmailPayload } from "../email-service";
+import { sendEmail } from "../email-service";
 
 export interface NotificationOpts {
   userId: number;
@@ -71,49 +71,49 @@ export async function notify(opts: NotificationOpts): Promise<number> {
  * Convenience builders — pre-formatted notification payloads for common events.
  */
 export const notifs = {
-  offerReceived: (listingTitle: string, buyerName: string, amount: string, orderId: number) => ({
+  offerReceived: (listingTitle: string, buyerName: string, amount: string, _orderId: number) => ({
     type: "offer_received",
     title: `New offer on "${listingTitle}"`,
     body: `${buyerName} offered $${amount}`,
     link: `/orders`,
     emailSubject: `New offer on "${listingTitle}"`,
   }),
-  offerAccepted: (listingTitle: string, amount: string, orderId: number) => ({
+  offerAccepted: (listingTitle: string, amount: string, _orderId: number) => ({
     type: "offer_accepted",
     title: `Offer accepted on "${listingTitle}"`,
     body: `Your ${amount} offer was accepted!`,
     link: `/orders`,
     emailSubject: `Offer accepted on "${listingTitle}"`,
   }),
-  offerDeclined: (listingTitle: string, orderId: number) => ({
+  offerDeclined: (listingTitle: string, _orderId: number) => ({
     type: "offer_declined",
     title: `Offer declined on "${listingTitle}"`,
     body: `Your offer on "${listingTitle}" was declined.`,
     link: `/orders`,
     emailSubject: `Offer declined on "${listingTitle}"`,
   }),
-  payoutReady: (amount: string, orderId: number) => ({
+  payoutReady: (amount: string, _orderId: number) => ({
     type: "payout_ready",
     title: `Payout ready!`,
     body: `$${amount} is ready to transfer to your bank.`,
     link: `/sale`,
     emailSubject: `Payout ready — $${amount}`,
   }),
-  payoutSent: (amount: string, transferId: string, orderId: number) => ({
+  payoutSent: (amount: string, transferId: string, _orderId: number) => ({
     type: "payout_sent",
     title: `Payout sent!`,
     body: `$${amount} transferred (ID: ${transferId}). Funds should arrive in 1-2 business days.`,
     link: `/sale`,
     emailSubject: `Payout sent — $${amount}`,
   }),
-  bidPlaced: (listingTitle: string, amount: string, auctionId: number) => ({
+  bidPlaced: (listingTitle: string, amount: string, _auctionId: number) => ({
     type: "bid_placed",
     title: `New bid on "${listingTitle}"`,
     body: `A bid of $${amount} was placed on your auction.`,
     link: `/sale`,
     emailSubject: `New bid on "${listingTitle}"`,
   }),
-  auctionEnded: (listingTitle: string, amount: string, auctionId: number) => ({
+  auctionEnded: (listingTitle: string, amount: string, _auctionId: number) => ({
     type: "auction_ended",
     title: `Auction ended: "${listingTitle}"`,
     body: `Highest bid: $${amount}. Check your dashboard for next steps.`,

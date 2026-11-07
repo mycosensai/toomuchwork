@@ -462,7 +462,7 @@ export const selfAuditRouter = createRouter({
   // ── DASHBOARD WIDGET DATA ──
   dashboard: adminQuery.query(async () => {
     const db = getDb();
-    const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const _hourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     const [recentIssues, allHardening, criticalCount] = await Promise.all([

@@ -1,7 +1,8 @@
 /**
  * SettingsNotifications.tsx — Notification preferences page.
  */
-import { trpc } from "@/providers/trpc";
+
+import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { Bell, Mail, MessageSquare, Smartphone } from "lucide-react";
 

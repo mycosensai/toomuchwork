@@ -5,7 +5,7 @@
 import { trpc } from "@/providers/trpc"
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
-import { Crown, Sparkles, Shield, Star, Loader2, Check, Lock } from 'lucide-react'
+import { Sparkles, Check } from 'lucide-react'
 
 const PLANS = [
   { name: 'Monthly', price: 19.99, period: 'mo', features: ['Early access to new listings', 'Priority support', 'Basic price alerts'] },
@@ -21,11 +21,11 @@ const BADGE_TIERS = [
 ]
 
 export function Membership() {
-  const { isAuthenticated, user } = useAuth()
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
+  const { isAuthenticated, user: _user } = useAuth()
+  const [_selectedPlan, setSelectedPlan] = useState<string | null>(null)
 
   // Fetch user's membership tier
-  const { data: tierData, isLoading } = trpc.membership.tier.useQuery(undefined, {
+  const { data: tierData, isLoading: _isLoading } = trpc.membership.tier.useQuery(undefined, {
     enabled: isAuthenticated === true,
   })
 
@@ -37,7 +37,7 @@ export function Membership() {
   const currentRank = tierData?.rank || 'Collector'
   const progress = tierData?.progress || 0
   const nextRank = tierData?.nextRank
-  const nextMinSales = tierData?.nextRankMinSales
+  const nextMinSales = tierData?.nextThreshold
 
   return (
     <section className="space-y-10">
@@ -106,7 +106,7 @@ export function Membership() {
               <button
                 onClick={() => {
                   setSelectedPlan(plan.name)
-                  checkoutMutation.mutateAsync({ plan: plan.name.toLowerCase(), amount: plan.price })
+                  checkoutMutation.mutateAsync({ plan: plan.name.toLowerCase() as "monthly" | "quarterly" | "annual" })
                 }}
                 disabled={checkoutMutation.isPending}
                 className="w-full px-4 py-2 bg-gold-500/90 text-black font-semibold rounded-lg hover:bg-gold-400 transition disabled:opacity-50"

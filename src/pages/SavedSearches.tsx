@@ -5,7 +5,7 @@
 import { trpc } from "@/providers/trpc"
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
-import { Search, Loader2, Trash2, Clock, RefreshCw } from "lucide-react"
+import { Search, Loader2, Trash2, RefreshCw } from "lucide-react"
 
 export function SavedSearches() {
   const { isAuthenticated } = useAuth()
@@ -29,7 +29,7 @@ export function SavedSearches() {
   const deleteMutation = trpc.savedSearches.delete.useMutation()
 
   // Run a search query
-  const runQuery = trpc.savedSearches.save.useMutation()
+  const _runQuery = trpc.savedSearches.save.useMutation()
 
   if (!isAuthenticated) return null
 
@@ -66,7 +66,7 @@ export function SavedSearches() {
             <option value="memorabilia">Memorabilia</option>
           </select>
           <button
-            onClick={() => saveMutation.mutateAsync({ query: searchTerm, category: category || undefined })}
+            onClick={() => saveMutation.mutateAsync({ name: searchTerm, criteria: { keywords: searchTerm, category: category || undefined } })}
             disabled={saveMutation.isPending || !searchTerm}
             className="px-4 py-3 bg-gold-500/90 text-black font-semibold rounded-lg hover:bg-gold-400 transition disabled:opacity-50"
           >
@@ -110,7 +110,7 @@ export function SavedSearches() {
                   <RefreshCw className="w-4 h-4 text-gray-400" />
                 </button>
                 <button
-                  onClick={() => deleteMutation.mutateAsync({ searchId: s.id })}
+                  onClick={() => deleteMutation.mutateAsync({ id: s.id })}
                   className="p-2 hover:bg-red-500/20 rounded-lg transition"
                   title="Delete"
                 >

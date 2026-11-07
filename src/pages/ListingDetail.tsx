@@ -28,6 +28,7 @@ const badgeStyles: Record<string, string> = {
 }
 
 export default function ListingDetail() {
+  const utils = trpc.useUtils();
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
@@ -41,8 +42,8 @@ export default function ListingDetail() {
   )
   const { data: reviewStats } = trpc.reviews.statsByListing.useQuery({ listingId }, { enabled: !!listing })
   const { data: reviews } = trpc.reviews.listByListing.useQuery({ listingId }, { enabled: !!listing })
-  const createReview = trpc.reviews.create.useMutation({ onSuccess: () => { trpc.reviews.listByListing.invalidate({ listingId }); trpc.reviews.statsByListing.invalidate({ listingId }); setReviewForm({ rating: 5, title: '', comment: '' }) } })
-  const helpful = trpc.reviews.helpful.useMutation({ onSuccess: () => trpc.reviews.listByListing.invalidate({ listingId }) })
+  const createReview = trpc.reviews.create.useMutation({ onSuccess: () => { utils.reviews.listByListing.invalidate({ listingId }); utils.reviews.statsByListing.invalidate({ listingId }); setReviewForm({ rating: 5, title: '', comment: '' }) } })
+  const helpful = trpc.reviews.helpful.useMutation({ onSuccess: () => utils.reviews.listByListing.invalidate({ listingId }) })
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '' })
 
   const handleBuyNow = () => {
@@ -83,7 +84,7 @@ export default function ListingDetail() {
   const features = (listing.features as string[] | null) || []
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <Link to="/browse" className="inline-flex items-center gap-2 text-[10px] tracking-[3px] uppercase text-[#C8BC98] hover:text-[#C9A84C] transition-colors mb-8">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Browse

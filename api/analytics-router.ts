@@ -3,7 +3,7 @@ import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq, sql, desc } from "drizzle-orm";
 import { listings, orders } from "@db/schema";
-import { TRPCError } from "@trpc/server";
+
 
 export const analyticsRouter = createRouter({
   dashboard: authedQuery.query(async ({ ctx }) => {
@@ -27,7 +27,7 @@ export const analyticsRouter = createRouter({
   listingStats: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
     const userId = ctx.user!.id;
-    const rows = await db.select({ id: listings.id, title: listings.title, views: listings.views, createdAt: listings.createdAt }).from(listings).where(eq(listings.sellerId, userId)).orderBy(desc(listings.createdAt)).limit(20);
+    const rows = await db.select({ id: listings.id, title: listings.title, views: listings.viewCount, createdAt: listings.createdAt }).from(listings).where(eq(listings.sellerId, userId)).orderBy(desc(listings.createdAt)).limit(20);
     return rows;
   }),
 });

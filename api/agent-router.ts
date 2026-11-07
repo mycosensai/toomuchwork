@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm";
 import { createRouter, publicQuery, adminQuery } from "./middleware";
 import { getDb } from "./queries/connection";
+import { isSamsonArmed } from "./lib/kill-switch";
 import {
   agentProjects,
   agentTasks,
@@ -27,7 +28,7 @@ import {
   verifyContact,
   buildFeedbackEnrichedPrompt,
 } from "./lib/hallucination-guard";
-import type { AgentFeedback } from "./lib/hallucination-guard";
+
 import { getPrompt } from "./agent-prompts";
 
 // ─── TYPES ───
@@ -100,7 +101,7 @@ async function verificationStep(
   const messages = [
     {
       role: "system" as const,
-      content: `You are a verification gate for The Vault agent system. Validate the engineer's output against the task requirements. Return ONLY a JSON object: {\"passed\": true/false, \"reason\": \"...\"}`,
+      content: `You are a verification gate for The Vault agent system. Validate the engineer's output against the task requirements. Return ONLY a JSON object: {"passed": true/false, "reason": "..."}`,
     },
     {
       role: "user" as const,
@@ -134,7 +135,7 @@ async function reviewStep(
   const messages = [
     {
       role: "system" as const,
-      content: `You are a reviewer for The Vault autonomous agent system. Review the engineer's output for:\n1. Scope drift (did it do what was asked?)\n2. Hands-off violations (did it touch forbidden areas: ${handsOff.join(", ") || "none"})\n3. Silent failures (obvious errors or omissions)\n\nReturn ONLY JSON: {\"verdict\": \"pass\"|\"fail\"|\"weak_pass\", \"reason\": \"...\", \"scope_drift\": [\"...\"], \"hands_off_violations\": [\"...\"], \"silent_failures\": [\"...\"]}`,
+      content: `You are a reviewer for The Vault autonomous agent system. Review the engineer's output for:\n1. Scope drift (did it do what was asked?)\n2. Hands-off violations (did it touch forbidden areas: ${handsOff.join(", ") || "none"})\n3. Silent failures (obvious errors or omissions)\n\nReturn ONLY JSON: {"verdict": "pass"|"fail"|"weak_pass", "reason": "...", "scope_drift": ["..."], "hands_off_violations": ["..."], "silent_failures": ["..."]}`,
     },
     {
       role: "user" as const,
@@ -170,6 +171,9 @@ async function executeCycle(
   task: typeof agentTasks.$inferSelect,
   sessionId?: string,
 ): Promise<{ cycleId: string; outcome: CycleOutcome; verdict: ReviewVerdict }> {
+  if (await isSamsonArmed(db)) {
+    throw new Error("SAMSON is armed. Agent execution is frozen.");
+  }
   const cycleId = genCycleId();
   const start = Date.now();
 
@@ -604,6 +608,7 @@ export const agentRouter = createRouter({
     }))
     .mutation(async ({ input }) => {
       const db = getDb();
+      if (await isSamsonArmed(db)) throw new Error("SAMSON is armed. Agent execution is frozen.");
       const [project] = await db
         .select()
         .from(agentProjects)
@@ -649,6 +654,7 @@ export const agentRouter = createRouter({
     }))
     .mutation(async ({ input }) => {
       const db = getDb();
+      if (await isSamsonArmed(db)) throw new Error("SAMSON is armed. Agent execution is frozen.");
       const [project] = await db
         .select()
         .from(agentProjects)
@@ -698,6 +704,10 @@ export const agentRouter = createRouter({
       let stopReason = "max-cycles";
 
       for (const task of tasks) {
+        if (await isSamsonArmed(db)) {
+          stopReason = "samson";
+          break;
+        }
         if (Date.now() - startTime > budgetMs) {
           stopReason = "budget";
           break;
@@ -1081,3 +1091,47 @@ export const agentRouter = createRouter({
         .limit(input.limit);
     }),
 });
+
+/** Cron entry: one pending task, Samson-gated, no outreach. */
+export async function runScheduledAgentTick(): Promise<{ ran: boolean; reason: string; taskId?: string }> {
+  const db = getDb();
+  if (await isSamsonArmed(db)) return { ran: false, reason: "samson_armed" };
+
+  const [task] = await db
+    .select()
+    .from(agentTasks)
+    .where(and(eq(agentTasks.status, "pending"), eq(agentTasks.interactiveOnly, false)))
+    .limit(1);
+  if (!task) {
+    await db.insert(agentLogs).values({
+      event: "scheduler_tick",
+      projectId: "system",
+      data: JSON.stringify({ reason: "no_pending_tasks", at: new Date().toISOString() }),
+    });
+    return { ran: false, reason: "no_pending_tasks" };
+  }
+
+  const [project] = await db
+    .select()
+    .from(agentProjects)
+    .where(eq(agentProjects.projectId, task.projectId))
+    .limit(1);
+  if (!project) return { ran: false, reason: "project_missing" };
+  if (await isSamsonArmed(db)) return { ran: false, reason: "samson_armed" };
+
+  const claim = await db
+    .update(agentTasks)
+    .set({ status: "in_progress" })
+    .where(and(eq(agentTasks.id, task.id), eq(agentTasks.status, "pending")));
+  if (!Number(claim.meta?.changes ?? 0)) return { ran: false, reason: "already_claimed" };
+
+  try {
+    const { outcome } = await executeCycle(db, project, task);
+    const taskStatus = outcome === "verified" ? "done" : "pending";
+    await db.update(agentTasks).set({ status: taskStatus }).where(eq(agentTasks.id, task.id));
+    return { ran: true, reason: outcome, taskId: task.taskId };
+  } catch (error) {
+    await db.update(agentTasks).set({ status: "pending" }).where(eq(agentTasks.id, task.id));
+    return { ran: false, reason: error instanceof Error ? error.message : "cycle_failed", taskId: task.taskId };
+  }
+}

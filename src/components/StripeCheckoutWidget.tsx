@@ -24,7 +24,7 @@ interface WidgetProps {
  * returns here and verifyPayment flips the report to unlocked IN PLACE.
  */
 export default function StripeCheckoutWidget({ type, targetId, itemName = '', onUnlocked, trigger = 'auto', amount: amountOverride }: WidgetProps) {
-  const navigate = useNavigate()
+  const _navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(trigger === 'auto')
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +32,7 @@ export default function StripeCheckoutWidget({ type, targetId, itemName = '', on
 
   const pricing = trpc.premium.pricing.useQuery()
   const createCheckout = trpc.premium.createCheckout.useMutation()
-  const verifyPayment = trpc.premium.verifyPayment.useMutation()
+  const _verifyPayment = trpc.premium.verifyPayment.useMutation()
 
   const amount = amountOverride || pricing.data?.[type]?.amount || (type === 'appraisal' ? '$29.00' : '$49.99')
   const includes = pricing.data?.[type]?.includes || []

@@ -15,6 +15,7 @@ const CATEGORIES = [
 ]
 
 export default function Forum() {
+  const utils = trpc.useUtils();
   const { isAuthenticated, isAdmin } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeCategory = searchParams.get('category') || ''
@@ -31,23 +32,23 @@ export default function Forum() {
   trpc.forum.listCategories.useQuery()
   const createPost = trpc.forum.createPost.useMutation({
     onSuccess: () => {
-      trpc.forum.listPosts.invalidate()
-      trpc.forum.listCategories.invalidate()
+      utils.forum.listPosts.invalidate()
+      utils.forum.listCategories.invalidate()
       setShowNewPost(false)
       setNewPost({ title: '', content: '', category: 'general' })
     }
   })
 
   const togglePin = trpc.forum.togglePin.useMutation({
-    onSuccess: () => trpc.forum.listPosts.invalidate()
+    onSuccess: () => utils.forum.listPosts.invalidate()
   })
 
   const toggleLock = trpc.forum.toggleLock.useMutation({
-    onSuccess: () => trpc.forum.listPosts.invalidate()
+    onSuccess: () => utils.forum.listPosts.invalidate()
   })
 
   const deletePost = trpc.forum.deletePost.useMutation({
-    onSuccess: () => trpc.forum.listPosts.invalidate()
+    onSuccess: () => utils.forum.listPosts.invalidate()
   })
 
   const handleCategoryFilter = (cat: string) => {
@@ -62,7 +63,7 @@ export default function Forum() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808]">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808]">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

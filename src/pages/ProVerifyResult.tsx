@@ -73,7 +73,7 @@ export default function ProVerifyResult() {
   const locked = app.locked === true
   if (locked) {
     return (
-      <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <Link to="/proverify" className="inline-flex items-center gap-2 text-[10px] tracking-[3px] uppercase text-[#C8BC98] hover:text-[#C9A84C] mb-8">
             <ArrowLeft className="w-3.5 h-3.5" /> ProVerify
@@ -106,7 +106,7 @@ export default function ProVerifyResult() {
   const condScore = Number(app.consensus?.consensusCondition || 0)
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <Link to="/proverify" className="inline-flex items-center gap-2 text-[10px] tracking-[3px] uppercase text-[#C8BC98] hover:text-[#C9A84C] mb-8">
           <ArrowLeft className="w-3.5 h-3.5" /> ProVerify

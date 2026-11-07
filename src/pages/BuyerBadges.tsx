@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function BuyerBadges() {
-  const [buyers, setBuyers] = useState([
+  const [buyers, _setBuyers] = useState([
     { name: "Buyer1", verified: true },
     { name: "Buyer2", verified: false },
   ]);

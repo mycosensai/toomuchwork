@@ -16,7 +16,7 @@ function notify() {
 }
 
 export function useToast() {
-  const [, setTick] = useState(0);
+  const [, _setTick] = useState(0);
 
   const subscribe = useCallback((fn: (toasts: Toast[]) => void) => {
     listeners.add(fn);

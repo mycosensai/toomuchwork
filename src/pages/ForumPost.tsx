@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 
 export default function ForumPost() {
+  const utils = trpc.useUtils();
   const { id } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated, isAdmin } = useAuth()
@@ -15,7 +16,7 @@ export default function ForumPost() {
   const { data, isLoading, error } = trpc.forum.getPost.useQuery({ id: Number(id) })
   const replyMutation = trpc.forum.replyToPost.useMutation({
     onSuccess: () => {
-      trpc.forum.getPost.invalidate({ id: Number(id) })
+      utils.forum.getPost.invalidate({ id: Number(id) })
       setReplyContent('')
     }
   })
@@ -45,7 +46,7 @@ export default function ForumPost() {
   const { post, replies } = data
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808]">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8 bg-[#080808]">
       <div className="max-w-4xl mx-auto">
         {/* Back Link */}
         <Link

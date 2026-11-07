@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
 import {
   forumPosts, forumReplies
@@ -91,7 +92,7 @@ export const forumRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
       const userId = ctx.user!.id;
-      const isAdmin = ctx.user!.role === "admin";
+      const isAdmin = isProvisionedAdmin(ctx.user);
 
       // Strip links for non-admin users
       const sanitizedContent = isAdmin ? input.content : stripLinks(input.content);
@@ -126,7 +127,7 @@ export const forumRouter = createRouter({
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
       const userId = ctx.user!.id;
-      const isAdmin = ctx.user!.role === "admin";
+      const isAdmin = isProvisionedAdmin(ctx.user);
 
       // Check post exists and not locked
       const [post] = await db

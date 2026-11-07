@@ -26,7 +26,6 @@ export default function AppraisalEmail() {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://thevaultdfw.win'
     sendEmail.mutate({
       appraisalId,
-      email,
       paymentLink: `${origin}/proverify`,
     })
   }
@@ -58,7 +57,7 @@ export default function AppraisalEmail() {
   const commissionEstimate = ev * (parseFloat(commissionRate) / 100)
 
   return (
-    <div className="min-h-screen bg-[#080808] pt-24 pb-20 px-4">
+    <div className="min-h-screen bg-[#080808] pb-20 px-4">
       <div className="max-w-xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

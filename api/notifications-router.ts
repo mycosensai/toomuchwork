@@ -13,11 +13,11 @@ import { logAudit, getClientIP } from "./security";
 export const notificationsRouter = createRouter({
   /** List notifications for the current user (paginated). */
   list: authedQuery
-    .input(z.object({ limit: z.number().min(1).max(100).optional(), offset: z.number().min(0).optional() }))
+    .input(z.object({ limit: z.number().min(1).max(100).optional(), offset: z.number().min(0).optional() }).optional())
     .query(async ({ input, ctx }) => {
       const db = getDb();
-      const limit = input.limit || 50;
-      const offset = input.offset || 0;
+      const limit = input?.limit || 50;
+      const offset = input?.offset || 0;
       const rows = await db.select().from(notifications).where(eq(notifications.userId, ctx.user!.id)).orderBy(desc(notifications.createdAt)).limit(limit).offset(offset);
       return rows;
     }),
@@ -25,7 +25,7 @@ export const notificationsRouter = createRouter({
   /** Get unread count. */
   unreadCount: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
-    const [row] = await db.select({ count: sql<number>`count(*)` }).from(notifications).where(and(eq(notifications.userId, ctx.user!.id), eq(notifications.isRead, 0)));
+    const [row] = await db.select({ count: sql<number>`count(*)` }).from(notifications).where(and(eq(notifications.userId, ctx.user!.id), eq(notifications.isRead, false)));
     return { unread: Number(row?.count || 0) };
   }),
 
@@ -34,15 +34,15 @@ export const notificationsRouter = createRouter({
     .input(z.object({ id: z.number().positive() }))
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
-      await db.update(notifications).set({ isRead: 1 }).where(and(eq(notifications.id, input.id), eq(notifications.userId, ctx.user!.id)));
+      await db.update(notifications).set({ isRead: true }).where(and(eq(notifications.id, input.id), eq(notifications.userId, ctx.user!.id)));
       logAudit({ ip: getClientIP(ctx.req), method: "POST", path: "notifications.markRead", userId: ctx.user!.id, action: "notification_read", details: `notification:${input.id}` });
       return { id: input.id };
     }),
 
   /** Mark all notifications as read. */
-  markAllRead: authedQuery.query(async ({ ctx }) => {
+  markAllRead: authedQuery.mutation(async ({ ctx }) => {
     const db = getDb();
-    await db.update(notifications).set({ isRead: 1 }).where(and(eq(notifications.userId, ctx.user!.id), eq(notifications.isRead, 0)));
+    await db.update(notifications).set({ isRead: true }).where(and(eq(notifications.userId, ctx.user!.id), eq(notifications.isRead, false)));
     return { marked: true };
   }),
 });

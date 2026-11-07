@@ -44,7 +44,7 @@ export default function Storefront() {
   const [showSuccess, setShowSuccess] = useState(paymentSuccess)
   const [showCancelled, setShowCancelled] = useState(paymentCancelled)
 
-  const { data: listings, isLoading } = trpc.listings.list.useQuery({
+  const { data: listings, isLoading, isError, refetch } = trpc.listings.list.useQuery({
     category: selectedCategory,
     status: 'active',
     limit: 50,
@@ -79,7 +79,7 @@ export default function Storefront() {
     })
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -213,20 +213,44 @@ export default function Storefront() {
         </div>
 
         {/* Results Count */}
-        <p className="text-[10px] tracking-[2px] text-[#8A6E2F] uppercase mb-6">
-          {filteredListings.length} item{filteredListings.length !== 1 ? 's' : ''} available
-        </p>
+        {!isLoading && !isError && (
+          <p className="text-[10px] tracking-[2px] text-[#C8BC98] uppercase mb-6">
+            {filteredListings.length} active listing{filteredListings.length !== 1 ? 's' : ''}
+          </p>
+        )}
 
         {/* Listings Grid/List */}
         {isLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 text-[#C9A84C] animate-spin" />
           </div>
-        ) : filteredListings.length === 0 ? (
-          <div className="text-center py-20 border border-[#C9A84C]/15 bg-[#161616]">
+        ) : isError ? (
+          <div className="text-center py-20 border border-[#C9A84C]/15 bg-[#161616] px-6">
             <Diamond className="w-12 h-12 text-[#C9A84C]/20 mx-auto mb-4" />
-            <p className="font-cinzel text-sm text-[#C8BC98] tracking-[2px] uppercase mb-2">No listings found</p>
-            <p className="text-xs text-[#8A6E2F]">Try adjusting your search or filters</p>
+            <p className="font-cinzel text-sm text-[#F5EED8] tracking-[2px] uppercase mb-2">Listings could not be loaded</p>
+            <p className="text-sm text-[#C8BC98] mb-6">The marketplace is still up. This is a connection problem, not an empty vault.</p>
+            <button type="button" onClick={() => refetch()} className="px-5 py-2 border border-[#C9A84C] text-[#C9A84C] text-[10px] tracking-[2px] uppercase font-cinzel">Try again</button>
+          </div>
+        ) : filteredListings.length === 0 ? (
+          <div className="text-center py-20 border border-[#C9A84C]/15 bg-[#161616] px-6">
+            <Diamond className="w-12 h-12 text-[#C9A84C]/30 mx-auto mb-4" />
+            <p className="font-cinzel text-sm text-[#F5EED8] tracking-[2px] uppercase mb-2">
+              {search || selectedCategory ? "No listings match" : "No active listings"}
+            </p>
+            <p className="text-sm text-[#C8BC98] max-w-md mx-auto">
+              {search || selectedCategory
+                ? "Clear the search or category filter to see everything currently for sale."
+                : "The exchange has 0 active listings right now. Category tiles use this same count, not an older stored total."}
+            </p>
+            {(search || selectedCategory) && (
+              <button
+                type="button"
+                onClick={() => { setSearch(""); setSelectedCategory(undefined); setSearchParams({}, { replace: true }) }}
+                className="mt-6 px-5 py-2 border border-[#C9A84C] text-[#C9A84C] text-[10px] tracking-[2px] uppercase font-cinzel"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -292,10 +316,14 @@ export default function Storefront() {
                 to={`/listing/${listing.id}`}
                 className="group flex bg-[#161616] border border-[#C9A84C]/15 hover:border-[#C9A84C] transition-all duration-300"
               >
-                <div className="w-40 sm:w-48 bg-[#1E1E1E] flex items-center justify-center flex-shrink-0 border-r border-[#C9A84C]/15">
-                  <div className="text-[#C9A84C]/30">
-                    {categoryIcons[listing.category?.name || ''] || <Diamond className="w-10 h-10" />}
-                  </div>
+                <div className="w-28 sm:w-48 h-28 sm:h-auto bg-[#1E1E1E] flex items-center justify-center flex-shrink-0 border-r border-[#C9A84C]/15 overflow-hidden">
+                  {listing.image ? (
+                    <img src={listing.image} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="text-[#C9A84C]/30">
+                      {categoryIcons[listing.category?.name || ''] || <Diamond className="w-10 h-10" />}
+                    </div>
+                  )}
                 </div>
                 <div className="p-5 flex-1 flex flex-col justify-between">
                   <div>

@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { listings, stripeSessions } from "@db/schema";
-import { eq, sql } from "drizzle-orm";
+import { listings, offers, stripeSessions } from "@db/schema";
+import { and, eq, sql } from "drizzle-orm";
 import { env } from "./lib/env";
-import { logAudit, getClientIP } from "./security";
+import { logAudit, getClientIP, assertSensitiveLimit } from "./security";
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
@@ -42,6 +42,7 @@ export const stripeRouter = createRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertSensitiveLimit(ctx.req, "checkout");
       const db = getDb();
       const [listing] = await db.select().from(listings).where(eq(listings.id, input.listingId)).limit(1);
       if (!listing) throw new Error("Listing not found");
@@ -62,8 +63,19 @@ export const stripeRouter = createRouter({
         throw new Error("Item was just purchased by another buyer or is no longer available");
       }
 
-      const price = input.offerPrice || Number(listing.price);
+      const [accepted] = await db
+        .select()
+        .from(offers)
+        .where(and(
+          eq(offers.listingId, listing.id),
+          eq(offers.buyerId, ctx.user.id),
+          eq(offers.status, "accepted"),
+        ))
+        .limit(1);
+      const price = accepted ? Number(accepted.amount) : Number(listing.price);
+      if (!Number.isFinite(price) || price <= 0) throw new Error("Listing price is invalid");
       const commission = price * (Number(listing.commissionRate) / 100);
+      void input.offerPrice;
 
       const body = new URLSearchParams({
         "payment_method_types[]": "card",
@@ -80,17 +92,25 @@ export const stripeRouter = createRouter({
         "metadata[commission]": String(commission),
       });
 
-      const session = await stripeFetch("/checkout/sessions", body);
-
-      await db.insert(stripeSessions).values({
-        sessionId: session.id,
-        userId: ctx.user?.id || null,
-        listingId: listing.id,
-        amount: String(price),
-        commission: String(commission),
-        status: "pending",
-        metadata: JSON.stringify(session.metadata || {}),
-      });
+      let session: { id: string; url: string; metadata?: Record<string, string> };
+      try {
+        session = await stripeFetch("/checkout/sessions", body);
+        await db.insert(stripeSessions).values({
+          sessionId: session.id,
+          userId: ctx.user?.id || null,
+          listingId: listing.id,
+          amount: String(price),
+          commission: String(commission),
+          status: "pending",
+          metadata: JSON.stringify({ listingId: listing.id, userId: ctx.user.id, amount: price }),
+        });
+      } catch (error) {
+        await db
+          .update(listings)
+          .set({ status: "active", updatedAt: new Date() })
+          .where(and(eq(listings.id, listing.id), eq(listings.status, "reserved")));
+        throw error;
+      }
 
       logAudit({
         ip: getClientIP(ctx.req),
@@ -106,20 +126,14 @@ export const stripeRouter = createRouter({
 
   verifySession: publicQuery
     .input(z.object({ sessionId: z.string() }))
-    .query(async ({ input }) => {
-      const session = await stripeFetch(`/checkout/sessions/${input.sessionId}`, undefined, "GET");
+    .query(async ({ input, ctx }) => {
       const db = getDb();
-
-      if (session.payment_status === "paid") {
-        await db.update(stripeSessions).set({ status: "completed" }).where(eq(stripeSessions.sessionId, input.sessionId));
-        const [sessRecord] = await db.select().from(stripeSessions).where(eq(stripeSessions.sessionId, input.sessionId)).limit(1);
-        if (sessRecord) {
-          await db.update(listings).set({ status: "sold" }).where(eq(listings.id, sessRecord.listingId));
-        }
+      const [record] = await db.select().from(stripeSessions).where(eq(stripeSessions.sessionId, input.sessionId)).limit(1);
+      if (!record || (record.userId && record.userId !== ctx.user?.id)) {
+        return { status: "unknown", amount_total: null, session: null };
       }
-
-      const [updatedRecord] = await db.select().from(stripeSessions).where(eq(stripeSessions.sessionId, input.sessionId)).limit(1);
-      return { status: session.payment_status, amount_total: session.amount_total, session: updatedRecord || null };
+      const session = await stripeFetch(`/checkout/sessions/${input.sessionId}`, undefined, "GET");
+      return { status: session.payment_status, amount_total: session.amount_total, session: record };
     }),
 
   getPublishableKey: publicQuery.query(() => {
