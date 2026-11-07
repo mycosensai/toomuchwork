@@ -7,7 +7,7 @@ import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq, sql, desc } from "drizzle-orm";
-import { listings, priceSnapshots, categories } from "@db/schema";
+import { listings, priceSnapshots } from "@db/schema";
 import { TRPCError } from "@trpc/server";
 
 export const priceCompareRouter = createRouter({
@@ -23,7 +23,7 @@ export const priceCompareRouter = createRouter({
       const [min] = await db.select({ min: sql<number>`COALESCE(MIN(CAST(price AS REAL)), 0)` }).from(listings).where(eq(listings.categoryId, categoryId)).where(eq(listings.status, "active"));
       const [max] = await db.select({ max: sql<number>`COALESCE(MAX(CAST(price AS REAL)), 0)` }).from(listings).where(eq(listings.categoryId, categoryId)).where(eq(listings.status, "active"));
       const [median] = await db.select({ median: sql<number>`COALESCE(CAST(price AS REAL), 0)` }).from(listings).where(eq(listings.categoryId, categoryId)).where(eq(listings.status, "active")).orderBy(sql`ABS(CAST(price AS REAL) - ${Number(listing.price)})`).limit(1);
-      const snapshots = await db.select().from(priceSnapshots).where(eq(priceSnapshots.listingId, input.listingId)).orderBy(desc(priceSnapshots.createdAt)).limit(30);
+      const snapshots = await db.select().from(priceSnapshots).where(eq(priceSnapshots.listingId, input.listingId)).orderBy(desc(priceSnapshots.capturedAt)).limit(30);
       return {
         listingPrice: Number(listing.price),
         categoryAvg: Number(avg?.avg || 0),

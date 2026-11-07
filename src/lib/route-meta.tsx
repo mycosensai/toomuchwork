@@ -90,7 +90,6 @@ const META: Record<string, Meta> = {
   '/price-comparison': { title: 'Price Comparison | The Vault DFW', description: 'Compare listing prices against market averages.' },
   '/agent-feedback': { title: 'Agent Feedback | The Vault DFW', description: 'Rate agent responses to improve accuracy.' },
   '/tokenize': { title: 'Tokenize Item | The Vault DFW', description: 'Convert your listing into a blockchain-verified token.' },
-  '/support': { title: 'Support & Inquiries | The Vault DFW', description: 'Submit an inquiry — every message becomes an individual ticket.' },
   '/ticker': { title: 'Market Ticker | The Vault DFW', description: 'Live vault dfw token ticker and scrolling market list.' },
 }
 
@@ -120,6 +119,16 @@ export default function RouteMeta() {
 
     document.title = meta.title
     setMeta('description', meta.description)
+    const canonicalHref = `https://thevaultdfw.win${pathname === '/' ? '/' : pathname}`
+    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (!canonical) {
+      canonical = document.createElement('link')
+      canonical.rel = 'canonical'
+      document.head.appendChild(canonical)
+    }
+    canonical.href = canonicalHref
+    const ogUrl = document.querySelector<HTMLMetaElement>('meta[property="og:url"]')
+    if (ogUrl) ogUrl.setAttribute('content', canonicalHref)
     const ogTitle = document.querySelector<HTMLMetaElement>('meta[property="og:title"]')
     if (ogTitle) ogTitle.setAttribute('content', meta.title)
     const ogDesc = document.querySelector<HTMLMetaElement>('meta[property="og:description"]')

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function SellerRatings() {
-  const [sellers, setSellers] = useState([
+  const [sellers, _setSellers] = useState([
     { name: "CollectorA", rating: 4.8 },
     { name: "DealerB", rating: 4.5 },
   ]);

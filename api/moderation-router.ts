@@ -8,12 +8,12 @@ import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq, desc } from "drizzle-orm";
 import { editorialArticles } from "@db/schema";
-import { TRPCError } from "@trpc/server";
+
 import { logAudit, getClientIP } from "./security";
 
 export const moderationRouter = createRouter({
   /** Get pending content for moderation. */
-  pending: authedQuery.query(async ({ ctx }) => {
+  pending: authedQuery.query(async ({ ctx: _ctx }) => {
     const db = getDb();
     const rows = await db.select().from(editorialArticles).where(eq(editorialArticles.status, "pending")).orderBy(desc(editorialArticles.createdAt));
     return rows;

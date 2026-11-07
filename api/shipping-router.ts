@@ -153,12 +153,13 @@ export const shippingRouter = createRouter({
 
       return {
         success: true,
+        simulated: true,
         rates: rates.map((r) => ({
           ...r,
           carrierUrl: CARRIER_LINKS[r.carrier],
         })),
         itemValue: value,
-        note: "These are estimated rates. Click carrier links for exact pricing.",
+        note: "These are simulated estimates, not live carrier quotes or purchased labels.",
       };
     }),
 

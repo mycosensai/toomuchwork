@@ -7,10 +7,10 @@
 import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { eq, and, lte, gte, desc } from "drizzle-orm";
-import { listings, users } from "@db/schema";
-import { sendEmail } from "./email-service";
-import { logAudit } from "./security";
+import { eq, and } from "drizzle-orm";
+import { listings, priceAlerts } from "@db/schema";
+
+
 
 export const priceAlertRouter = createRouter({
   /** Set a price alert for a listing. */
@@ -20,26 +20,26 @@ export const priceAlertRouter = createRouter({
       const db = getDb();
       const [listing] = await db.select().from(listings).where(eq(listings.id, input.listingId)).limit(1);
       if (!listing) throw new Error("Listing not found");
-      await db.insert({} as any).values({ userId: ctx.user!.id, listingId: input.listingId, targetPrice: input.targetPrice, direction: input.direction });
-      return { alertId: Number((await db.select().from({} as any).orderBy(desc({})).limit(1))[0]?.id) || 0 };
+      const inserted = await db.insert(priceAlerts).values({ userId: ctx.user!.id, listingId: input.listingId, targetPrice: String(input.targetPrice), direction: input.direction });
+      return { alertId: Number(inserted.meta.last_row_id) };
     }),
 
   /** List alerts for user. */
   list: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
-    return db.select().from({} as any).where(eq({} as any, ctx.user!.id));
+    return db.select().from(priceAlerts).where(eq(priceAlerts.userId, ctx.user!.id));
   }),
 
   /** Delete alert. */
   delete: authedQuery.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
     const db = getDb();
-    await db.delete({} as any).where(eq({} as any, input.id));
+    await db.delete(priceAlerts).where(and(eq(priceAlerts.id, input.id), eq(priceAlerts.userId, ctx.user!.id)));
     return { deleted: true };
   }),
 
   /** Check all alerts against current listing prices (cron-ish). */
   check: publicQuery.query(async () => {
-    const db = getDb();
+    const _db = getDb();
     // Stub: actual check requires snapshot table + scheduled job
     return { checked: 0, triggered: 0 };
   }),

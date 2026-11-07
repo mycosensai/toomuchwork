@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
 import { orders, sellerPayouts, listings } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
+import { parseStringList } from "./lib/listing-json";
 import { TRPCError } from "@trpc/server";
-import { logAudit, getClientIP } from "./security";
+import { logAudit, getClientIP, assertSensitiveLimit } from "./security";
 import { notifyTelegram } from "./lib/telegram";
 
 export const ordersRouter = createRouter({
@@ -46,27 +48,35 @@ export const ordersRouter = createRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertSensitiveLimit(ctx.req, "checkout");
       const db = getDb();
       if (!ctx.user) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
+      const [listing] = await db.select().from(listings).where(eq(listings.id, input.listingId)).limit(1);
+      if (!listing || listing.status !== "active") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Listing is not available" });
+      }
+      if (listing.sellerId === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot purchase your own listing" });
+      }
+      const amount = Number(listing.price);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Listing price is invalid" });
+      }
+      const commission = amount * (Number(listing.commissionRate) / 100);
       const result = await db.insert(orders).values({
         userId: ctx.user.id,
-        listingId: input.listingId,
-        listingTitle: input.listingTitle,
-        listingImage: input.listingImage || null,
-        amount: String(input.amount),
-        commission: String(input.commission || 0),
+        sellerId: listing.sellerId,
+        listingId: listing.id,
+        listingTitle: listing.title,
+        listingImage: parseStringList(listing.images)[0] || null,
+        amount: amount.toFixed(2),
+        commission: commission.toFixed(2),
         paymentMethod: input.paymentMethod || "other",
         paymentStatus: "pending",
         orderStatus: "pending",
         shippingAddress: input.shippingAddress || null,
-      });
-      await notifyTelegram("🛒 NEW ORDER", {
-        "Order ID": String(result.meta.last_row_id),
-        "Item": input.listingTitle,
-        "Amount": `$${input.amount}`,
-        "Buyer": `#${ctx.user.id}`,
       });
       return { id: Number(result.meta.last_row_id), success: true };
     }),
@@ -107,12 +117,28 @@ export const ordersRouter = createRouter({
         throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
       }
 
-      if (order.userId !== ctx.user.id && ctx.user.role !== "admin") {
+      const buyer = order.userId === ctx.user.id;
+      const seller = order.sellerId === ctx.user.id;
+      const admin = isProvisionedAdmin(ctx.user);
+      if (!buyer && !seller && !admin) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this order" });
+      }
+      if (input.paymentStatus || input.orderStatus === "refunded" || input.orderStatus === "confirmed") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Paid, refunded, and confirmed states are webhook-only" });
+      }
+      if (buyer && !seller && !admin) {
+        if (input.orderStatus && input.orderStatus !== "cancelled") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Buyers can only cancel an unpaid order" });
+        }
+        if (input.orderStatus === "cancelled" && order.paymentStatus === "completed") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Paid orders cannot be cancelled here" });
+        }
+        if (input.trackingNumber) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only the seller can set tracking" });
+        }
       }
 
       const updateData: Record<string, unknown> = {};
-      if (input.paymentStatus) updateData.paymentStatus = input.paymentStatus;
       if (input.orderStatus) updateData.orderStatus = input.orderStatus;
       if (input.trackingNumber) updateData.trackingNumber = input.trackingNumber;
 
@@ -140,7 +166,7 @@ export const ordersRouter = createRouter({
       const db = getDb();
       const [order] = await db.select().from(orders).where(eq(orders.id, input.orderId)).limit(1);
       if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
-      if (order.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+      if (order.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You are not the seller of this order" });
       }
       if (order.paymentStatus !== "completed") {
@@ -175,7 +201,7 @@ export const ordersRouter = createRouter({
       const db = getDb();
       const [order] = await db.select().from(orders).where(eq(orders.id, input.orderId)).limit(1);
       if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
-      if (order.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+      if (order.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You are not the seller of this order" });
       }
 
@@ -203,7 +229,7 @@ export const ordersRouter = createRouter({
       const db = getDb();
       const [order] = await db.select().from(orders).where(eq(orders.id, input.orderId)).limit(1);
       if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
-      if (order.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+      if (order.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "You are not the seller of this order" });
       }
       if (order.orderStatus !== "delivered" && order.orderStatus !== "shipped") {
@@ -262,7 +288,7 @@ export const ordersRouter = createRouter({
         .where(eq(orders.id, input.orderId))
         .limit(1);
       if (!order) return null;
-      if (order.userId && order.userId !== ctx.user?.id && ctx.user?.role !== "admin") return null;
+      if (order.userId && order.userId !== ctx.user?.id && !isProvisionedAdmin(ctx.user)) return null;
       return order;
     }),
 });

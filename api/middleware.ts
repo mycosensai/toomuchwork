@@ -2,10 +2,18 @@ import { ErrorMessages } from "@contracts/constants";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
+import { isProvisionedAdmin } from "./lib/admin-access";
 
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
-  meta: true,
+  errorFormatter({ shape }) {
+    const nodeEnv = typeof process !== "undefined" ? process.env.NODE_ENV : undefined;
+    const expose = nodeEnv === "development" || nodeEnv === "test";
+    if (expose) return shape;
+    const data = { ...(shape.data as Record<string, unknown>) };
+    delete data.stack;
+    return { ...shape, data };
+  },
 });
 
 export const createRouter = t.router;
@@ -27,6 +35,16 @@ const requireAuth = t.middleware(async (opts) => {
 function requireRole(role: string) {
   return t.middleware(async (opts) => {
     const { ctx, next } = opts;
+
+    if (role === "admin") {
+      if (!isProvisionedAdmin(ctx.user)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: ErrorMessages.insufficientRole,
+        });
+      }
+      return next({ ctx: { ...ctx, user: ctx.user! } });
+    }
 
     if (!ctx.user || ctx.user.role !== role) {
       throw new TRPCError({

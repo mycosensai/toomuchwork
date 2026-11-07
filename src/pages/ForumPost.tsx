@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 
 export default function ForumPost() {
+  const utils = trpc.useUtils();
   const { id } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated, isAdmin } = useAuth()
@@ -15,7 +16,7 @@ export default function ForumPost() {
   const { data, isLoading, error } = trpc.forum.getPost.useQuery({ id: Number(id) })
   const replyMutation = trpc.forum.replyToPost.useMutation({
     onSuccess: () => {
-      trpc.forum.getPost.invalidate({ id: Number(id) })
+      utils.forum.getPost.invalidate({ id: Number(id) })
       setReplyContent('')
     }
   })

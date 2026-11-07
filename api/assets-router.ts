@@ -18,6 +18,9 @@ export const assetsRouter = createRouter({
       const bucket = env.r2Assets;
       if (!bucket) throw new Error("R2 storage not configured");
 
+      if (!input.contentType.startsWith("image/")) throw new Error("Only images can be uploaded");
+      if (input.base64Data.length > 8_000_000) throw new Error("Image is too large");
+
       const timestamp = Date.now();
       const safeName = input.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
       const key = `uploads/${ctx.user!.id}/${timestamp}_${safeName}`;
@@ -33,7 +36,7 @@ export const assetsRouter = createRouter({
       });
 
       // Return the public URL
-      const publicUrl = `https://thevaultdfw.win/assets/${key}`;
+      const publicUrl = `https://thevaultdfw.win/api/assets/${key}`;
 
       return { ok: true, key, url: publicUrl };
     }),

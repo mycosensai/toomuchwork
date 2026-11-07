@@ -27,7 +27,7 @@ export default function SellerPayoutPanel() {
   const handleOnboard = async () => {
     setBusy(true); setErr(null); setOk(null)
     try {
-      const res = await onboarding.mutateAsync({})
+      const res = await onboarding.mutateAsync()
       if (res?.url) window.location.href = res.url  // Stripe-hosted onboarding
       else { setErr('Onboarding link unavailable — try again.'); setBusy(false) }
     } catch (e: any) {

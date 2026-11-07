@@ -26,7 +26,6 @@ export default function AppraisalEmail() {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://thevaultdfw.win'
     sendEmail.mutate({
       appraisalId,
-      email,
       paymentLink: `${origin}/proverify`,
     })
   }

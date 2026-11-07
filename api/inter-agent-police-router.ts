@@ -272,7 +272,7 @@ export const interAgentPoliceRouter = createRouter({
       if (check.verdict === "fail") agentScores[check.targetAgent].fails++;
     }
 
-    for (const [agent, data] of Object.entries(agentScores)) {
+    for (const [_agent, data] of Object.entries(agentScores)) {
       data.score = data.total > 0 ? Math.round((data.passes / data.total) * 100) : 100;
     }
 

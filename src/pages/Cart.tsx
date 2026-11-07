@@ -10,8 +10,6 @@ export default function Cart() {
   if (!ctx) return null;
 
   const { items, remove, clear, total } = ctx;
-  const tax = total * 0.09;
-  const subtotal = total + tax;
 
   const handleCheckout = () => {
     if (items.length === 0) return;
@@ -46,12 +44,12 @@ export default function Cart() {
               <span className="text-lg font-semibold">{formatCurrency(total)}</span>
             </div>
             <div className="mt-2 flex items-center justify-between text-sm text-vault-muted">
-              <span>Tax (9%)</span>
-              <span>{formatCurrency(tax)}</span>
+              <span>Tax</span>
+              <span>Calculated only if a jurisdiction requires it</span>
             </div>
             <div className="mt-4 flex items-center justify-between">
               <span className="font-semibold">Total</span>
-              <span className="text-xl font-bold text-vault-gold">{formatCurrency(subtotal)}</span>
+              <span className="text-xl font-bold text-vault-gold">{formatCurrency(total)}</span>
             </div>
             <button onClick={handleCheckout} className="mt-6 w-full rounded-xl bg-vault-gold py-3 font-semibold text-vault-bg hover:bg-vault-gold-hover">
               Checkout{items.length > 1 ? ` — ${items.length} items (1 at a time)` : ''}

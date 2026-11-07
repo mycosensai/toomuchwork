@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function DraftListings() {
-  const [drafts, setDrafts] = useState([
+  const [drafts, _setDrafts] = useState([
     { id: "1", title: "Vintage Rolex", status: "draft" },
     { id: "2", title: "Diamond Ring", status: "draft" },
   ]);

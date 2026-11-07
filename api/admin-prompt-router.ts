@@ -113,7 +113,7 @@ export const adminPromptRouter = createRouter({
 
       // Create high-priority queue entry
       const promptId = genId("ap");
-      const result = await db.insert(adminPromptQueue).values({
+      const _result = await db.insert(adminPromptQueue).values({
         promptId,
         promptText: input.promptText,
         targetAgent: finalAgent,

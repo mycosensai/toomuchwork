@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createRouter, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq } from "drizzle-orm";
-import { logAudit } from "./security";
+
 
 export const savedSearchRouter = createRouter({
   /** Save a search criteria. */
@@ -24,7 +24,7 @@ export const savedSearchRouter = createRouter({
   }),
 
   /** Delete a saved search. */
-  delete: authedQuery.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+  delete: authedQuery.input(z.object({ id: z.number() })).mutation(async ({ input, ctx: _ctx }) => {
     const db = getDb();
     await db.delete({} as any).where(eq({} as any, input.id));
     return { deleted: true };

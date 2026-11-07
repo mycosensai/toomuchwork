@@ -12,9 +12,10 @@
 
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
 import { listings, saleTransactions, sellerPayouts, commissionTiers } from "@db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { env } from "./lib/env";
 import { logAudit, getClientIP } from "./security";
 import { autoTransferForOrder } from "./lib/connect-payouts";
@@ -87,7 +88,7 @@ export const saleRouter = createRouter({
         .limit(1);
 
       if (!listing) throw new Error("Listing not found");
-      if (listing.sellerId !== seller.id && seller.role !== "admin") {
+      if (listing.sellerId !== seller.id && !isProvisionedAdmin(seller)) {
         throw new Error("You do not own this listing");
       }
 
@@ -154,7 +155,7 @@ export const saleRouter = createRouter({
         .limit(1);
 
       if (!sale) throw new Error("Sale not found");
-      if (sale.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+      if (sale.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) {
         throw new Error("Unauthorized");
       }
 
@@ -205,28 +206,44 @@ export const saleRouter = createRouter({
         .where(eq(saleTransactions.id, input.saleId))
         .limit(1);
       if (!sale) throw new Error("Sale not found");
-      if (sale.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+      if (sale.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) {
         throw new Error("Unauthorized");
       }
 
-      // Verify the payment intent against Stripe BEFORE marking paid.
+      if (sale.status === "payment_received") {
+        if (sale.stripePaymentIntentId === input.stripePaymentIntentId) {
+          return { success: true, status: "payment_received" };
+        }
+        throw new Error("Sale is already paid with a different payment");
+      }
+
       const intent = await stripeFetch(`/payment_intents/${input.stripePaymentIntentId}`);
       if (!intent || intent.status !== "succeeded") {
         throw new Error(`Payment not confirmed by Stripe (status: ${intent?.status || "unknown"})`);
       }
-      // Cross-check the intent amount against the sale price (prevent underpay/overpay).
+      if (intent.currency !== "usd") throw new Error("Payment currency must be usd");
       const expectedCents = Math.round(Number(sale.salePrice) * 100);
       if (intent.amount_received !== expectedCents) {
         throw new Error(`Payment amount mismatch: expected ${expectedCents}, received ${intent.amount_received}`);
       }
+      if (String(intent.metadata?.saleId || "") !== String(sale.id)) {
+        throw new Error("Payment is not bound to this sale");
+      }
+      const [other] = await db
+        .select()
+        .from(saleTransactions)
+        .where(eq(saleTransactions.stripePaymentIntentId, input.stripePaymentIntentId))
+        .limit(1);
+      if (other && other.id !== sale.id) throw new Error("Payment intent is already attributed to another sale");
 
-      await db
+      const claim = await db
         .update(saleTransactions)
         .set({
           status: "payment_received",
           stripePaymentIntentId: input.stripePaymentIntentId,
         })
-        .where(eq(saleTransactions.id, input.saleId));
+        .where(and(eq(saleTransactions.id, input.saleId), eq(saleTransactions.status, sale.status)));
+      if (!Number(claim.meta?.changes ?? 0)) throw new Error("Sale payment was already recorded");
 
       logAudit({
         ip: getClientIP(ctx.req),
@@ -261,7 +278,7 @@ export const saleRouter = createRouter({
         .limit(1);
 
       if (!sale) throw new Error("Sale not found");
-      if (sale.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+      if (sale.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) {
         throw new Error("Unauthorized");
       }
 
@@ -302,7 +319,7 @@ export const saleRouter = createRouter({
         .limit(1);
 
       if (!sale) throw new Error("Sale not found");
-      if (sale.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+      if (sale.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) {
         throw new Error("Unauthorized");
       }
 
@@ -341,7 +358,7 @@ export const saleRouter = createRouter({
         .limit(1);
 
       if (!sale) throw new Error("Sale not found");
-      if (sale.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+      if (sale.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) {
         throw new Error("Unauthorized");
       }
 

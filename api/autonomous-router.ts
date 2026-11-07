@@ -17,6 +17,7 @@ import {
   listings, appraisals, categories, outreachCampaigns, outreachLogs, agentLogs, agentCycles, partnershipOutreach
 } from "@db/schema";
 import { openaiChat, AGENT_MODEL } from "./lib/openai";
+import { isSamsonArmed } from "./lib/kill-switch";
 import {
   checkHallucinations, censorOutreach
 } from "./lib/hallucination-guard";
@@ -248,6 +249,9 @@ async function runOutreachRound(db: ReturnType<typeof getDb>): Promise<{
   blockedByGuard: number;
   personalizationAvg: number;
 }> {
+  if (await isSamsonArmed(db)) {
+    return { campaignsCreated: 0, messagesSent: 0, blockedByGuard: 0, personalizationAvg: 0 };
+  }
   let campaignsCreated = 0;
   let messagesSent = 0;
   let blockedByGuard = 0;
@@ -283,7 +287,7 @@ async function runOutreachRound(db: ReturnType<typeof getDb>): Promise<{
       }
 
       // Store campaign
-      const campaignId = genId("auto");
+      const _campaignId = genId("auto");
       const result = await db.insert(outreachCampaigns).values({
         listingId: trigger.listingId || null,
         userId: null,
@@ -304,7 +308,7 @@ async function runOutreachRound(db: ReturnType<typeof getDb>): Promise<{
         specialty: trigger.category,
         outreachMethod: "autonomous",
         message: outreach.body,
-        status: "sent",
+        status: "draft",
         confidence: outreach.personalizationScore,
         attemptNumber: 1,
       });
@@ -318,7 +322,7 @@ async function runOutreachRound(db: ReturnType<typeof getDb>): Promise<{
         contactTitle: target.contactTitle || "Partnerships Director",
         messageBody: outreach.body,
         priority: 2,
-        status: "sent",
+        status: "draft",
         assignedAgent: "outreach",
       });
 
@@ -372,6 +376,7 @@ export const autonomousRouter = createRouter({
     }).optional())
     .mutation(async ({ input }) => {
       const db = getDb();
+      if (await isSamsonArmed(db)) throw new Error("SAMSON is armed. Agent execution is frozen.");
 
       // If specific item provided, override triggers
       if (input?.itemName) {
@@ -402,7 +407,7 @@ export const autonomousRouter = createRouter({
             institution: target.industry,
             outreachMethod: "manual_trigger",
             message: outreach.body,
-            status: "sent",
+            status: "draft",
             confidence: outreach.personalizationScore,
           });
 
@@ -515,6 +520,7 @@ export const autonomousRouter = createRouter({
     }))
     .mutation(async ({ input }) => {
       const db = getDb();
+      if (await isSamsonArmed(db)) throw new Error("SAMSON is armed. Agent execution is frozen.");
 
       // Log the trigger
       await db.insert(agentLogs).values({
@@ -563,7 +569,7 @@ export const autonomousRouter = createRouter({
           institution: target.industry,
           outreachMethod: "autonomous",
           message: outreach.body,
-          status: "sent",
+          status: "draft",
           confidence: outreach.personalizationScore,
         });
 

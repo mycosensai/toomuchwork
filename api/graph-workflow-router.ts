@@ -37,7 +37,7 @@ const globalVariables = new VariablePool();
 const graphEngine = new GraphEngine({ pool: globalPool, commands: globalCommands, variables: globalVariables });
 
 // ─── VAULT WORKFLOW DEFINITIONS (Dify-style graphs) ───
-function buildOutreachWorkflow(listingId: number, itemName: string, category: string): any {
+function buildOutreachWorkflow(listingId: number, itemName: string, _category: string): any {
   return {
     id: genId("wf"),
     name: `Outreach for ${itemName}`,

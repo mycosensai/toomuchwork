@@ -25,6 +25,7 @@ interface AgentProject {
 
 export default function Admin() {
   const navigate = useNavigate()
+  const utils = trpc.useUtils();
   const { isAuthenticated, isAdmin, isLoading: authLoading } = useAuth()
 
   const [activeTab, setActiveTab] = useState<'overview' | 'agents' | 'cloudflare' | 'users' | 'listings' | 'transactions' | 'payouts' | 'assets' | 'forum' | 'messages' | 'email' | 'config'>('overview')
@@ -32,6 +33,7 @@ export default function Admin() {
   const [showCreateTask, setShowCreateTask] = useState<string | null>(null)
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 2, interactiveOnly: false, expectedTouches: '', assignedAgent: '' })
   const [cloudflareDeploying, setCloudflareDeploying] = useState(false)
+  const cloudflareDeploy = trpc.admin.cloudflareDeploy.useMutation()
 
   useEffect(() => {
     if (!authLoading && (!isAuthenticated || !isAdmin)) {
@@ -46,12 +48,12 @@ export default function Admin() {
   
   // Mutations
   const updateProject = trpc.admin.updateAgentProject.useMutation({
-    onSuccess: () => trpc.admin.listAgentProjects.invalidate()
+    onSuccess: () => utils.admin.listAgentProjects.invalidate()
   })
   const createTask = trpc.admin.createAgentTask.useMutation({
     onSuccess: (_, vars) => {
-      trpc.admin.getAgentProject.invalidate({ projectId: vars.projectId })
-      trpc.admin.listAgentProjects.invalidate()
+      utils.admin.getAgentProject.invalidate({ projectId: vars.projectId })
+      utils.admin.listAgentProjects.invalidate()
       setShowCreateTask(null)
       setNewTask({ title: '', description: '', priority: 2, interactiveOnly: false, expectedTouches: '', assignedAgent: '' })
     }
@@ -180,7 +182,7 @@ export default function Admin() {
                     <div className="text-[9px] text-[#8A6E2F]">{stats?.counts.users || 0} registered</div>
                   </button>
                   <button
-                    onClick={() => trpc.admin.cloudflareDeploy.mutate({ projectName: 'thevault' })}
+                    onClick={() => { setCloudflareDeploying(true); cloudflareDeploy.mutate({ projectName: 'thevault' }, { onSettled: () => setCloudflareDeploying(false) }) }}
                     className="p-4 bg-[#1E1E1E] border border-[#C9A84C]/20 text-left hover:border-[#C9A84C]/50 transition-all text-center"
                   >
                     <PlayCircle className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
@@ -512,15 +514,16 @@ export default function Admin() {
 
 // ─── FORUM ADMIN PANEL ───
 function ForumAdminPanel() {
+  const utils = trpc.useUtils();
   const { data: posts } = trpc.forum.listPosts.useQuery({ page: 1, limit: 50 })
   const deletePost = trpc.forum.deletePost.useMutation({
-    onSuccess: () => trpc.forum.listPosts.invalidate()
+    onSuccess: () => utils.forum.listPosts.invalidate()
   })
   const togglePin = trpc.forum.togglePin.useMutation({
-    onSuccess: () => trpc.forum.listPosts.invalidate()
+    onSuccess: () => utils.forum.listPosts.invalidate()
   })
   const toggleLock = trpc.forum.toggleLock.useMutation({
-    onSuccess: () => trpc.forum.listPosts.invalidate()
+    onSuccess: () => utils.forum.listPosts.invalidate()
   })
 
   return (
@@ -596,12 +599,13 @@ function ForumAdminPanel() {
 
 // ─── MESSAGE ADMIN PANEL ───
 function MessageAdminPanel() {
+  const utils = trpc.useUtils();
   const { data: inbox } = trpc.messages.inbox.useQuery({ page: 1, limit: 50 })
   const { data: outbox } = trpc.messages.outbox.useQuery({ page: 1, limit: 50 })
   const deleteMsg = trpc.messages.delete.useMutation({
     onSuccess: () => {
-      trpc.messages.inbox.invalidate()
-      trpc.messages.outbox.invalidate()
+      utils.messages.inbox.invalidate()
+      utils.messages.outbox.invalidate()
     }
   })
 
@@ -833,11 +837,12 @@ function UsersAdminPanel() {
 }
 
 function ListingsAdminPanel() {
+  const utils = trpc.useUtils();
   const [page, setPage] = useState(1)
   const limit = 25
   const offset = (page - 1) * limit
   const { data: listings, isLoading, error } = trpc.admin.listListings.useQuery({ limit, offset } as any)
-  const updateStatus = trpc.admin.updateListingStatus.useMutation({ onSuccess: () => trpc.admin.listListings.invalidate() })
+  const updateStatus = trpc.admin.updateListingStatus.useMutation({ onSuccess: () => utils.admin.listListings.invalidate() })
   const [editingId, setEditingId] = useState<number | null>(null)
   return (
     <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
@@ -916,8 +921,9 @@ function TransactionsAdminPanel() {
 }
 
 function PayoutsAdminPanel() {
+  const utils = trpc.useUtils();
   const { data: payouts, isLoading, error } = trpc.admin.listPayouts.useQuery({} as any)
-  const markPaid = trpc.admin.markPayoutPaid.useMutation({ onSuccess: () => trpc.admin.listPayouts.invalidate() })
+  const markPaid = trpc.admin.markPayoutPaid.useMutation({ onSuccess: () => utils.admin.listPayouts.invalidate() })
   return (
     <div className="bg-[#161616] border border-[#C9A84C]/15 p-6">
       {isLoading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 text-[#C9A84C] animate-spin" /></div> : error ? <div className="text-center py-8 text-xs text-red-400">{(error as any).message}</div> : (
@@ -975,12 +981,13 @@ function AssetsAdminPanel() {
 
 // ─── SITE CONFIG PANEL ───
 function SiteConfigPanel() {
+  const utils = trpc.useUtils();
   const { data: configs, isLoading } = trpc.siteConfig.list.useQuery()
   const setConfig = trpc.siteConfig.set.useMutation({
-    onSuccess: () => trpc.siteConfig.list.invalidate()
+    onSuccess: () => utils.siteConfig.list.invalidate()
   })
   const deleteConfig = trpc.siteConfig.delete.useMutation({
-    onSuccess: () => trpc.siteConfig.list.invalidate()
+    onSuccess: () => utils.siteConfig.list.invalidate()
   })
   const [newKey, setNewKey] = useState('')
   const [newValue, setNewValue] = useState('')
@@ -1094,9 +1101,7 @@ function AgentProjectCard({
 }) {
   const [expanded, setExpanded] = useState(false)
 
-  const handsOffArray = (() => {
-    try { return JSON.parse(project.handsOff ?? '[]') } catch { return [] }
-  })()
+  const handsOffArray = Array.isArray(project.handsOff) ? project.handsOff : []
 
   if (editingProjectId === project.projectId) {
     return (
@@ -1339,7 +1344,7 @@ function AgentProjectForm({ project, onSave, onCancel }: { project: AgentProject
     priority: project.priority,
     cycleBudgetMinutes: project.cycleBudgetMinutes,
     verificationCommand: project.verificationCommand,
-    handsOff: project.handsOff,
+    handsOff: Array.isArray(project.handsOff) ? project.handsOff.join(", ") : "",
     engineerCommand: project.engineerCommand,
     model: project.model,
   })
@@ -1448,7 +1453,7 @@ function AgentProjectForm({ project, onSave, onCancel }: { project: AgentProject
         <button onClick={onCancel} className="px-4 py-2 bg-[#1E1E1E] border border-[#8A6E2F]/20 text-[#8A6E2F] text-[9px] tracking-[1px] uppercase font-cinzel rounded hover:border-[#8A6E2F]/50">
           Cancel
         </button>
-        <button onClick={() => onSave(form)} className="px-4 py-2 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] text-[9px] tracking-[1px] uppercase font-cinzel rounded hover:shadow-[0_0_20px_rgba(201,168,76,0.4)]">
+        <button onClick={() => onSave({ ...form, handsOff: form.handsOff.split(",").map((part) => part.trim()).filter(Boolean) })} className="px-4 py-2 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] text-[9px] tracking-[1px] uppercase font-cinzel rounded hover:shadow-[0_0_20px_rgba(201,168,76,0.4)]">
           Save Changes
         </button>
       </div>

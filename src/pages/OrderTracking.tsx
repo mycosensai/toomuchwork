@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function OrderTracking() {
-  const [orders, setOrders] = useState([
+  const [orders, _setOrders] = useState([
     { id: "#1001", status: "shipped", eta: "3 days" },
     { id: "#1002", status: "processing", eta: "5 days" },
   ]);

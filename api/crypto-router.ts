@@ -4,14 +4,16 @@ import { getDb } from "./queries/connection";
 import { cryptoPayments, listings } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
-import { logAudit, getClientIP } from "./security";
+import { logAudit, getClientIP, assertSensitiveLimit } from "./security";
 import { getRawEnv } from "./lib/env";
+import { getFreshSolUsd } from "./lib/sol-price";
+import { solTransferMatches, splTransferMatches, treasuryTokenAccount } from "./lib/spl-transfer";
 import {
   LAMPORTS_PER_SOL
 } from "@solana/web3.js";
 
 // ─── Constants ───
-const LAMPORTS_PER_SOL_BN = BigInt(LAMPORTS_PER_SOL);
+const _LAMPORTS_PER_SOL_BN = BigInt(LAMPORTS_PER_SOL);
 const SOLANA_MAINNET_RPC = "https://api.mainnet-beta.solana.com";
 const SOL_SIGNATURE_RE = /^[1-9A-HJ-NP-Za-km-z]{43,88}$/;
 const SOL_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
@@ -50,7 +52,7 @@ type ParsedInstruction = {
 type ParsedSolanaTransaction = {
   slot?: number;
   blockTime?: number | null;
-  meta?: { err?: unknown; fee?: number; preTokenBalances?: unknown[]; postTokenBalances?: unknown[] } | null;
+  meta?: { err?: unknown; fee?: number; preTokenBalances?: unknown[]; postTokenBalances?: unknown[]; innerInstructions?: Array<{ instructions?: ParsedInstruction[] }> } | null;
   transaction?: {
     message?: {
       accountKeys?: Array<{ pubkey?: string; signer?: boolean; writable?: boolean }>;
@@ -106,10 +108,10 @@ function assertCryptoConfigured(currency: SupportedCurrency) {
     });
   }
 
-  if (!rate) {
+  if (currency === "USDC" && !rate) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
-      message: `${currency} rate not configured. Set ${currency === "USDC" ? "USDC_USD_RATE" : "SOL_USD_RATE"} env var.`,
+      message: "USDC rate is not configured.",
     });
   }
 }
@@ -134,7 +136,7 @@ async function callSolanaRpc<T>(method: string, params: unknown[]): Promise<T> {
   return payload.result as T;
 }
 
-function readLamports(value: unknown): number {
+function _readLamports(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {
     const parsed = Number(value);
@@ -144,47 +146,15 @@ function readLamports(value: unknown): number {
 }
 
 // ─── Payment Verification ───
-function hasExpectedSolTransfer(
-  tx: ParsedSolanaTransaction,
-  expectedDestination: string,
-  expectedLamports: number
-): boolean {
-  const instructions = tx.transaction?.message?.instructions || [];
-  return instructions.some((instruction) => {
-    if (instruction.program !== "system") return false;
-    if (instruction.parsed?.type !== "transfer") return false;
-    const info = instruction.parsed.info || {};
-    const destination = String(info.destination || "");
-    const lamports = readLamports(info.lamports);
-    return destination === expectedDestination && lamports >= expectedLamports;
-  });
-}
-
-function hasExpectedTokenTransfer(
-  tx: ParsedSolanaTransaction,
-  expectedDestination: string,
-  expectedMint: string,
-  expectedAmount: number,
-  decimals: number
-): boolean {
-  const instructions = tx.transaction?.message?.instructions || [];
-  return instructions.some((instruction) => {
-    if (instruction.program !== "spl-token") return false;
-    if (instruction.parsed?.type !== "transfer") return false;
-    const info = instruction.parsed.info || {};
-    const destination = String(info.destination || "");
-    const mint = String(info.mint || "");
-    const amount = Number(info.amount || 0);
-    return (
-      destination === expectedDestination &&
-      mint === expectedMint &&
-      amount >= expectedAmount
-    );
-  });
+function instructionList(tx: ParsedSolanaTransaction): ParsedInstruction[] {
+  const outer = tx.transaction?.message?.instructions || [];
+  const inner = (tx.meta?.innerInstructions || []).flatMap((group) => group.instructions || []);
+  return [...outer, ...inner];
 }
 
 async function verifySolanaPayment(input: {
   txHash: string;
+  buyerAddress: string;
   expectedDestination: string;
   expectedAmount: number;
   currency: SupportedCurrency;
@@ -214,20 +184,23 @@ async function verifySolanaPayment(input: {
 
   let transferFound = false;
 
+  const instructions = instructionList(tx);
   if (config.isToken) {
-    // SPL Token transfer (USDC, etc.)
     const rawAmount = Math.floor(input.expectedAmount * Math.pow(10, config.decimals));
-    transferFound = hasExpectedTokenTransfer(
-      tx,
-      input.expectedDestination,
-      config.mintAddress!,
+    const tokenAccount = treasuryTokenAccount(config.mintAddress!, input.expectedDestination);
+    transferFound = instructions.some((instruction) => splTransferMatches(instruction, {
+      buyer: input.buyerAddress,
+      treasuryTokenAccount: tokenAccount,
+      mint: config.mintAddress!,
       rawAmount,
-      config.decimals
-    );
+    }));
   } else {
-    // Native SOL transfer
     const expectedLamports = Math.ceil(input.expectedAmount * LAMPORTS_PER_SOL);
-    transferFound = hasExpectedSolTransfer(tx, input.expectedDestination, expectedLamports);
+    transferFound = instructions.some((instruction) => solTransferMatches(instruction, {
+      buyer: input.buyerAddress,
+      treasuryWallet: input.expectedDestination,
+      lamports: expectedLamports,
+    }));
   }
 
   if (!transferFound) {
@@ -256,6 +229,7 @@ export const cryptoRouter = createRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertSensitiveLimit(ctx.req, "checkout");
       assertCryptoConfigured(input.currency);
 
       const db = getDb();
@@ -266,7 +240,12 @@ export const cryptoRouter = createRouter({
 
       const config = CURRENCY_CONFIGS[input.currency];
       const amountUsd = Number(listing.price);
-      const tokenRate = getTokenRate(input.currency);
+      const quoteExpiresAt = Date.now() + 15 * 60 * 1000;
+      let tokenRate = getTokenRate(input.currency);
+      if (input.currency === "SOL") {
+        const quote = await getFreshSolUsd();
+        tokenRate = quote.usd;
+      }
       const amountToken = amountUsd / tokenRate;
       const treasury = getTreasuryAddress();
 
@@ -289,6 +268,7 @@ export const cryptoRouter = createRouter({
           treasury,
           currencyConfig: config,
           initiatedBy: ctx.user?.id,
+          quoteExpiresAt,
         }),
       });
 
@@ -340,6 +320,17 @@ export const cryptoRouter = createRouter({
       if (payment.txHash && payment.txHash !== input.txHash) {
         throw new TRPCError({ code: "CONFLICT", message: "A different transaction is already attached" });
       }
+      const meta = payment.metadata ? JSON.parse(payment.metadata) as { initiatedBy?: number; quoteExpiresAt?: number } : {};
+      if (!ctx.user || meta.initiatedBy !== ctx.user.id) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "This payment was started by a different account" });
+      }
+      if (!meta.quoteExpiresAt || Date.now() > meta.quoteExpiresAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "The price quote expired. Start checkout again." });
+      }
+      const [used] = await db.select().from(cryptoPayments).where(eq(cryptoPayments.txHash, input.txHash)).limit(1);
+      if (used && used.id !== payment.id) {
+        throw new TRPCError({ code: "CONFLICT", message: "That transaction is already attributed" });
+      }
 
       const destination = payment.sellerAddress || getTreasuryAddress();
       const amount = Number(payment.amount);
@@ -349,6 +340,7 @@ export const cryptoRouter = createRouter({
 
       const verification = await verifySolanaPayment({
         txHash: input.txHash,
+        buyerAddress: payment.buyerAddress,
         expectedDestination: destination,
         expectedAmount: amount,
         currency,
@@ -411,18 +403,29 @@ export const cryptoRouter = createRouter({
       return p || null;
     }),
 
-  getRates: publicQuery.query(() => {
-    const solRate = getTokenRate("SOL");
+  getRates: publicQuery.query(async () => {
     const usdcRate = getTokenRate("USDC");
     const treasury = getTreasuryAddress();
     const hasTreasury = Boolean(treasury && SOL_ADDRESS_RE.test(treasury));
+    let solQuote: { usd: number; fetchedAt: number; source: string } | null = null;
+    let solError: string | null = null;
+    try {
+      solQuote = await getFreshSolUsd();
+    } catch (error) {
+      solError = error instanceof Error ? error.message : "SOL quote unavailable";
+    }
 
     return {
-      enabled: hasTreasury && solRate > 0,
+      enabled: hasTreasury && Boolean(solQuote),
       treasuryConfigured: hasTreasury,
       treasuryAddress: hasTreasury ? treasury : null,
+      solAvailable: Boolean(solQuote),
+      usdcAvailable: usdcRate > 0,
+      quoteAgeMs: solQuote ? Date.now() - solQuote.fetchedAt : null,
+      quoteSource: solQuote?.source ?? null,
+      solError,
       rates: {
-        SOL: solRate || null,
+        SOL: solQuote?.usd ?? null,
         USDC: usdcRate,
       },
       supportedCurrencies: ["SOL", "USDC"] as SupportedCurrency[],
@@ -454,7 +457,7 @@ export const cryptoRouter = createRouter({
       configured: hasTreasury,
       address: hasTreasury ? treasury : null,
       network: "solana_mainnet",
-      supportedCurrencies: Object.entries(CURRENCY_CONFIGS).map(([key, config]) => ({
+      supportedCurrencies: Object.entries(CURRENCY_CONFIGS).map(([_key, config]) => ({
         symbol: config.symbol,
         name: config.name,
         decimals: config.decimals,

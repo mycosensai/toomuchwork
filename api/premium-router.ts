@@ -14,10 +14,12 @@
 
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
 import { eq } from "drizzle-orm";
-import { logAudit, getClientIP } from "./security";
-import { createPremiumCheckout, fetchStripeSession, markPremiumPaid, PREMIUM_PRICES, dollarsToCents } from "./lib/premium-pay";
+import { appraisals, expertApplications, premiumPurchases } from "@db/schema";
+import { logAudit, getClientIP, assertSensitiveLimit } from "./security";
+import { createPremiumCheckout, fetchStripeSession, markPremiumPaid, premiumSessionMatches, consumePremiumPurchase, PREMIUM_PRICES, dollarsToCents } from "./lib/premium-pay";
 
 export const premiumRouter = createRouter({
   /** Transparent pricing + what's included — shown on the paywall itself. */
@@ -56,22 +58,21 @@ export const premiumRouter = createRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
+      await assertSensitiveLimit(ctx.req, "checkout");
       const db = getDb();
 
       // The target row must exist (and belong to the caller) BEFORE charging.
       if (input.type === "appraisal") {
-        const { appraisals } = await import("@db/schema");
         const [row] = await db.select().from(appraisals).where(eq(appraisals.id, input.targetId)).limit(1);
         if (!row) throw new Error("Appraisal not found");
-        if (row.userId && ctx.user?.id && row.userId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (row.userId && ctx.user?.id && row.userId !== ctx.user.id && !isProvisionedAdmin(ctx.user)) {
           throw new Error("You can only unlock your own appraisals");
         }
         if (row.paid) return { alreadyPaid: true, type: input.type, targetId: input.targetId, url: null, sessionId: "" };
       } else {
-        const { expertApplications } = await import("@db/schema");
         const [row] = await db.select().from(expertApplications).where(eq(expertApplications.id, input.targetId)).limit(1);
         if (!row) throw new Error("Verification request not found");
-        if (row.userId && ctx.user?.id && row.userId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (row.userId && ctx.user?.id && row.userId !== ctx.user.id && !isProvisionedAdmin(ctx.user)) {
           throw new Error("You can only unlock your own verification requests");
         }
         if (row.paid) return { alreadyPaid: true, type: input.type, targetId: input.targetId, url: null, sessionId: "" };
@@ -126,9 +127,25 @@ export const premiumRouter = createRouter({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      const { payment_status } = await fetchStripeSession(input.sessionId);
-      if (payment_status !== "paid") {
-        return { success: false, status: payment_status, message: "Payment not complete" };
+      if (!ctx.user) throw new Error("Authentication required");
+      const session = await fetchStripeSession(input.sessionId);
+      const db = getDb();
+      const [purchase] = await db.select().from(premiumPurchases).where(eq(premiumPurchases.sessionId, input.sessionId)).limit(1);
+      if (!purchase || purchase.userId !== ctx.user.id || purchase.reportType !== input.type || purchase.targetId !== input.targetId) {
+        return { success: false, status: session.payment_status, message: "Payment does not match this report" };
+      }
+      const match = premiumSessionMatches(session, {
+        type: input.type,
+        targetId: input.targetId,
+        userId: ctx.user.id,
+        amountCents: purchase.amountCents,
+      });
+      if (!match.ok) {
+        return { success: false, status: session.payment_status, message: "Payment does not match this report" };
+      }
+      const consumed = await consumePremiumPurchase(input.sessionId, ctx.user.id, input.type, input.targetId);
+      if (consumed === "mismatch") {
+        return { success: false, status: session.payment_status, message: "Payment does not match this report" };
       }
 
       const paid = await markPremiumPaid(input.type, input.targetId);

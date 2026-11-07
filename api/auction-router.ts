@@ -11,8 +11,9 @@
  */
 import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
-import { eq, desc, gt } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { listings, users } from "@db/schema";
 import { sendEmail } from "./email-service";
 import { TRPCError } from "@trpc/server";
@@ -39,7 +40,7 @@ export const auctionRouter = createRouter({
       const seller = ctx.user!;
       const [listing] = await db.select().from(listings).where(eq(listings.id, input.listingId)).limit(1);
       if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "Listing not found" });
-      if (listing.sellerId !== seller.id && seller.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
+      if (listing.sellerId !== seller.id && !isProvisionedAdmin(seller)) throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
       if (listing.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Listing not active" });
 
       const now = Date.now();
@@ -98,7 +99,7 @@ export const auctionRouter = createRouter({
         newEnd = now + SNIPE_EXTENSION_SEC * 1000;
       }
 
-      const updated = await db.update(listings).set({ price: String(input.amount), auctionEndAt: newEnd }).where(eq(listings.id, input.auctionId)).returning().then(r => r[0]);
+      const _updated = await db.update(listings).set({ price: String(input.amount), auctionEndAt: newEnd }).where(eq(listings.id, input.auctionId)).returning().then(r => r[0]);
 
       // Email seller about new bid
       const [seller] = await db.select().from(users).where(eq(users.id, auction.sellerId)).limit(1);
@@ -114,6 +115,19 @@ export const auctionRouter = createRouter({
       });
       return { auctionId: input.auctionId, newHighest: input.amount, newEnd: new Date(newEnd).toISOString() };
     }),
+
+  active: publicQuery.query(async () => {
+    const db = getDb();
+    const rows = await db.select().from(listings).where(eq(listings.status, "auction")).limit(50);
+    return rows.map((row) => ({
+      id: row.id,
+      auctionStatus: "active" as const,
+      listingTitle: row.title,
+      description: row.description,
+      highestBid: row.auctionBuyNow ? Number(row.auctionBuyNow) : null,
+      auctionReservePrice: row.auctionReserve ? Number(row.auctionReserve) : null,
+    }));
+  }),
 
   /** Get auction state (current bid, end time, status). */
   get: publicQuery
@@ -138,7 +152,7 @@ export const auctionRouter = createRouter({
       const db = getDb();
       const [auction] = await db.select().from(listings).where(eq(listings.id, input.auctionId)).limit(1);
       if (!auction) throw new TRPCError({ code: "NOT_FOUND", message: "Auction not found" });
-      if (auction.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
+      if (auction.sellerId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
 
       await db.update(listings).set({ status: "sold", auctionWinner: String(auction.price) }).where(eq(listings.id, input.auctionId));
       logAudit({ ip: getClientIP(ctx.req), method: "POST", path: "auction.endEarly", userId: ctx.user!.id, action: "auction_ended", details: `auction:${input.auctionId}` });

@@ -8,17 +8,17 @@ import { z } from "zod";
 import { createRouter, authedQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { eq, desc } from "drizzle-orm";
-import { listings, priceSnapshots, priceAlerts } from "@db/schema";
-import { sendEmail } from "./email-service";
-import { TRPCError } from "@trpc/server";
+import { listings, priceAlerts } from "@db/schema";
+
+
 import { logAudit, getClientIP } from "./security";
-import { env } from "./lib/env";
+
 
 export const aiAssistantRouter = createRouter({
   /** Get AI-driven recommendations for the current user. */
   recommendations: authedQuery.query(async ({ ctx }) => {
     const db = getDb();
-    const userId = ctx.user!.id;
+    const _userId = ctx.user!.id;
     // Stub: actual recommendations use browsing history + watchlist
     const [recent] = await db.select().from(listings).orderBy(desc(listings.createdAt)).limit(5);
     return {
@@ -31,7 +31,7 @@ export const aiAssistantRouter = createRouter({
   /** Check price alerts against current listing prices (scheduled). */
   checkPriceAlerts: publicQuery.query(async () => {
     const db = getDb();
-    const alerts = await db.select().from(priceAlerts).where(eq(priceAlerts.notified, 0));
+    const alerts = await db.select().from(priceAlerts).where(eq(priceAlerts.notified, false));
     let triggered = 0;
     for (const alert of alerts) {
       const [listing] = await db.select().from(listings).where(eq(listings.id, alert.listingId)).limit(1);

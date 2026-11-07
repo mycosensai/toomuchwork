@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const steps = [
   { title: "Welcome", body: "Discover rare collectibles with AI-powered verification." },
@@ -10,13 +10,14 @@ const steps = [
 ];
 
 export function OnboardingTour() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem("vault_tour_seen") !== "true";
+    } catch {
+      return false;
+    }
+  });
   const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    const seen = localStorage.getItem("vault_tour_seen");
-    if (!seen) setOpen(true);
-  }, []);
 
   const next = () => {
     if (step >= steps.length - 1) {

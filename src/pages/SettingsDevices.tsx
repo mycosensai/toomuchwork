@@ -3,7 +3,7 @@
  */
 import { trpc } from "@/providers/trpc";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Trash2, Monitor, Smartphone, Clock, AlertTriangle } from "lucide-react";
+import { Loader2, Trash2, Monitor, Smartphone } from "lucide-react";
 
 export default function SettingsDevices() {
   const { isAuthenticated } = useAuth();
@@ -45,7 +45,7 @@ export default function SettingsDevices() {
         )}
       </div>
 
-      <button onClick={() => revokeAllMutation.mutateAsync({})} disabled={revokeAllMutation.isPending} className="w-full px-4 py-3 bg-red-500/90 text-white font-semibold rounded-lg hover:bg-red-400 transition disabled:opacity-50">
+      <button onClick={() => revokeAllMutation.mutateAsync()} disabled={revokeAllMutation.isPending} className="w-full px-4 py-3 bg-red-500/90 text-white font-semibold rounded-lg hover:bg-red-400 transition disabled:opacity-50">
         {revokeAllMutation.isPending ? "Revoking..." : "Revoke All Other Sessions"}
       </button>
     </section>

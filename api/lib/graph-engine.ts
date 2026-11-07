@@ -213,7 +213,7 @@ class IterationNode {
     items: T[],
     processor: (item: T, index: number) => Promise<R>,
     parallel: boolean = true,
-    maxWorkers?: number
+    _maxWorkers?: number
   ): Promise<R[]> {
     if (parallel) {
       const futures = items.map((item, index) =>
@@ -346,7 +346,7 @@ class GraphEngine {
   private async executeNode(
     node: WorkflowNode,
     inputs: Record<string, any>,
-    scopeId: string
+    _scopeId: string
   ): Promise<any> {
     switch (node.type) {
       case "start":

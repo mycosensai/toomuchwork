@@ -5,7 +5,7 @@
 import { trpc } from "@/providers/trpc"
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
-import { AlertTriangle, Bell, Clock, TrendingDown, Loader2, Plus } from "lucide-react"
+import { AlertTriangle, Bell, TrendingDown, Loader2, Plus } from "lucide-react"
 
 export function Alerts() {
   const { isAuthenticated } = useAuth()
@@ -74,7 +74,7 @@ export function Alerts() {
             />
           </div>
           <button
-            onClick={() => setAlertMutation.mutateAsync({ symbol, targetPrice: parseFloat(targetPrice), direction })}
+            onClick={() => setAlertMutation.mutateAsync({ listingId: Number(symbol), targetPrice: parseFloat(targetPrice), direction: direction === "drop" ? "below" : "above" })}
             disabled={setAlertMutation.isPending || !symbol || !targetPrice}
             className="px-6 py-2 bg-emerald-500/90 text-white font-semibold rounded-lg hover:bg-emerald-400 transition disabled:opacity-50"
           >

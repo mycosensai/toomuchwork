@@ -6,10 +6,11 @@
  * and a seller-response field.
  */
 import { z } from "zod";
-import { createRouter, authedQuery, publicQuery } from "./middleware";
+import { createRouter, authedQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
-import { eq, desc } from "drizzle-orm";
-import { reviews, orders, listings } from "@db/schema";
+import { eq } from "drizzle-orm";
+import { reviews, orders, listings, users } from "@db/schema";
 import { sendEmail } from "./email-service";
 import { TRPCError } from "@trpc/server";
 import { logAudit, getClientIP } from "./security";
@@ -63,7 +64,7 @@ export const reviewsRouter = createRouter({
       const db = getDb();
       const [review] = await db.select().from(reviews).where(eq(reviews.id, input.reviewId)).limit(1);
       if (!review) throw new TRPCError({ code: "NOT_FOUND", message: "Review not found" });
-      if (review.userId && review.userId !== ctx.user!.id && ctx.user!.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
+      if (review.userId && review.userId !== ctx.user!.id && !isProvisionedAdmin(ctx.user)) throw new TRPCError({ code: "FORBIDDEN", message: "Not the seller" });
       await db.update(reviews).set({ sellerResponse: input.response }).where(eq(reviews.id, input.reviewId));
       return { reviewId: input.reviewId };
     }),

@@ -5,19 +5,20 @@
 import { trpc } from "@/providers/trpc"
 import { useAuth } from "@/hooks/useAuth"
 import { useState } from "react"
-import { MessageCircle, Check, X, Mail, Loader2 } from "lucide-react"
+import { MessageCircle, Check, X, Loader2 } from "lucide-react"
 
 export function OfferManagement() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user: _user } = useAuth()
   const [showNewOffer, setShowNewOffer] = useState(false)
   const [amount, setAmount] = useState("")
   const [message, setMessage] = useState("")
-  const [selectedListingId, setSelectedListingId] = useState<number | null>(null)
+  const [selectedListingId, _setSelectedListingId] = useState<number | null>(null)
 
   // Fetch offers received by the current user (seller view)
-  const { data: receivedOffers, isLoading } = trpc.offers.list.useQuery(undefined, {
+  const { data: receivedOffers, isLoading } = trpc.offers.mine.useQuery(undefined, {
     enabled: isAuthenticated === true,
   })
+  const createOffer = trpc.offers.create.useMutation()
 
   // Accept offer mutation
   const acceptMutation = trpc.offers.accept.useMutation()
@@ -53,7 +54,8 @@ export function OfferManagement() {
           <div className="flex gap-3">
             <button
               onClick={async () => {
-                await trpc.offers.create.mutateAsync({
+                if (!selectedListingId) return
+                await createOffer.mutateAsync({
                   listingId: selectedListingId,
                   amount: parseFloat(amount),
                   message: message || undefined,

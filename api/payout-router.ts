@@ -11,10 +11,12 @@
  */
 import { z } from "zod";
 import { createRouter, authedQuery } from "./middleware";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import { getDb } from "./queries/connection";
-import { eq, and, desc } from "drizzle-orm";
-import { orders, sellerPayouts } from "@db/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
+import { orders, sellerPayouts, users } from "@db/schema";
 import { logAudit, getClientIP } from "./security";
+import { notifyTelegram } from "./lib/telegram";
 import { createSellerConnectAccount, getSellerConnectStatus, createSellerTransfer } from "./lib/connect-payouts";
 
 export const payoutRouter = createRouter({
@@ -29,6 +31,7 @@ export const payoutRouter = createRouter({
       email,
       returnUrl: `https://thevaultdfw.win/sell?payout=done`,
       refreshUrl: `https://thevaultdfw.win/sell?payout=refresh`,
+      existingAccountId: seller.stripeAccountId,
     });
 
     await db.update(users).set({
@@ -107,32 +110,62 @@ export const payoutRouter = createRouter({
 
       const [order] = await db.select().from(orders).where(eq(orders.id, input.orderId)).limit(1);
       if (!order) throw new Error("Order not found");
-      if (order.sellerId !== seller.id && seller.role !== "admin") {
+      if (order.sellerId !== seller.id && !isProvisionedAdmin(seller)) {
         throw new Error("Unauthorized");
       }
-      if (!seller.stripeAccountId) {
-        throw new Error("Complete payout onboarding first (payout.onboarding)");
-      }
+      if (!order.sellerId) throw new Error("Order has no seller");
       if (order.payoutStatus === "paid") {
         return { success: true, alreadyPaid: true, transferId: order.stripeTransferId };
       }
+      if (order.paymentStatus !== "completed") throw new Error("Payout requires a settled payment");
+      if (order.orderStatus !== "delivered" && order.orderStatus !== "completed") {
+        throw new Error("Payout requires a delivered order");
+      }
 
-      const status = await getSellerConnectStatus(seller.stripeAccountId);
+      const [sellerUser] = await db.select().from(users).where(eq(users.id, order.sellerId)).limit(1);
+      const accountId = sellerUser?.stripeAccountId;
+      if (!accountId) throw new Error("Complete payout onboarding first (payout.onboarding)");
+
+      const claim = await db.update(orders).set({
+        payoutStatus: "processing",
+        updatedAt: new Date(),
+      }).where(and(
+        eq(orders.id, order.id),
+        eq(orders.payoutStatus, "pending"),
+        eq(orders.paymentStatus, "completed"),
+        inArray(orders.orderStatus, ["delivered", "completed"]),
+      ));
+      if (!Number(claim.meta?.changes ?? 0)) {
+        throw new Error("Payout is not eligible or is already in progress");
+      }
+
+      const status = await getSellerConnectStatus(accountId);
       if (!status.transfersEnabled) {
+        await db.update(orders).set({ payoutStatus: "pending", updatedAt: new Date() }).where(eq(orders.id, order.id));
         throw new Error("Seller account not verified for transfers — finish onboarding.");
       }
 
       const amountCents = Math.round(Number(order.payoutAmount || "0") * 100);
-      if (!(amountCents > 0)) throw new Error("Payout amount must be positive");
+      if (!(amountCents > 0)) {
+        await db.update(orders).set({ payoutStatus: "pending", updatedAt: new Date() }).where(eq(orders.id, order.id));
+        throw new Error("Payout amount must be positive");
+      }
 
-      const { transferId } = await createSellerTransfer({
-        accountId: seller.stripeAccountId,
-        amountCents,
-        description: `The Vault DFW payout — order #${order.id} (${order.listingTitle})`,
-        metadata: { orderId: String(order.id), listingId: String(order.listingId) },
-      });
+      let transferId = "";
+      try {
+        const transfer = await createSellerTransfer({
+          accountId,
+          amountCents,
+          description: `The Vault DFW payout — order #${order.id} (${order.listingTitle})`,
+          metadata: { orderId: String(order.id), listingId: String(order.listingId) },
+          idempotencyKey: `vault-payout-order-${order.id}`,
+        });
+        transferId = transfer.transferId;
+      } catch (error) {
+        await db.update(orders).set({ payoutStatus: "pending", updatedAt: new Date() }).where(and(eq(orders.id, order.id), eq(orders.payoutStatus, "processing")));
+        throw error;
+      }
 
-      // Mark order paid
       await db.update(orders).set({
         payoutStatus: "paid",
         stripeTransferId: transferId,
@@ -143,7 +176,7 @@ export const payoutRouter = createRouter({
       // Mirror into seller_payouts ledger (best-effort; table may not have a row yet)
       try {
         await db.insert(sellerPayouts).values({
-          sellerId: seller.id,
+          sellerId: order.sellerId,
           saleTransactionId: order.listingId,
           amount: String(amountCents / 100),
           stripeTransferId: transferId,
@@ -170,6 +203,3 @@ export const payoutRouter = createRouter({
       return { success: true, transferId, amount: (amountCents / 100).toFixed(2) };
     }),
 });
-
-import { users } from "@db/schema";
-import { notifyTelegram } from "./lib/telegram";

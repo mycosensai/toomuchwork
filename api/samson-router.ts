@@ -15,7 +15,7 @@ import { openaiChat, AGENT_MODEL } from "./lib/openai";
 import {
   checkHallucinations, sanitizeHallucinations, censorOutreach, verifyContact
 } from "./lib/hallucination-guard";
-import type { AgentFeedback } from "./lib/hallucination-guard";
+
 
 function genCycleId(): string {
   const now = new Date();

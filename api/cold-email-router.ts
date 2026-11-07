@@ -24,6 +24,7 @@
 import { z } from "zod";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { createRouter, adminQuery } from "./middleware";
+import { isSamsonArmed } from "./lib/kill-switch";
 import { getDb } from "./queries/connection";
 import {
   coldEmailTemplates, coldEmailProspects, coldEmailSends, agentLogs
@@ -138,38 +139,32 @@ async function sendVaultEmail(
   db: ReturnType<typeof getDb>,
   send: typeof coldEmailSends.$inferSelect
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  if (await isSamsonArmed(db)) return { success: false, error: "samson_armed" };
   try {
-    // In production, this would call Gmail API
-    // For now, log the send and simulate success
     await db.insert(agentLogs).values({
-      event: "cold_email_queued",
+      event: "cold_email_draft",
       projectId: "outreach",
       data: JSON.stringify({
         sendId: send.sendId,
         prospectId: send.prospectId,
         niche: send.niche,
         timestamp: new Date().toISOString(),
-        note: "Gmail API integration ready — set GMAIL_API_TOKEN env var",
+        note: "No delivery adapter is configured. The message stays a draft.",
       }) || "{}",
     });
 
-    // Simulate Gmail send
-    const mockMessageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
     await db.update(coldEmailSends)
       .set({
-        status: "sent",
-        gmailMessageId: mockMessageId,
-        sentAt: new Date(),
+        status: "draft",
+        gmailMessageId: null,
       })
       .where(eq(coldEmailSends.sendId, send.sendId));
 
-    // Update prospect status
     await db.update(coldEmailProspects)
-      .set({ status: "sent", sentAt: new Date() })
+      .set({ status: "draft" })
       .where(eq(coldEmailProspects.prospectId, send.prospectId));
 
-    return { success: true, messageId: mockMessageId };
+    return { success: false, error: "delivery_not_configured" };
   } catch (e: any) {
     await db.update(coldEmailSends)
       .set({ status: "failed", errorMessage: e?.message || "Unknown error" })
@@ -187,7 +182,7 @@ export const coldEmailRouter = createRouter({
       const db = getDb();
       const template = await generateTemplateForNiche(input.niche as VaultNicheId);
 
-      const result = await db.insert(coldEmailTemplates).values({
+      const _result = await db.insert(coldEmailTemplates).values({
         templateId: genId("tpl"),
         niche: template.niche,
         subject: template.subject,

@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router'
 import { Suspense, lazy } from 'react'
-import { Diamond, Gavel, Sparkles, Bell, AlertTriangle, Search, LayoutGrid, Newspaper, Image, Trophy, Brain } from 'lucide-react'
+import { Diamond } from 'lucide-react'
 import Layout from './components/Layout'
 import MobileAppPrompt from './components/MobileAppPrompt'
 import RouteMeta from './lib/route-meta'

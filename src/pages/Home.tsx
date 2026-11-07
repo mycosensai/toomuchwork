@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+
 import { trpc } from '@/providers/trpc'
 import Reveal from '@/components/Reveal'
 import TickerWidget from '@/components/TickerWidget'
@@ -455,7 +455,7 @@ function CategoriesSection() {
                   {cat.name}
                 </h3>
                 <p className="text-[10px] text-[#C8BC98] tracking-[1px] relative z-10">
-                  {cat.listingCount?.toLocaleString()} listings
+                  {cat.listingCount?.toLocaleString()} active listings
                 </p>
               </Link>
             </Reveal>

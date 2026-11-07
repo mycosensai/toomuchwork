@@ -16,11 +16,11 @@ export default function Appraisal() {
   const [category, setCategory] = useState('')
   const [condition, setCondition] = useState('good')
   const [description, setDescription] = useState('')
-  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [_imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
   const [imageValidating, setImageValidating] = useState(false)
-  const [justCreatedId, setJustCreatedId] = useState<number | null>(null)
+  const [_justCreatedId, setJustCreatedId] = useState<number | null>(null)
   const [showPaywall, setShowPaywall] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -28,7 +28,7 @@ export default function Appraisal() {
   // showing the unlocked (paid) result; otherwise we show the create form.
   const resultId = Number(params.get('appraisalId') || 0)
   const viewingResult = !!resultId && !isNaN(resultId) && resultId > 0
-  const unlockedMode = viewingResult && params.get('pending') !== '1'
+  const _unlockedMode = viewingResult && params.get('pending') !== '1'
 
   const { data: categories } = trpc.categories.list.useQuery()
   const { data: appraisal, isLoading, refetch } = trpc.appraisal.getById.useQuery(

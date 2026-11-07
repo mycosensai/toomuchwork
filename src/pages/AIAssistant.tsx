@@ -28,7 +28,7 @@ export function AIAssistant() {
     setMessages((prev) => [...prev, { role: 'user', content: input }])
     setInput("")
     setIsLoading(true)
-    askMutation.mutateAsync({ query: input })
+    askMutation.mutateAsync({ message: input })
   }
 
   // Quick actions
@@ -56,7 +56,7 @@ export function AIAssistant() {
             onClick={() => {
               setMessages((prev) => [...prev, { role: 'user', content: action.query }])
               setIsLoading(true)
-              askMutation.mutateAsync({ query: action.query })
+              askMutation.mutateAsync({ message: action.query })
             }}
             disabled={askMutation.isPending}
             className="bg-dark-800/50 border border-gold-500/20 rounded-xl p-4 text-center hover:border-gold-400/40 transition disabled:opacity-50"

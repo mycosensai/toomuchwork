@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { blockchainCerts, listings, tokenMints, chainCerts, chainTokenMints } from "@db/schema";
+import { listings, chainCerts, chainTokenMints } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 import { logAudit, getClientIP } from "./security";
 import { notifyTelegram } from "./lib/telegram";
 import { TRPCError } from "@trpc/server";
-import { autoTriggerFromAction } from "./lib/auto-trigger";
+
 import { tokenizeListing, isTokenizationConfigured } from "./lib/solana-token";
 import {
   tokenizeMultiChain,
@@ -16,6 +16,7 @@ import {
   type ChainKey,
 } from "./lib/multichain-token";
 import { getRawEnv } from "./lib/env";
+import { isProvisionedAdmin } from "./lib/admin-access";
 import {
   Keypair,
 } from "@solana/web3.js";
@@ -30,18 +31,11 @@ function isValidEthAddress(addr: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(addr);
 }
 
-function resolveTreasury(chainKey: string): string {
+function _resolveTreasury(chainKey: string): string {
   if (chainKey === "solana") {
     return (getRawEnv().SOLANA_TREASURY as string) || (getRawEnv().TREASURY_WALLET as string) || "";
   }
-  const priv = (getRawEnv()[`CHAIN_${chainKey.toUpperCase()}_TREASURY_SECRET`] as string) || "";
-  if (!priv || priv.length < 64) return "";
-  try {
-    const { privateKeyToAccount } = require("viem/accounts") as typeof import("viem/accounts");
-    return privateKeyToAccount(`0x${priv.startsWith("0x") ? priv.slice(2) : priv}`).address;
-  } catch {
-    return "";
-  }
+  return "";
 }
 
 // ─── Router ──────────────────────────────────────────────────
@@ -75,51 +69,35 @@ export const blockchainRouter = createRouter({
         .where(eq(chainCerts.listingId, listingId)).limit(1);
       if (existing) return { success: false, error: "Item already certified", cert: existing };
 
-      // Verify listing exists
       const [listing] = await db.select().from(listings).where(eq(listings.id, listingId)).limit(1);
       if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "Listing not found" });
+      if (listing.sellerId !== ctx.user?.id && !isProvisionedAdmin(ctx.user)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the seller can attest this listing" });
+      }
 
-      // Generate certificate hash + contract address
       const ts = Date.now();
-      const certKeypair = Keypair.generate();
-      const certPubkey = certKeypair.publicKey.toBase58();
-
-      const certHashData = new TextEncoder().encode(`${listingId}:${input.itemName}:${ts}:thevaultdfw`);
+      const certHashData = new TextEncoder().encode(`${listingId}:${input.itemName}:${ts}:thevaultdfw:offchain`);
       const certHashBuf = await crypto.subtle.digest("SHA-256", certHashData);
       const certHash = "0x" + Array.from(new Uint8Array(certHashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 
-      const blockHashData = new TextEncoder().encode(`${listingId}-${ts}-block`);
-      const blockHashBuf = await crypto.subtle.digest("SHA-256", blockHashData);
-      const blockHash = "0x" + Array.from(new Uint8Array(blockHashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-
-      const blockNum = Math.floor(ts / 1000);
-
-      // Insert chain-specific cert
       const result = await db.insert(chainCerts).values({
         listingId,
         userId: ctx.user?.id || null,
         certificateHash: certHash,
-        contractAddress: chainKey === "solana" ? certPubkey : certKeypair.publicKey.toBase58(),
-        tokenId: certPubkey.slice(0, 8),
-        blockHash,
-        blockNumber: blockNum,
-        network: chainKey === "solana" ? "solana" : `${chainKey}_mainnet`,
+        contractAddress: null,
+        tokenId: null,
+        blockHash: null,
+        blockNumber: null,
+        network: "offchain",
         chainKey,
         itemName: input.itemName,
         itemDescription: input.itemDescription || null,
         metadataUri: `https://thevaultdfw.win/certificate/${listingId}`,
-        status: "minted",
-        certificationFee: "0.002",
+        status: "offchain_attestation",
+        certificationFee: "0",
       });
 
       const certId = Number(result.meta.last_row_id);
-
-      // Update listing
-      await db.update(listings).set({
-        isCertified: true,
-        tokenContractAddress: certPubkey,
-        certificationId: certId,
-      }).where(eq(listings.id, listingId));
 
       logAudit({
         ip: getClientIP(ctx.req),
@@ -127,7 +105,7 @@ export const blockchainRouter = createRouter({
         path: "blockchain.certify",
         userId: ctx.user?.id,
         action: `item_certified_${chainKey}`,
-        details: `listing:${listingId} cert:${certId} chain:${chainKey} pubkey:${certPubkey.slice(0, 8)}...`,
+        details: `listing:${listingId} cert:${certId} chain:${chainKey} hash:${certHash.slice(0, 10)}`,
       });
 
       return {
@@ -135,21 +113,21 @@ export const blockchainRouter = createRouter({
         cert: {
           id: certId,
           certificateHash: certHash,
-          contractAddress: certPubkey,
-          tokenId: certPubkey.slice(0, 8),
-          blockHash,
-          blockNumber: blockNum,
-          network: chainKey === "solana" ? "solana" : `${chainKey}_mainnet`,
+          contractAddress: null,
+          tokenId: null,
+          blockHash: null,
+          blockNumber: null,
+          network: "offchain",
           chainKey,
-          status: "minted",
+          status: "offchain_attestation",
           itemName: input.itemName,
           metadataUri: `https://thevaultdfw.win/certificate/${listingId}`,
         },
-        message: `Item certified with real keypair on ${CHAINS[chainKey].name}. Certificate of authenticity generated.`,
+        message: "Off-chain attestation recorded. This is not an on-chain mint or a blockchain certificate.",
         verification: {
-          publicKey: certPubkey,
-          canVerify: true,
-          instructions: `Certificate authenticity can be verified on ${CHAINS[chainKey].name} via the contract address.`,
+          publicKey: null,
+          canVerify: false,
+          instructions: "This record is an off-chain attestation. It is not a confirmed chain transaction.",
         },
       };
     }),
@@ -179,6 +157,9 @@ export const blockchainRouter = createRouter({
 
       const [listing] = await db.select().from(listings).where(eq(listings.id, listingId)).limit(1);
       if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "Listing not found" });
+      if (listing.sellerId !== ctx.user?.id && !isProvisionedAdmin(ctx.user)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the seller can tokenize this listing" });
+      }
 
       // Check already tokenized
       const [existing] = await db.select().from(chainTokenMints)
@@ -213,8 +194,12 @@ export const blockchainRouter = createRouter({
         });
       }
 
-      if (!result.success && !result.simulated) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.message });
+      if (!result.success || result.simulated) {
+        return {
+          success: false,
+          simulated: Boolean(result.simulated),
+          message: result.message || "Tokenization did not produce a confirmed chain transaction",
+        };
       }
 
       const inserted = await db.insert(chainTokenMints).values({
@@ -293,8 +278,8 @@ export const blockchainRouter = createRouter({
           chainKey: c.chainKey,
         },
         message: c.status === "minted"
-          ? `Certificate verified — real keypair on ${chainConfig.name}`
-          : "Certificate pending or failed verification",
+          ? `On-chain certificate recorded for ${chainConfig.name}`
+          : "This record is an off-chain attestation, not a confirmed chain certificate",
         network: c.chainKey === "solana" ? "solana" : `${c.chainKey}_mainnet`,
         verificationSteps: [
           "1. Certificate hash is SHA-256 derived from listing data",
@@ -321,6 +306,19 @@ export const blockchainRouter = createRouter({
     }),
 
   // ── list mints ──
+  list: publicQuery.query(async () => {
+    const db = getDb();
+    return db.select().from(chainCerts).orderBy(desc(chainCerts.createdAt)).limit(50);
+  }),
+
+  getById: publicQuery
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = getDb();
+      const [cert] = await db.select().from(chainCerts).where(eq(chainCerts.id, input.id)).limit(1);
+      return cert ?? null;
+    }),
+
   listTokens: publicQuery.query(async () => {
     const db = getDb();
     return db.select().from(chainTokenMints).orderBy(desc(chainTokenMints.createdAt)).limit(50);

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function DeviceManager() {
-  const [devices, setDevices] = useState([
+  const [devices, _setDevices] = useState([
     { id: "1", name: "MacBook Pro", lastActive: "2026-09-08" },
     { id: "2", name: "iPhone 15", lastActive: "2026-09-07" },
   ]);

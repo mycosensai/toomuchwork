@@ -38,6 +38,10 @@ export interface CloudflareEnv {
   R2_ENDPOINT?: string;
   R2_BUCKET_NAME?: string;
   TELEGRAM_BOT_TOKEN?: string;
+  VAULT_TG_BOT_TOKEN?: string;
+  ENABLE_STRIPE_WEBHOOKS?: string;
+  ENABLE_RATE_LIMITING?: string;
+  ENABLE_SECURITY_HEADERS?: string;
   // EVM chain treasury private keys (base64-encoded 64-byte hex key)
   CHAIN_ETHEREUM_TREASURY_SECRET?: string;
   CHAIN_BASE_TREASURY_SECRET?: string;
@@ -150,11 +154,20 @@ export const env = {
     return cfEnv.CLOUDFLARE_API_TOKEN || "";
   },
   get adminEmails(): string[] {
-    const raw = cfEnv.ADMIN_EMAILS || "ratchetkrewelabs@gmail.com,dakotavanalstyne318@gmail.com";
-    return raw
-      .split(",")
-      .map((item) => item.trim().toLowerCase())
-      .filter(Boolean);
+    // Privilege is the hardcoded allowlist. ADMIN_EMAILS cannot add admins.
+    return ["ratchetkrewelabs@gmail.com", "dakotavanalstyne318@gmail.com"];
+  },
+  get stripeWebhooksEnabled(): boolean {
+    return (cfEnv.ENABLE_STRIPE_WEBHOOKS ?? "true") !== "false";
+  },
+  get rateLimitingEnabled(): boolean {
+    return (cfEnv.ENABLE_RATE_LIMITING ?? "true") !== "false";
+  },
+  get securityHeadersEnabled(): boolean {
+    return (cfEnv.ENABLE_SECURITY_HEADERS ?? "true") !== "false";
+  },
+  get vaultTelegramToken(): string {
+    return cfEnv.VAULT_TG_BOT_TOKEN || "";
   },
   get r2Assets(): any {
     return cfEnv.ASSETS;

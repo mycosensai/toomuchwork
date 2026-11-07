@@ -69,7 +69,7 @@ const BOXED_IN_PREAMBLE = `THE BOX — ABSOLUTE BOUNDARIES (VIOLATION = OUTPUT D
 // ─── REDDIT SEARCH (public API, no auth) ───
 async function searchRedditForBuyers(
   query: string,
-  subreddits?: string[]
+  _subreddits?: string[]
 ): Promise<Array<typeof internetResearch.$inferInsert>> {
   const findings: Array<typeof internetResearch.$inferInsert> = [];
   const searchQueries = [
@@ -325,7 +325,7 @@ export const internetResearchRouter = createRouter({
       category: z.string().optional(),
       triggerAgent: z.string().default("outreach"),
     }))
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input, ctx: _ctx }) => {
       const db = getDb();
       const sessionId = genId("rs");
 
@@ -346,7 +346,10 @@ export const internetResearchRouter = createRouter({
       // Live RSS/blog feeds: Bring a Trailer auction comparables + Google News
       // collectibles-market discussion (research-analysis integration 2026-09-07)
       const feedFindings = await searchLiveFeedsForBuyers(input.itemName, input.category);
-      const allRaw = [...redditFindings, ...xFindings, ...feedFindings];
+      const allRaw = [...redditFindings, ...xFindings, ...feedFindings].map((finding) => ({
+        ...finding,
+        researchId: finding.researchId ?? `feed-${input.itemName}`,
+      }));
 
       // AI analysis layer (only scores real data)
       const { analyzed, summary, buyingSignals } = await analyzeFindings(input.itemName, allRaw);

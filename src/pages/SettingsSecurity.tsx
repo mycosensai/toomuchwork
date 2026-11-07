@@ -2,22 +2,18 @@
  * SettingsSecurity.tsx — Security settings: 2FA, backup codes, session management.
  */
 import { useState } from "react";
-import { trpc } from "@/providers/trpc";
+
 import { useAuth } from "@/hooks/useAuth";
-import { Shield, Key, AlertTriangle, Check, Copy, Loader2 } from "lucide-react";
+import { Shield, AlertTriangle, Copy } from "lucide-react";
 
 export default function SettingsSecurity() {
   const { isAuthenticated } = useAuth();
   const [show2FA, setShow2FA] = useState(false);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
-  const enable2FA = trpc.twoFactor.enable2FA.useMutation();
-  const generateCodes = trpc.twoFactor.generateBackupCodes.useMutation();
-
-  const handleGenerate = async () => {
-    const codes = await generateCodes.mutateAsync({});
-    setBackupCodes(codes.codes || []);
-    setShow2FA(true);
+  const handleGenerate = () => {
+    setBackupCodes([]);
+    setShow2FA(false);
   };
 
   if (!isAuthenticated) return null;
@@ -33,8 +29,8 @@ export default function SettingsSecurity() {
       <div className="bg-dark-800/50 border border-gold-500/20 rounded-xl p-6">
         <h2 className="text-xl font-bold text-white mb-2">Two-Factor Authentication</h2>
         <p className="text-gray-400 mb-4">Add an extra layer of security with 2FA.</p>
-        <button onClick={handleGenerate} disabled={enable2FA.isPending} className="px-6 py-3 bg-gold-500/90 text-black font-semibold rounded-lg hover:bg-gold-400 transition disabled:opacity-50">
-          {enable2FA.isPending ? "Setting up..." : "Enable 2FA"}
+        <button type="button" onClick={handleGenerate} className="px-6 py-3 bg-gold-500/90 text-black font-semibold rounded-lg hover:bg-gold-400 transition">
+          Two-factor setup is not available on this server yet
         </button>
       </div>
 

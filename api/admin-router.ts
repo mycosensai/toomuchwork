@@ -7,15 +7,11 @@ import {
   logAudit, getClientIP
 } from "./security";
 import { env } from "./lib/env";
+import { isProvisionedAdmin } from "./lib/admin-access";
 
-function requireAdmin(ctx: any) {
-  const email = ctx.user?.email?.toLowerCase();
-  if (!email) {
-    throw new Error("Authentication context missing email");
-  }
-
-  const allowed = env.adminEmails;
-  if (!allowed.includes(email)) {
+function requireAdmin(ctx: { user?: { id?: number; email?: string | null; role?: string | null; email_verified?: number | boolean | null }; req: Request }) {
+  if (!isProvisionedAdmin(ctx.user)) {
+    const email = ctx.user?.email?.toLowerCase() || "none";
     logAudit({
       ip: getClientIP(ctx.req),
       method: "GET",
@@ -278,10 +274,10 @@ export const adminRouter = createRouter({
 
   cloudflareBindings: adminQuery
     .input(z.object({ projectName: z.string().default("thevault") }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input: _input, ctx }) => {
       logAudit({ ip: getClientIP(ctx.req), method: "GET", path: "admin.cloudflareBindings", userId: ctx.user?.id, action: "admin_cf_bindings" });
       const apiToken = env.cloudflareApiToken;
-      const accountId = "2ad733f9d698170c202b12924868c60e";
+      const _accountId = "2ad733f9d698170c202b12924868c60e";
 
       if (!apiToken) return { configured: false, error: "CLOUDFLARE_API_TOKEN not set" };
 

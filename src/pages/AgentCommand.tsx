@@ -120,7 +120,7 @@ export default function AgentCommand() {
     onSuccess: () => utils.graphWorkflow.engineStats.invalidate()
   });
   const difyCommand = trpc.graphWorkflow.command.useMutation();
-  const auditFleetHallucinations = trpc.samson.auditFleetHallucinations.useMutation({
+  const auditFleetHallucinations = trpc.samson.runQualityAudit.useMutation({
     onSuccess: (data) => setAuditResult(data),
   });
 
@@ -1245,7 +1245,7 @@ export default function AgentCommand() {
                   onClick={() => {
                     setAuditLoading(true);
                     auditFleetHallucinations.mutate(
-                      { perAgent: 10 },
+                      { type: "all" },
                       { onSettled: () => setAuditLoading(false) },
                     );
                   }}

@@ -209,10 +209,10 @@ export default function TokenGallery() {
             <div className="flex gap-3">
               <button
                 onClick={submitTokenize}
-                disabled={tokenize.isLoading}
+                disabled={tokenize.isPending}
                 className="flex-1 py-3 bg-gradient-to-br from-[#C9A84C] to-[#8A6E2F] text-[#080808] font-cinzel text-[10px] tracking-[3px] uppercase font-bold hover:shadow-[0_0_40px_rgba(201,168,76,0.4)] transition-all disabled:opacity-50"
               >
-                {tokenize.isLoading ? 'Minting…' : 'Mint Token'}
+                {tokenize.isPending ? 'Minting…' : 'Mint Token'}
               </button>
               <button
                 onClick={() => setTokenizeTarget(null)}

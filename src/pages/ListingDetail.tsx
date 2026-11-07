@@ -28,6 +28,7 @@ const badgeStyles: Record<string, string> = {
 }
 
 export default function ListingDetail() {
+  const utils = trpc.useUtils();
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
@@ -41,8 +42,8 @@ export default function ListingDetail() {
   )
   const { data: reviewStats } = trpc.reviews.statsByListing.useQuery({ listingId }, { enabled: !!listing })
   const { data: reviews } = trpc.reviews.listByListing.useQuery({ listingId }, { enabled: !!listing })
-  const createReview = trpc.reviews.create.useMutation({ onSuccess: () => { trpc.reviews.listByListing.invalidate({ listingId }); trpc.reviews.statsByListing.invalidate({ listingId }); setReviewForm({ rating: 5, title: '', comment: '' }) } })
-  const helpful = trpc.reviews.helpful.useMutation({ onSuccess: () => trpc.reviews.listByListing.invalidate({ listingId }) })
+  const createReview = trpc.reviews.create.useMutation({ onSuccess: () => { utils.reviews.listByListing.invalidate({ listingId }); utils.reviews.statsByListing.invalidate({ listingId }); setReviewForm({ rating: 5, title: '', comment: '' }) } })
+  const helpful = trpc.reviews.helpful.useMutation({ onSuccess: () => utils.reviews.listByListing.invalidate({ listingId }) })
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', comment: '' })
 
   const handleBuyNow = () => {

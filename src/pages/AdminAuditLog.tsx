@@ -3,7 +3,7 @@
  */
 import { trpc } from "@/providers/trpc";
 import { useState } from "react";
-import { Shield, FileText, Filter, Download } from "lucide-react";
+import { Shield } from "lucide-react";
 
 export default function AdminAuditLog() {
   const [filter, setFilter] = useState("all");

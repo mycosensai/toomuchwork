@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 const VAULT_DFW_TOKEN = {
   symbol: "DFW",

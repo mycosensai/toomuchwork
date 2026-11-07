@@ -1,9 +1,10 @@
 import * as cookie from "cookie";
 import { getSessionCookieOptions } from "./lib/cookies";
 import { createRouter, authedQuery } from "./middleware";
+import { publicRole } from "./lib/admin-access";
 
 export const authRouter = createRouter({
-  me: authedQuery.query((opts) => opts.ctx.user),
+  me: authedQuery.query((opts) => ({ ...opts.ctx.user, role: publicRole(opts.ctx.user) })),
   logout: authedQuery.mutation(async ({ ctx }) => {
     const opts = getSessionCookieOptions(ctx.req.headers);
 

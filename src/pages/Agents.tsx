@@ -3,9 +3,9 @@
  * GeneralStaff-inspired warm cream / ink / rust palette
  */
 
-import { useState } from "react";
 import { Link } from "react-router";
 import { trpc } from "@/providers/trpc";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Bot, Play, CheckCircle, XCircle, Clock, TrendingUp, Activity, Shield, MessageSquare, Zap, BarChart3, Globe, FileText, Users, Search, DollarSign, Lock
 } from 'lucide-react';
@@ -35,15 +35,12 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function Agents() {
-  const [isAdmin] = useState(() => {
-    const role = localStorage.getItem("user_role");
-    return role === "admin" || role === "owner";
-  });
-  const utils = trpc.useContext();
+  const { isAdmin } = useAuth();
+  const utils = trpc.useUtils();
 
-  const { data: stats } = trpc.agent.dashboardStats.useQuery();
-  const { data: fleet } = trpc.agent.fleetOverview.useQuery();
-  const { data: sessions } = trpc.agent.listSessions.useQuery({ limit: 10 });
+  const { data: stats, isLoading: statsLoading, isError: statsError } = trpc.agent.dashboardStats.useQuery();
+  const { data: fleet, isLoading: fleetLoading, isError: fleetError } = trpc.agent.fleetOverview.useQuery();
+  const { data: sessions, isLoading: sessionsLoading, isError: sessionsError } = trpc.agent.listSessions.useQuery({ limit: 10 });
   const seedProjects = trpc.agent.seedProjects.useMutation({
     onSuccess: () => { utils.agent.dashboardStats.invalidate(); utils.agent.fleetOverview.invalidate(); }
   });
@@ -67,6 +64,8 @@ export default function Agents() {
           <p className="mt-2 text-slate-600 font-serif italic">
             Autonomous business operations for The Vault — ten specialized agents, one mission: sell luxury.
           </p>
+          {statsLoading && <p className="mt-2 text-sm text-slate-400">Loading fleet stats…</p>}
+          {statsError && <p className="mt-2 text-sm text-red-500">Fleet stats could not be loaded.</p>}
         </div>
 
         {/* Stats Band */}
@@ -160,7 +159,13 @@ export default function Agents() {
                     </td>
                   </tr>
                 ))}
-                {(!fleet || fleet.length === 0) && (
+                {fleetLoading && (
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">Loading agents…</td></tr>
+                )}
+                {fleetError && (
+                  <tr><td colSpan={8} className="px-4 py-8 text-center text-red-500">The agent fleet could not be loaded.</td></tr>
+                )}
+                {!fleetLoading && !fleetError && (!fleet || fleet.length === 0) && (
                   <tr>
                     <td colSpan={8} className="px-4 py-8 text-center text-slate-400">
                       No agents registered yet. Click "Seed Projects" above to initialize.
@@ -179,7 +184,9 @@ export default function Agents() {
               <h2 className="text-lg font-semibold text-slate-900">Recent Sessions</h2>
             </div>
             <div className="p-4 space-y-3">
-              {recentLogs.length === 0 && (
+              {sessionsLoading && <p className="text-sm text-slate-400 text-center py-4">Loading sessions…</p>}
+              {sessionsError && <p className="text-sm text-red-500 text-center py-4">Sessions could not be loaded.</p>}
+              {!sessionsLoading && !sessionsError && recentLogs.length === 0 && (
                 <p className="text-sm text-slate-400 text-center py-4">No sessions recorded yet.</p>
               )}
               {recentLogs.map((s) => (

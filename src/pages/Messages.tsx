@@ -7,6 +7,7 @@ import {
 import { Link } from 'react-router'
 
 export default function Messages() {
+  const utils = trpc.useUtils();
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [activeView, setActiveView] = useState<'inbox' | 'outbox' | 'compose'>('inbox')
   const [selectedMsg, setSelectedMsg] = useState<any>(null)
@@ -28,21 +29,21 @@ export default function Messages() {
 
   const markRead = trpc.messages.markRead.useMutation({
     onSuccess: () => {
-      trpc.messages.inbox.invalidate()
-      trpc.messages.unreadCount.invalidate()
+      utils.messages.inbox.invalidate()
+      utils.messages.unreadCount.invalidate()
     }
   })
   const deleteMsg = trpc.messages.delete.useMutation({
     onSuccess: () => {
-      trpc.messages.inbox.invalidate()
-      trpc.messages.outbox.invalidate()
+      utils.messages.inbox.invalidate()
+      utils.messages.outbox.invalidate()
       setSelectedMsg(null)
     }
   })
   const replyMutation = trpc.messages.reply.useMutation({
     onSuccess: () => {
-      trpc.messages.inbox.invalidate()
-      trpc.messages.outbox.invalidate()
+      utils.messages.inbox.invalidate()
+      utils.messages.outbox.invalidate()
       setReplyText('')
     }
   })

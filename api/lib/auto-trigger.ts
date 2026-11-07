@@ -15,6 +15,7 @@ import {
   
 } from "drizzle-orm";
 import { openaiChat, AGENT_MODEL } from "./openai";
+import { isSamsonArmed } from "./kill-switch";
 import { checkHallucinations, censorOutreach } from "./hallucination-guard";
 import {
   
@@ -147,9 +148,10 @@ export async function autoTriggerFromAction(
   value?: number,
   listingId?: number
 ): Promise<{ dispatched: boolean; messagesSent: number; blocked: number }> {
-  const execCtx = (globalThis as any).__cfExecCtx as ExecutionContext | undefined;
+  const execCtx = (globalThis as { __cfExecCtx?: { waitUntil: (promise: Promise<unknown>) => void } }).__cfExecCtx;
   const work = (async () => {
     const db = getDb();
+    if (await isSamsonArmed(db)) return { dispatched: false, messagesSent: 0, blocked: 0 };
     const startTime = Date.now();
     try {
     // Log the trigger
@@ -193,7 +195,7 @@ export async function autoTriggerFromAction(
         institution: target.industry,
         outreachMethod: "autonomous",
         message: msg.body,
-        status: "sent",
+        status: "draft",
         confidence: msg.score,
       });
 
@@ -206,7 +208,7 @@ export async function autoTriggerFromAction(
         contactTitle: "Partnerships Director",
         messageBody: msg.body,
         priority: 2,
-        status: "sent",
+        status: "draft",
         assignedAgent: "outreach",
       });
 
@@ -221,12 +223,12 @@ export async function autoTriggerFromAction(
       status: "complete",
       outcome: "verified",
       engineerOutput: JSON.stringify({ itemName, sent, blocked, duration: Date.now() - startTime }) || "{}",
-      verificationOutput: `Auto-trigger ${actionType}: ${sent} sent, ${blocked} blocked`,
+      verificationOutput: `Auto-trigger ${actionType}: ${sent} drafts, ${blocked} blocked`,
       reviewVerdict: "pass",
       durationSeconds: Math.round((Date.now() - startTime) / 1000),
     });
 
-      return { dispatched: true, messagesSent: sent, blocked };
+      return { dispatched: false, messagesSent: 0, blocked: blocked + sent };
     } catch {
       return { dispatched: false, messagesSent: 0, blocked: 0 };
     }

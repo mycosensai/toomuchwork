@@ -25,9 +25,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     staleTime: 15_000,
     retry: 1,
   });
-  const addCart = trpc.cart.add.useMutation({ onSuccess: () => trpc.cart.get.invalidate() });
-  const removeCart = trpc.cart.remove.useMutation({ onSuccess: () => trpc.cart.get.invalidate() });
-  const clearCart = trpc.cart.clear.useMutation({ onSuccess: () => trpc.cart.get.invalidate() });
+  const utils = trpc.useUtils();
+  const addCart = trpc.cart.add.useMutation({ onSuccess: () => utils.cart.get.invalidate() });
+  const removeCart = trpc.cart.remove.useMutation({ onSuccess: () => utils.cart.get.invalidate() });
+  const clearCart = trpc.cart.clear.useMutation({ onSuccess: () => utils.cart.get.invalidate() });
 
   // Hydrate from DB when available (DB is source of truth when it returns rows)
   // This is intentional external→React sync: tRPC cache → local optimistic cart

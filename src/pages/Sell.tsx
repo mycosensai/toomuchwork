@@ -94,7 +94,7 @@ export default function Sell() {
       return
     }
 
-    setImageErrors(prev => ({ ...prev, global: undefined }))
+    setImageErrors(prev => { const next = { ...prev }; delete next.global; return next })
 
     for (const file of files) {
       const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -141,7 +141,7 @@ export default function Sell() {
     e.preventDefault()
     if (!title || !categoryId || !price) return
 
-    setImageErrors(prev => ({ ...prev, global: undefined }))
+    setImageErrors(prev => { const next = { ...prev }; delete next.global; return next })
 
     // Prefer R2: upload each image via assets.upload (R2) → use permanent URLs; fallback to data URLs if R2 not configured
     const doCreate = async () => {

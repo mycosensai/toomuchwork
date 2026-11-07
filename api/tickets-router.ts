@@ -17,7 +17,7 @@ import { logAudit, getClientIP, sanitizeInput } from "./security";
 import { notifyTelegram, sendTelegramMessage } from "./lib/telegram";
 import { TRPCError } from "@trpc/server";
 
-const OWNER_INBOX = "5688111406"; // Hermes telegram.home_channel — "my inbox"
+const _OWNER_INBOX = "5688111406"; // Hermes telegram.home_channel — "my inbox"
 
 /** Build the next ticket number: VLT-1001, VLT-1002, … */
 async function nextTicketNo(db: any): Promise<string> {

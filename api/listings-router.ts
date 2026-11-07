@@ -9,6 +9,16 @@ import { notifyTelegram } from "./lib/telegram";
 import {
   validateImageDataUris
 } from "./lib/file-upload";
+import { parseStringList, serializeStringList } from "./lib/listing-json";
+
+function presentListing<T extends { images: unknown; features: unknown; categoryId: number }>(
+  item: T,
+  category: unknown,
+) {
+  const images = parseStringList(item.images);
+  const features = parseStringList(item.features);
+  return { ...item, images, features, category, image: images[0] ?? null };
+}
 
 export const listingsRouter = createRouter({
   list: publicQuery
@@ -56,11 +66,7 @@ export const listingsRouter = createRouter({
       const cats = await db.select().from(categories);
       const catMap = new Map(cats.map(c => [c.id, c]));
 
-      return items.map(item => ({
-        ...item,
-        category: catMap.get(item.categoryId) || null,
-        image: item.images?.[0] || null,
-      }));
+      return items.map(item => presentListing(item, catMap.get(item.categoryId) || null));
     }),
 
   getById: publicQuery
@@ -82,7 +88,7 @@ export const listingsRouter = createRouter({
         .set({ viewCount: sql`${listings.viewCount} + 1` })
         .where(eq(listings.id, input.id));
 
-      return { ...item, category: cat || null, image: item.images?.[0] || null };
+      return presentListing(item, cat || null);
     }),
 
   create: authedQuery
@@ -146,8 +152,8 @@ export const listingsRouter = createRouter({
         categoryId: input.categoryId,
         price: String(input.price),
         condition: input.condition,
-        images: input.images,
-        features: sanitizedInput.features,
+        images: serializeStringList(input.images),
+        features: serializeStringList(sanitizedInput.features),
         isBuyNow: input.isBuyNow,
         isConsignment: input.isConsignment,
         badge: input.badge,
@@ -193,11 +199,7 @@ export const listingsRouter = createRouter({
     const cats = await db.select().from(categories);
     const catMap = new Map(cats.map(c => [c.id, c]));
 
-    return items.map(item => ({
-      ...item,
-      category: catMap.get(item.categoryId) || null,
-      image: item.images?.[0] || null,
-    }));
+    return items.map(item => presentListing(item, catMap.get(item.categoryId) || null));
   }),
 
   certified: publicQuery.query(async () => {
@@ -212,10 +214,6 @@ export const listingsRouter = createRouter({
     const cats = await db.select().from(categories);
     const catMap = new Map(cats.map(c => [c.id, c]));
 
-    return items.map(item => ({
-      ...item,
-      category: catMap.get(item.categoryId) || null,
-      image: item.images?.[0] || null,
-    }));
+    return items.map(item => presentListing(item, catMap.get(item.categoryId) || null));
   }),
 });

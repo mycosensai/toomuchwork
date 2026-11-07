@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { env } from "./lib/env";
 import { getRawDb } from "./queries/connection";
 
@@ -45,6 +46,56 @@ export function getClientIP(req: Request): string {
     req.headers.get("x-real-ip") ||
     "unknown"
   );
+}
+
+export type SensitiveAction = "auth" | "reset" | "checkout";
+
+const SENSITIVE_LIMITS: Record<SensitiveAction, RateLimitConfig> = {
+  auth: { windowMs: 15 * 60 * 1000, maxRequests: 5 },
+  reset: { windowMs: 15 * 60 * 1000, maxRequests: 5 },
+  checkout: { windowMs: 10 * 60 * 1000, maxRequests: 8 },
+};
+
+type RateDecision = { allowed: boolean; remaining: number; resetAt: number };
+
+async function consumeDurableBucket(bucket: string, config: RateLimitConfig): Promise<RateDecision | null> {
+  const db = getRawDb() as { prepare?: (query: string) => { bind: (...values: unknown[]) => { run: () => Promise<unknown>; first: <T>() => Promise<T | null> } } } | null;
+  if (!db?.prepare) return null;
+  const windowStart = Math.floor(Date.now() / config.windowMs) * config.windowMs;
+  try {
+    await db.prepare(
+      `INSERT INTO rate_limit_counters (bucket, window_start, count)
+       VALUES (?, ?, 1)
+       ON CONFLICT(bucket, window_start) DO UPDATE SET count = count + 1`,
+    ).bind(bucket, windowStart).run();
+    const row = await db.prepare(
+      `SELECT count AS count FROM rate_limit_counters WHERE bucket = ? AND window_start = ?`,
+    ).bind(bucket, windowStart).first<{ count: number }>();
+    const count = Number(row?.count ?? 1);
+    return {
+      allowed: count <= config.maxRequests,
+      remaining: Math.max(0, config.maxRequests - count),
+      resetAt: windowStart + config.windowMs,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** D1 counter when the table exists, otherwise the per-isolate memory limiter. */
+export async function enforceSensitiveLimit(req: Request, action: SensitiveAction): Promise<RateDecision> {
+  const config = SENSITIVE_LIMITS[action];
+  const bucket = `${action}:${getClientIP(req)}`;
+  const durable = await consumeDurableBucket(bucket, config);
+  if (durable) return durable;
+  return checkRateLimit(req, { ...config, keyGenerator: () => bucket });
+}
+
+export async function assertSensitiveLimit(req: Request, action: SensitiveAction): Promise<void> {
+  const decision = await enforceSensitiveLimit(req, action);
+  if (!decision.allowed) {
+    throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many requests. Try again later." });
+  }
 }
 
 export function checkRateLimit(
