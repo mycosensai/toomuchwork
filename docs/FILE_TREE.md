@@ -45,7 +45,7 @@ Important deployment note:
 
 ```txt
 db/schema.ts         Drizzle D1 schema
-migrations/          Manual D1 SQL migrations
+db/migrations-manual/  Manual D1 SQL migrations (drizzle-generated ones live in db/migrations/)
 ```
 
 Current migration files:
@@ -86,8 +86,8 @@ No literal files named `import 1`, `import 2`, `import_1`, or similar were found
 The recent added support files are intentionally grouped as:
 
 ```txt
-migrations/0001_users_schema_fix.sql
-migrations/0002_webhook_events.sql
+db/migrations-manual/0001_users_schema_fix.sql
+db/migrations-manual/0002_webhook_events.sql
 tests/load/k6-smoke.js
 docs/FILE_TREE.md
 .github/workflows/ci.yml

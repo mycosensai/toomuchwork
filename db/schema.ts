@@ -1,20 +1,28 @@
-import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, real, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ─── USERS ───
-export const users = sqliteTable("users", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  unionId: text("unionId").unique(),
-  oauthProvider: text("oauth_provider"),
-  oauthProviderId: text("oauth_provider_id"),
-  name: text("name"),
-  email: text("email"),
-  avatar: text("avatar"),
-  password: text("password"),
-  role: text("role").default("user").notNull(),
-  createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-  updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-  lastSignInAt: integer("lastSignInAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
-});
+export const users = sqliteTable(
+  "users",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    unionId: text("unionId").unique(),
+    oauthProvider: text("oauth_provider"),
+    oauthProviderId: text("oauth_provider_id"),
+    name: text("name"),
+    email: text("email").unique(),
+    avatar: text("avatar"),
+    password: text("password"),
+    role: text("role").default("user").notNull(),
+    createdAt: integer("createdAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    updatedAt: integer("updatedAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+    lastSignInAt: integer("lastSignInAt", { mode: "timestamp" }).$defaultFn(() => new Date()).notNull(),
+  },
+  (table) => [
+    // Mirrors migrations/0001_users_schema_fix.sql so drizzle-kit generates
+    // the same constraint instead of drifting away from the applied schema.
+    uniqueIndex("users_oauth_unique_idx").on(table.oauthProvider, table.oauthProviderId),
+  ]
+);
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
