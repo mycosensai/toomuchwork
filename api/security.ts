@@ -252,6 +252,29 @@ function normalizeAllowedHost(value: string): string {
   }
 }
 
+/**
+ * Allowlist for the Host header used to build OAuth redirect_uri values.
+ * Never trust the raw Host header — an attacker-controlled host would make
+ * the provider send the authorization code to a hostile redirect_uri.
+ */
+export function isAllowedAppHost(host: string | null | undefined): boolean {
+  if (!host) return false;
+
+  const hostname = normalizeAllowedHost(host);
+
+  if (!env.isProduction && ["localhost", "127.0.0.1"].includes(hostname)) {
+    return true;
+  }
+
+  // Cloudflare Pages preview/production domains (*.pages.dev)
+  if (hostname === "pages.dev" || hostname.endsWith(".pages.dev")) {
+    return true;
+  }
+
+  const allowedDomain = env.vaultDomain ? normalizeAllowedHost(env.vaultDomain) : "thevaultdfw.win";
+  return hostname === allowedDomain || hostname.endsWith(`.${allowedDomain}`);
+}
+
 export function getCorsConfig() {
   return {
     origin: (origin: string): string | null => {

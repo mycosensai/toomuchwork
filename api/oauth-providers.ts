@@ -5,6 +5,7 @@
  */
 
 import { env } from "./lib/env";
+import { isAllowedAppHost } from "./security";
 import * as jose from "jose";
 
 export type OAuthProvider = "google" | "x" | "apple" | "github";
@@ -186,9 +187,18 @@ export async function buildAuthUrl(
     };
   }
 
-  let base = hostOverride
-    ? `${env.isProduction ? "https" : "http"}://${hostOverride}`
-    : `${env.isProduction ? "https" : "http"}://localhost:3000`;
+  // Only allow redirect hosts from the validated allowlist — never build a
+  // redirect_uri from an unvalidated Host header.
+  let base: string;
+  if (hostOverride && isAllowedAppHost(hostOverride)) {
+    base = `${env.isProduction ? "https" : "http"}://${hostOverride}`;
+  } else if (hostOverride) {
+    return { url: "", error: "Invalid host for OAuth redirect" };
+  } else if (env.vaultDomain) {
+    base = `${env.isProduction ? "https" : "http"}://${env.vaultDomain}`;
+  } else {
+    base = `${env.isProduction ? "https" : "http"}://localhost:3000`;
+  }
 
   const redirectUri = `${base}/api/oauth/callback/${provider}`;
   const { verifier, challenge } = await generatePKCE();
