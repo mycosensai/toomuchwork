@@ -40,6 +40,71 @@ function pruneRateLimitStore(now: number) {
   }
 }
 
+// ─── D1-backed security state ───
+// In-memory Maps are per-isolate on Cloudflare Workers, so all persistent
+// security state (rate-limit counters, revoked tokens, revoked user sessions)
+// lives in D1. The in-memory mirrors remain only as a best-effort fast path
+// and as a fallback when the D1 binding is unavailable (local dev).
+
+const RATE_LIMIT_CLEANUP_PROBABILITY = 0.02; // ~2% of writes trigger pruning
+
+function rawDb(): any {
+  try {
+    return getRawDb();
+  } catch {
+    return null;
+  }
+}
+
+export async function checkRateLimitD1(
+  req: Request,
+  config: RateLimitConfig = DEFAULT_RATE_LIMIT,
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  const db = rawDb();
+  if (!db) return checkRateLimit(req, config);
+
+  const key = `ratelimit:${(config.keyGenerator || getClientIP)(req)}`;
+  const now = Date.now();
+
+  try {
+    const stmt = db
+      .prepare(
+        `INSERT INTO rate_limits (key, window_start, count, last_seen) VALUES (?, ?, 1, ?)
+         ON CONFLICT(key) DO UPDATE SET
+           count = CASE WHEN rate_limits.window_start <= ? THEN 1 ELSE rate_limits.count + 1 END,
+           window_start = CASE WHEN rate_limits.window_start <= ? THEN ? ELSE rate_limits.window_start END,
+           last_seen = excluded.last_seen
+         RETURNING count, window_start`,
+      )
+      .bind(key, now, now, now - config.windowMs, now - config.windowMs, now);
+
+    const row = (await stmt.first()) as
+      | { count: number; window_start: number }
+      | null;
+
+    if (!row) return checkRateLimit(req, config);
+
+    // Opportunistic pruning of stale windows / expired revocations.
+    if (Math.random() < RATE_LIMIT_CLEANUP_PROBABILITY) {
+      void db
+        .prepare("DELETE FROM rate_limits WHERE last_seen < ?")
+        .bind(now - 15 * 60 * 1000)
+        .run()
+        .catch(() => {});
+    }
+
+    const allowed = row.count <= config.maxRequests;
+    return {
+      allowed,
+      remaining: Math.max(0, config.maxRequests - row.count),
+      resetAt: row.window_start + config.windowMs,
+    };
+  } catch (error) {
+    console.error("[Security] D1 rate limit failed, falling back to in-memory:", error);
+    return checkRateLimit(req, config);
+  }
+}
+
 export function getClientIP(req: Request): string {
   return (
     req.headers.get("cf-connecting-ip") ||
@@ -301,27 +366,104 @@ export function getAuditLog(
   return logs.slice(0, limit);
 }
 
+// ─── Token revocation (D1-backed, in-memory mirror as best-effort) ───
+
+const REVOCATION_TTL_MS = 8 * 24 * 60 * 60 * 1000; // tokens live at most 7 days
+
 const revokedTokens = new Set<string>();
 const revokedUserSessions = new Map<number, number>();
 
-export function revokeToken(token: string): void {
-  if (token.length < 4096) {
-    revokedTokens.add(token);
+export async function revokeToken(token: string): Promise<void> {
+  if (token.length >= 4096) return;
+
+  revokedTokens.add(token);
+
+  const db = rawDb();
+  if (db) {
+    try {
+      await db
+        .prepare("INSERT OR IGNORE INTO revoked_tokens (token, revoked_at) VALUES (?, ?)")
+        .bind(token, Date.now())
+        .run();
+    } catch (error) {
+      console.error("[Security] Failed to persist token revocation:", error);
+    }
   }
 }
 
-export function revokeAllUserSessions(userId: number): void {
+export async function revokeAllUserSessions(userId: number): Promise<void> {
   revokedUserSessions.set(userId, Date.now());
+
+  const db = rawDb();
+  if (db) {
+    try {
+      await db
+        .prepare("INSERT INTO revoked_user_sessions (user_id, revoked_at) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET revoked_at = excluded.revoked_at")
+        .bind(userId, Date.now())
+        .run();
+    } catch (error) {
+      console.error("[Security] Failed to persist user session revocation:", error);
+    }
+  }
 }
 
-export function isTokenRevoked(token: string): boolean {
-  return revokedTokens.has(token);
+export async function isTokenRevoked(token: string): Promise<boolean> {
+  if (revokedTokens.has(token)) return true;
+
+  const db = rawDb();
+  if (!db) return false;
+
+  try {
+    const row = await db
+      .prepare("SELECT token FROM revoked_tokens WHERE token = ? LIMIT 1")
+      .bind(token)
+      .first();
+    return !!row;
+  } catch (error) {
+    console.error("[Security] Failed to read token revocation state:", error);
+    return false;
+  }
 }
 
-export function isUserSessionRevoked(userId: number, tokenIssuedAt: number): boolean {
-  const revokedAt = revokedUserSessions.get(userId);
-  if (!revokedAt) return false;
-  return tokenIssuedAt < revokedAt;
+export async function isUserSessionRevoked(userId: number, tokenIssuedAt: number): Promise<boolean> {
+  const inMemoryRevokedAt = revokedUserSessions.get(userId);
+  if (inMemoryRevokedAt && tokenIssuedAt < inMemoryRevokedAt) return true;
+
+  const db = rawDb();
+  if (!db) return false;
+
+  try {
+    const row = await db
+      .prepare("SELECT revoked_at FROM revoked_user_sessions WHERE user_id = ? LIMIT 1")
+      .bind(userId)
+      .first();
+    if (!row) return false;
+    const revokedAt = Number(row.revoked_at);
+    return tokenIssuedAt < revokedAt;
+  } catch (error) {
+    console.error("[Security] Failed to read session revocation state:", error);
+    return false;
+  }
+}
+
+// Opportunistic cleanup of revocation entries older than the max token lifetime.
+export async function pruneRevocationState(): Promise<void> {
+  const db = rawDb();
+  if (!db) return;
+
+  const cutoff = Date.now() - REVOCATION_TTL_MS;
+  try {
+    await db
+      .prepare("DELETE FROM revoked_tokens WHERE revoked_at < ?")
+      .bind(cutoff)
+      .run();
+    await db
+      .prepare("DELETE FROM revoked_user_sessions WHERE revoked_at < ?")
+      .bind(cutoff)
+      .run();
+  } catch {
+    // best-effort
+  }
 }
 
 export function validateUrl(url: string, allowedHosts?: string[]): boolean {

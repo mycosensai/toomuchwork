@@ -11,7 +11,7 @@ import { appRouter } from "../api/router";
 import { createContext } from "../api/context";
 import { setDb } from "../api/queries/connection";
 import { setCloudflareEnv } from "../api/lib/env";
-import { checkRateLimit, getSecurityHeaders, getCorsConfig } from "../api/security";
+import { checkRateLimitD1, getSecurityHeaders, getCorsConfig } from "../api/security";
 
 type Env = Record<string, unknown> & {
   DB?: D1Database;
@@ -162,7 +162,9 @@ app.use("/api/*", async (c, next) => {
     c.req.path.includes("oauth.callback");
 
   const config = isAuth ? { maxRequests: 5, windowMs: 60_000 } : undefined;
-  const result = checkRateLimit(c.req.raw, config);
+  // D1-backed so the counter is global across Workers isolates (falls back to
+  // in-memory when no D1 binding is present, e.g. local dev).
+  const result = await checkRateLimitD1(c.req.raw, config);
 
   if (!result.allowed) {
     return c.json(

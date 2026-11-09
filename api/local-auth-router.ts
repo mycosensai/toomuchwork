@@ -76,7 +76,7 @@ export async function verifyLocalTokenAndRefresh(token: string): Promise<{
     }
 
     // Check token revocation and session revocation
-    if (isTokenRevoked(token) || isUserSessionRevoked(userId, (iat || 0) * 1000)) {
+    if ((await isTokenRevoked(token)) || (await isUserSessionRevoked(userId, (iat || 0) * 1000))) {
       console.log(`[LocalAuth] Token revoked for user ${userId}`);
       return { userId: null, newToken: null };
     }
