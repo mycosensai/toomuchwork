@@ -48,7 +48,7 @@ function pruneRateLimitStore(now: number) {
 
 const RATE_LIMIT_CLEANUP_PROBABILITY = 0.02; // ~2% of writes trigger pruning
 
-function rawDb(): any {
+function rawDb(): ReturnType<typeof getRawDb> {
   try {
     return getRawDb();
   } catch {
