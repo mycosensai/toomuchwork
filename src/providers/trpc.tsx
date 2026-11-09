@@ -83,6 +83,20 @@ const trpcClient = trpc.createClient({
             }
           }
 
+          // The server rotates the local-auth token on activity and returns
+          // the new one in the x-local-auth-token response header. Persist it
+          // so the next request uses the refreshed lastActivity — otherwise
+          // every request re-verifies the stale token and the session is
+          // hard-logged-out after 30 idle-looking minutes.
+          const rotated = response.headers.get("x-local-auth-token");
+          if (rotated) {
+            try {
+              localStorage.setItem("local_auth_token", rotated);
+            } catch (err) {
+              console.error("Unable to persist rotated auth token", err);
+            }
+          }
+
           return response;
         } catch (err) {
           console.error("TRPC network request failed", err);
