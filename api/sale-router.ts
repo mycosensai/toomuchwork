@@ -190,10 +190,35 @@ export const saleRouter = createRouter({
   /**
    * Mark sale as payment received
    */
-  recordPayment: publicQuery
+  recordPayment: authedQuery
     .input(z.object({ saleId: z.number(), stripePaymentIntentId: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = getDb();
+
+      const [sale] = await db
+        .select()
+        .from(saleTransactions)
+        .where(eq(saleTransactions.id, input.saleId))
+        .limit(1);
+
+      if (!sale) throw new Error("Sale not found");
+      if (sale.sellerId !== ctx.user!.id && ctx.user!.role !== "admin") {
+        throw new Error("Unauthorized");
+      }
+
+      // Verify the payment intent exists and succeeded, server-side, via Stripe.
+      // Never trust a client-supplied payment-intent id on its own.
+      if (!/^[a-zA-Z0-9_-]{3,64}$/.test(input.stripePaymentIntentId)) {
+        throw new Error("Invalid payment intent id");
+      }
+
+      const intent = await stripeFetch(
+        `/payment_intents/${encodeURIComponent(input.stripePaymentIntentId)}`
+      );
+
+      if (!intent || intent.status !== "succeeded") {
+        throw new Error("Payment not completed");
+      }
 
       await db
         .update(saleTransactions)
@@ -202,6 +227,15 @@ export const saleRouter = createRouter({
           stripePaymentIntentId: input.stripePaymentIntentId,
         })
         .where(eq(saleTransactions.id, input.saleId));
+
+      logAudit({
+        ip: getClientIP(ctx.req),
+        method: "POST",
+        path: "sale.recordPayment",
+        userId: ctx.user!.id,
+        action: "payment_recorded",
+        details: `sale:${input.saleId} intent:${input.stripePaymentIntentId}`,
+      });
 
       return { success: true, status: "payment_received" };
     }),
