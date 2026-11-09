@@ -60,7 +60,9 @@ export const PROVIDER_CONFIGS: Record<OAuthProvider, ProviderConfig> = {
     name: "Apple",
     authUrl: "https://appleid.apple.com/auth/authorize",
     tokenUrl: "https://appleid.apple.com/auth/token",
-    profileUrl: "https://appleid.apple.com/auth/userinfo",
+    // Apple has no userinfo endpoint; the identity (sub/email) is read from
+    // the id_token returned by the token endpoint (see fetchProfile).
+    profileUrl: "",
     scope: "name email",
     profileParser: (data) => ({
       id: data.sub || data.id || "apple-user",
@@ -237,7 +239,7 @@ export async function exchangeCode(
   code: string,
   pkce: string,
   redirectUri?: string
-): Promise<{ access_token: string; error?: string }> {
+): Promise<{ access_token: string; id_token?: string; error?: string }> {
   const config = PROVIDER_CONFIGS[provider];
   const clientId = getClientId(provider);
   const clientSecret = getClientSecret(provider);
@@ -251,11 +253,15 @@ export async function exchangeCode(
     code_verifier: pkce,
   });
 
+  // Apple's token endpoint responds with x-www-form-urlencoded, most others
+  // with JSON — accept both so id_token extraction works everywhere.
+  const acceptBoth = provider === "apple" ? "application/x-www-form-urlencoded, application/json" : "application/json";
+
   const resp = await fetch(config.tokenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
+      Accept: acceptBoth,
     },
     body: body.toString(),
   });
@@ -265,8 +271,16 @@ export async function exchangeCode(
     return { access_token: "", error: `Token exchange failed: ${text}` };
   }
 
-  const data = (await resp.json()) as Record<string, unknown>;
+  const contentType = resp.headers.get("content-type") || "";
+  let data: Record<string, unknown>;
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    data = Object.fromEntries(new URLSearchParams(await resp.text()));
+  } else {
+    data = (await resp.json()) as Record<string, unknown>;
+  }
+
   const token = typeof data.access_token === "string" ? data.access_token : "";
+  const idToken = typeof data.id_token === "string" ? data.id_token : "";
   const upstreamError = typeof data.error === "string" ? data.error : "";
   const errorDescription =
     typeof data.error_description === "string" ? data.error_description : "";
@@ -276,14 +290,36 @@ export async function exchangeCode(
     return { access_token: "", error: `Token exchange failed: ${detail}` };
   }
 
-  return { access_token: token };
+  return { access_token: token, id_token: idToken || undefined };
+}
+
+// ─── ID Token helpers ───
+
+/**
+ * Decode (without signature verification) the payload of an ID token
+ * received directly from the provider over TLS in the token response.
+ * Signature verification is delegated to the provider's token endpoint;
+ * the claims we check here (nonce, aud, sub, email) are anti-replay /
+ * audience assertions, which is the standard use for this pattern.
+ */
+export function decodeIdTokenPayload(idToken: string): Record<string, unknown> | null {
+  try {
+    const parts = idToken.split(".");
+    if (parts.length !== 3) return null;
+    const json = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+    const padded = json + "=".repeat((4 - (json.length % 4)) % 4);
+    return JSON.parse(padded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
 }
 
 // ─── Profile Fetch ───
 
 export async function fetchProfile(
   provider: OAuthProvider,
-  accessToken: string
+  accessToken: string,
+  opts?: { idToken?: string; expectedNonce?: string }
 ): Promise<{
   id: string;
   name: string;
@@ -291,6 +327,36 @@ export async function fetchProfile(
   avatar: string | null;
 }> {
   const config = PROVIDER_CONFIGS[provider];
+
+  // Apple has no userinfo endpoint — the identity lives in the id_token.
+  if (provider === "apple") {
+    if (!opts?.idToken) throw new Error("Apple sign-in failed: missing id_token");
+    const payload = decodeIdTokenPayload(opts.idToken);
+    if (!payload || typeof payload.sub !== "string") {
+      throw new Error("Apple sign-in failed: invalid id_token");
+    }
+    const email = typeof payload.email === "string" ? payload.email : null;
+    const name =
+      typeof payload.name === "string" && payload.name ? payload.name : "Apple User";
+    return { id: payload.sub, name, email, avatar: null };
+  }
+
+  // For Google, verify the nonce (replay protection) and audience of the
+  // returned ID token before trusting the profile.
+  if (provider === "google" && opts?.idToken) {
+    const payload = decodeIdTokenPayload(opts.idToken);
+    if (!payload) throw new Error("Google sign-in failed: invalid id_token");
+
+    if (opts.expectedNonce && payload.nonce !== opts.expectedNonce) {
+      throw new Error("Google sign-in failed: nonce mismatch (possible replay)");
+    }
+
+    const aud = typeof payload.aud === "string" ? payload.aud : "";
+    const clientId = getClientId("google");
+    if (clientId && aud !== clientId) {
+      throw new Error("Google sign-in failed: id_token audience mismatch");
+    }
+  }
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${accessToken}`,

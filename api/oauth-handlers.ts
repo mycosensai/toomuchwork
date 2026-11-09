@@ -167,8 +167,12 @@ export async function handleOAuthCallback(c: Context, provider: OAuthProvider) {
       return c.redirect("/?oauth_error=token_exchange_failed", 302);
     }
 
-    // Fetch user profile
-    const profile = await fetchProfile(provider, tokenResult.access_token);
+    // Fetch user profile (id_token used for Apple identity and Google
+    // nonce/audience verification)
+    const profile = await fetchProfile(provider, tokenResult.access_token, {
+      idToken: tokenResult.id_token,
+      expectedNonce: stateData.nonce,
+    });
 
     // Upsert user in database
     const db = getDb();
@@ -230,7 +234,11 @@ export async function handleOAuthCallback(c: Context, provider: OAuthProvider) {
         userId = Number(result.meta.last_row_id);
       }
     } else {
-      // No email, create by provider
+      // No email (X never exposes one): create/reuse an account keyed by
+      // provider+id. Repeat X logins hit existingByProvider above, so the
+      // same X identity always maps to the same account. Account linking to
+      // a pre-existing local (email) account is not possible without an
+      // email from the provider.
       const result = await db.insert(users).values({
         oauthProvider: provider,
         oauthProviderId: profile.id,
