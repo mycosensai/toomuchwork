@@ -8,6 +8,7 @@ export interface CloudflareEnv {
   KIMI_OPEN_URL?: string;
   OWNER_UNION_ID?: string;
   STRIPE_SECRET_KEY?: string;
+  CF_PAGES?: string | boolean;
   VITE_STRIPE_PUBLISHABLE_KEY?: string;
   OPENAI_API_KEY?: string;
   OPENAI_BASE_URL?: string;
@@ -58,9 +59,20 @@ export const env = {
   get isProduction(): boolean {
     const nodeEnv = cfEnv.NODE_ENV;
     if (nodeEnv) return nodeEnv === "production";
+
+    // Cloudflare Pages always deploys a built, production bundle.
+    if (cfEnv.CF_PAGES) return true;
+
     const domain = cfEnv.VAULT_DOMAIN as string | undefined;
     const host = typeof globalThis !== "undefined" ? (globalThis as any).location?.hostname : undefined;
-    return !host || host === domain || domain === "thevaultdfw.win";
+
+    // Derive from the actual host when we know it; never assume production
+    // just because a hardcoded domain literal is configured.
+    if (host) {
+      if (!domain) return false;
+      return host === domain || host.endsWith(`.${domain}`);
+    }
+    return !!domain;
   },
   get databaseUrl(): string {
     return cfEnv.DATABASE_URL || "";

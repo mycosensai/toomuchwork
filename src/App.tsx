@@ -1,7 +1,6 @@
 import { Routes, Route } from 'react-router'
 import { Suspense, lazy } from 'react'
 import Layout from './components/Layout'
-import MobileAppPrompt from './components/MobileAppPrompt'
 
 const Home = lazy(() => import('./pages/Home'))
 const Storefront = lazy(() => import('./pages/Storefront'))
@@ -53,8 +52,6 @@ function LoadingFallback() {
 export default function App() {
   return (
     <>
-      <MobileAppPrompt />
-
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route element={<Layout />}>

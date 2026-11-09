@@ -262,8 +262,20 @@ app.post("/api/stripe/webhook", async (c) => {
     }
   }
 
-  if (event.type === "payment_intent.payment_failed" && sessionId) {
-    await db.prepare("UPDATE stripe_sessions SET status = ? WHERE session_id = ?").bind("failed", sessionId).run();
+  if (event.type === "payment_intent.payment_failed") {
+    // object.id here is a pi_… payment-intent id and can never match
+    // stripe_sessions.session_id (a cs_… checkout id). Resolve the checkout
+    // session through the metadata recorded at creation instead.
+    const meta = (object as { metadata?: Record<string, unknown> }).metadata || {};
+    const saleId = Number(meta.saleId);
+    if (Number.isFinite(saleId) && saleId > 0) {
+      await db
+        .prepare(
+          "UPDATE stripe_sessions SET status = ? WHERE metadata LIKE ? AND status != ?"
+        )
+        .bind("failed", `%"saleId":"${saleId}"%`, "completed")
+        .run();
+    }
   }
 
   await db
