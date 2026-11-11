@@ -113,9 +113,9 @@ describe("URL Validation", () => {
 
 // ─── TOKEN REVOCATION TESTS ───
 describe("Token Revocation", () => {
-  it("revokes tokens", () => {
+  it("revokes tokens", async () => {
     const token = "malicious_token_123";
-    expect(isTokenRevoked(token)).toBe(false);
+    expect(await isTokenRevoked(token)).toBe(false);
     // Token would be revoked via revokeToken()
   });
   it("tracks revoked user sessions", () => {
