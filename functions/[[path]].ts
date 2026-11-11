@@ -11,7 +11,7 @@ import { appRouter } from "../api/router";
 import { createContext } from "../api/context";
 import { setDb } from "../api/queries/connection";
 import { setCloudflareEnv } from "../api/lib/env";
-import { checkRateLimitD1, getSecurityHeaders, getCorsConfig } from "../api/security";
+import { checkRateLimitD1, getSecurityHeaders, getCorsConfig, getD1SecurityStateStatus } from "../api/security";
 
 type Env = Record<string, unknown> & {
   DB?: D1Database;
@@ -181,15 +181,23 @@ app.use("/api/*", async (c, next) => {
 });
 
 // ─── Health ───
-app.get("/api/health", (c) =>
-  c.json({
-    ok: true,
-    status: "ok",
-    version: "v3.0.0",
-    database: getD1(c.env) ? "bound" : "missing",
-    timestamp: new Date().toISOString(),
-  }),
-);
+app.get("/api/health", (c) => {
+  const securityState = getD1SecurityStateStatus();
+  return c.json(
+    {
+      ok: true,
+      status: "ok",
+      version: "v3.0.0",
+      database: getD1(c.env) ? "bound" : "missing",
+      // Degraded when D1-backed rate limiting / revocation failed in this
+      // isolate (e.g. migration 0003_security_state.sql not applied).
+      securityState: securityState.healthy ? "ok" : "degraded",
+      securityStateDetail: securityState.healthy ? null : securityState.lastError,
+      timestamp: new Date().toISOString(),
+    },
+    securityState.healthy ? 200 : 503,
+  );
+});
 
 // ─── DB Health ───
 app.get("/api/db/health", async (c) => {
