@@ -19,7 +19,7 @@ import { sql } from "drizzle-orm";
 import * as jose from "jose";
 import { env } from "./lib/env";
 import { getSessionCookieOptions } from "./lib/cookies";
-import { logAudit, getClientIP } from "./security";
+import { logAudit, getClientIP, isUserSessionRevoked } from "./security";
 
 const getJwtSecret = () => new TextEncoder().encode(env.appSecret);
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -92,6 +92,14 @@ export async function verifyOAuthSessionAndRefresh(
     if (!userId) return { user: null, newToken: null };
 
     const now = Date.now();
+
+    // Enforce server-side revocation: revokeAllUserSessions / session
+    // revocation must also log out OAuth-cookie users, not just local-auth
+    // token holders. iat is in seconds; revocation timestamps are in ms.
+    if (await isUserSessionRevoked(userId, (iat || 0) * 1000)) {
+      console.log(`[OAuth] Session revoked for user ${userId}`);
+      return { user: null, newToken: null };
+    }
 
     // Check idle timeout (30 minutes)
     if (lastActivity && now - lastActivity > IDLE_TIMEOUT_MS) {

@@ -56,6 +56,51 @@ function rawDb(): ReturnType<typeof getRawDb> {
   }
 }
 
+// ─── D1 security-state health tracking ───
+// If the D1-backed security state (rate_limits / revoked_tokens /
+// revoked_user_sessions) is unavailable — e.g. migration 0003 was never
+// applied — the system silently degrades to per-isolate in-memory state.
+// Track that explicitly so the health endpoint can surface it loudly.
+
+let d1SecurityStateDegraded = false;
+let d1SecurityStateLastError: string | null = null;
+let d1SecurityStateLastFailureAt: number | null = null;
+
+/** Record a D1 security-state failure and log it at error level. */
+function markD1SecurityStateFailure(scope: string, error: unknown): void {
+  const first = !d1SecurityStateDegraded;
+  d1SecurityStateDegraded = true;
+  d1SecurityStateLastError = error instanceof Error ? error.message : String(error);
+  d1SecurityStateLastFailureAt = Date.now();
+  // Use a greppable marker so this cannot be lost in routine error noise.
+  console.error(
+    `[SECURITY-STATE-DEGRADED] scope=${scope} first=${first} ` +
+      `${d1SecurityStateLastError}. Persistent security state is NOT being ` +
+      `enforced globally (per-isolate fallback). Apply db/migrations-manual/0003_security_state.sql.`,
+  );
+}
+
+/**
+ * True when D1-backed security state (rate limiting / revocation) is healthy.
+ * Once a D1 error has been observed this returns false until the isolate
+ * restarts — the deployment should page on this via /api/health.
+ */
+export function isD1SecurityStateHealthy(): boolean {
+  return !d1SecurityStateDegraded;
+}
+
+export function getD1SecurityStateStatus(): {
+  healthy: boolean;
+  lastError: string | null;
+  lastFailureAt: number | null;
+} {
+  return {
+    healthy: !d1SecurityStateDegraded,
+    lastError: d1SecurityStateLastError,
+    lastFailureAt: d1SecurityStateLastFailureAt,
+  };
+}
+
 export async function checkRateLimitD1(
   req: Request,
   config: RateLimitConfig = DEFAULT_RATE_LIMIT,
@@ -100,7 +145,7 @@ export async function checkRateLimitD1(
       resetAt: row.window_start + config.windowMs,
     };
   } catch (error) {
-    console.error("[Security] D1 rate limit failed, falling back to in-memory:", error);
+    markD1SecurityStateFailure("checkRateLimitD1", error);
     return checkRateLimit(req, config);
   }
 }
@@ -409,7 +454,7 @@ export async function revokeToken(token: string): Promise<void> {
         .bind(token, Date.now())
         .run();
     } catch (error) {
-      console.error("[Security] Failed to persist token revocation:", error);
+      markD1SecurityStateFailure("revokeToken", error);
     }
   }
 }
@@ -425,7 +470,7 @@ export async function revokeAllUserSessions(userId: number): Promise<void> {
         .bind(userId, Date.now())
         .run();
     } catch (error) {
-      console.error("[Security] Failed to persist user session revocation:", error);
+      markD1SecurityStateFailure("revokeAllUserSessions", error);
     }
   }
 }
@@ -443,7 +488,7 @@ export async function isTokenRevoked(token: string): Promise<boolean> {
       .first();
     return !!row;
   } catch (error) {
-    console.error("[Security] Failed to read token revocation state:", error);
+    markD1SecurityStateFailure("isTokenRevoked", error);
     return false;
   }
 }
@@ -464,7 +509,7 @@ export async function isUserSessionRevoked(userId: number, tokenIssuedAt: number
     const revokedAt = Number(row.revoked_at);
     return tokenIssuedAt < revokedAt;
   } catch (error) {
-    console.error("[Security] Failed to read session revocation state:", error);
+    markD1SecurityStateFailure("isUserSessionRevoked", error);
     return false;
   }
 }
