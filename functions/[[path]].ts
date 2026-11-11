@@ -273,15 +273,19 @@ app.post("/api/stripe/webhook", async (c) => {
   if (event.type === "payment_intent.payment_failed") {
     // object.id here is a pi_… payment-intent id and can never match
     // stripe_sessions.session_id (a cs_… checkout id). Resolve the checkout
-    // session through the metadata recorded at creation instead.
+    // session through the metadata recorded at creation: sale-flow checkouts
+    // insert a stripe_sessions row with metadata {saleId:"N", …} and
+    // listing checkouts store whatever metadata the Stripe session carried.
     const meta = (object as { metadata?: Record<string, unknown> }).metadata || {};
     const saleId = Number(meta.saleId);
     if (Number.isFinite(saleId) && saleId > 0) {
+      // Metadata may be stored with the value quoted ("saleId":"7") or not
+      // ("saleId":7) depending on how the row was written — match both.
       await db
         .prepare(
-          "UPDATE stripe_sessions SET status = ? WHERE metadata LIKE ? AND status != ?"
+          "UPDATE stripe_sessions SET status = ? WHERE (metadata LIKE ? OR metadata LIKE ?) AND status != ?",
         )
-        .bind("failed", `%"saleId":"${saleId}"%`, "completed")
+        .bind("failed", `%"saleId":"${saleId}"%`, `%"saleId":${saleId}%`, "completed")
         .run();
     }
   }

@@ -13,7 +13,7 @@
 import { z } from "zod";
 import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { listings, saleTransactions, sellerPayouts, commissionTiers } from "@db/schema";
+import { listings, saleTransactions, sellerPayouts, commissionTiers, stripeSessions } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 import { env } from "./lib/env";
 import { logAudit, getClientIP } from "./security";
@@ -178,6 +178,23 @@ export const saleRouter = createRouter({
       });
 
       const session = await stripeFetch("/checkout/sessions", body);
+
+      // Persist a stripe_sessions row carrying the saleId in its metadata so
+      // the payment_intent.payment_failed webhook arm (which matches on
+      // metadata.saleId) can actually find it and mark the checkout failed.
+      await db.insert(stripeSessions).values({
+        sessionId: session.id,
+        userId: sale.sellerId,
+        listingId: sale.listingId,
+        amount: String(sale.salePrice),
+        commission: String(sale.salePrice * (Number(listing?.commissionRate ?? 0) / 100)),
+        status: "pending",
+        metadata: JSON.stringify({
+          saleId: String(sale.id),
+          listingId: String(sale.listingId),
+          sellerId: String(sale.sellerId),
+        }),
+      });
 
       return {
         success: true,
