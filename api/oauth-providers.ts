@@ -296,6 +296,44 @@ export async function exchangeCode(
 // ─── ID Token helpers ───
 
 /**
+ * exp / iss validation for decoded id_tokens. The token is received directly
+ * from the provider over TLS (signature verification is delegated to the
+ * token endpoint), but expiry and issuer are cheap, standard claims checks
+ * that catch stale or wrong-issuer tokens.
+ */
+const ID_TOKEN_CLOCK_LEEWAY_SECONDS = 60;
+
+const PROVIDER_ID_TOKEN_ISSUERS: Record<string, string[]> = {
+  apple: ["https://appleid.apple.com"],
+  google: ["https://accounts.google.com", "accounts.google.com"],
+};
+
+export function validateIdTokenClaims(
+  payload: Record<string, unknown>,
+  provider: "apple" | "google",
+): { valid: boolean; error?: string } {
+  const now = Math.floor(Date.now() / 1000);
+
+  const exp = typeof payload.exp === "number" ? payload.exp : Number(payload.exp);
+  if (!Number.isFinite(exp) || exp <= 0) {
+    return { valid: false, error: `id_token missing/invalid exp` };
+  }
+  if (now - ID_TOKEN_CLOCK_LEEWAY_SECONDS >= exp) {
+    return { valid: false, error: `id_token expired` };
+  }
+
+  const allowedIssuers = PROVIDER_ID_TOKEN_ISSUERS[provider] || [];
+  if (allowedIssuers.length > 0) {
+    const iss = typeof payload.iss === "string" ? payload.iss : "";
+    if (!allowedIssuers.includes(iss)) {
+      return { valid: false, error: `id_token issuer mismatch` };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
  * Decode (without signature verification) the payload of an ID token
  * received directly from the provider over TLS in the token response.
  * Signature verification is delegated to the provider's token endpoint;
@@ -335,6 +373,10 @@ export async function fetchProfile(
     if (!payload || typeof payload.sub !== "string") {
       throw new Error("Apple sign-in failed: invalid id_token");
     }
+    const claims = validateIdTokenClaims(payload, "apple");
+    if (!claims.valid) {
+      throw new Error(`Apple sign-in failed: ${claims.error}`);
+    }
     const email = typeof payload.email === "string" ? payload.email : null;
     const name =
       typeof payload.name === "string" && payload.name ? payload.name : "Apple User";
@@ -346,6 +388,11 @@ export async function fetchProfile(
   if (provider === "google" && opts?.idToken) {
     const payload = decodeIdTokenPayload(opts.idToken);
     if (!payload) throw new Error("Google sign-in failed: invalid id_token");
+
+    const claims = validateIdTokenClaims(payload, "google");
+    if (!claims.valid) {
+      throw new Error(`Google sign-in failed: ${claims.error}`);
+    }
 
     if (opts.expectedNonce && payload.nonce !== opts.expectedNonce) {
       throw new Error("Google sign-in failed: nonce mismatch (possible replay)");
