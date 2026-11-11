@@ -237,6 +237,14 @@ export const saleRouter = createRouter({
         throw new Error("Payment not completed");
       }
 
+      // Cross-check the intent was actually created for THIS sale. A seller
+      // could otherwise attach any succeeded intent (e.g. from another sale)
+      // to their own sale record.
+      const intentSaleId = Number((intent.metadata as Record<string, unknown> | null)?.saleId);
+      if (!Number.isFinite(intentSaleId) || intentSaleId !== input.saleId) {
+        throw new Error("Payment intent does not belong to this sale");
+      }
+
       await db
         .update(saleTransactions)
         .set({
